@@ -7,7 +7,7 @@ parts:
  - caption: Examples
    chapters:
    - file: notebooks/_dipoles
-   - file: notebooks/metal_dipole
+   - file: notebooks/_metal_dipole
    - file: notebooks/crystal_bz
  - caption: API
    chapters:

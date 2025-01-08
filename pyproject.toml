@@ -26,6 +26,17 @@ dependencies = [
   "numpy",
 ]
 [project.optional-dependencies]
+docs = [
+  "matplotlib",
+  "jupyter-book==1.0.3",
+  "sphinx-autodoc-typehints",
+  "sphinx-click",
+]
+examples = [
+  "matplotlib",
+  "scikit-image",
+  "scipy",
+]
 jeig = [
   "jeig",
 ]
@@ -34,17 +45,6 @@ tests = [
   "parameterized",
   "pytest",
   "pytest-subtests",
-]
-examples = [
-  "matplotlib",
-  "scikit-image",
-  "scipy",
-]
-docs = [
-  "matplotlib",
-  "jupyter-book==1.0.3",
-  "sphinx-autodoc-typehints",
-  "sphinx-click",
 ]
 dev = [
   "black",
