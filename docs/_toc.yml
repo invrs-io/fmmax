@@ -6,8 +6,8 @@ root: index
 parts:
  - caption: Examples
    chapters:
-   - file: notebooks/_dipoles
-   - file: notebooks/_metal_dipole
+   - file: notebooks/dipoles
+   - file: notebooks/metal_dipole
    - file: notebooks/crystal_bz
  - caption: API
    chapters:
