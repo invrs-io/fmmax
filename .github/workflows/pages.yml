@@ -1,4 +1,4 @@
-name: Sphinx docs to gh-pages
+name: build and deploy sphinx docs
 
 on:
   push:
@@ -9,7 +9,6 @@ on:
 jobs:
   build-docs:
     runs-on: ubuntu-latest
-    name: Sphinx docs to gh-pages
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -36,7 +35,6 @@ jobs:
           path: "./docs/_build/html/"
 
   deploy-docs:
-    needs: build-docs
     permissions:
       pages: write
       id-token: write

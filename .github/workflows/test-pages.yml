@@ -1,4 +1,4 @@
-name: Sphinx docs to gh-pages
+name: test sphinx docs
 
 on:
   pull_request:
@@ -9,7 +9,6 @@ on:
 jobs:
   build-docs:
     runs-on: ubuntu-latest
-    name: Sphinx docs to gh-pages
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
