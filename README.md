@@ -15,17 +15,17 @@ Our use of JAX enables GPU acceleration and automatic differentiation of FMM sim
 ## Brillouin zone integration
 Brillouin zone integration [2022 Lopez-Fraguas] allows modeling of localized sources in periodic structures. Check out the `crystal` example to see how we model a Gaussian beam incident upon a photonic crystal slab, or an isolated dipole embedded within the slab. The Gaussian beam fields are shown below.
 
-![Gaussian beam incident on photonic crystal](https://raw.githubusercontent.com/mfschubert/fmmax/refs/heads/main/docs/img/crystal_beam.gif)
+![Gaussian beam incident on photonic crystal](https://github.com/mfschubert/fmmax/blob/main/docs/img/crystal_beam.gif?raw=true)
 
 ## Vector FMM formulations
 Vector FMM formulations introduce local coordinate systems at each point in the unit cell, which are normal and tangent to all interfaces. This allows normal and tangent field components to be treated differently and improves convergence. FMMAX implements several vector formulations of the FMM, with automatic vector field generation based on functional minimization similar to [2012 Liu]. We implement the _Pol_, _Normal_, and _Jones_ methods of that reference, and introduce a new _Jones direct_ method which we have found to have superior convergence. These are supported also with anisotropic and magnetic materials. The `vector_fields` example computes vector fields by these methods for an example structure.
 
-![Comparison of automatically-generated vector fields](https://raw.githubusercontent.com/mfschubert/fmmax/refs/heads/main/docs/img/vector_fields.png)
+![Comparison of automatically-generated vector fields](https://github.com/mfschubert/fmmax/blob/main/docs/img/vector_fields.png?raw=true)
 
 ## Anisotropic, magnetic materials
 Our support of anisotropic, magnetic materials allows modeling of uniaxial perfectly matched layers. This is demonstrated in the `metal_dipole` example, which simulates in vaccuum located above a metal substrate. The resulting electric fields are whown below.
 
-![Dipole suspended above metal substrate with PML](https://raw.githubusercontent.com/mfschubert/fmmax/refs/heads/main/docs/img/metal_dipole.png)
+![Dipole suspended above metal substrate with PML](https://github.com/mfschubert/fmmax/blob/main/docs/img/metal_dipole.png?raw=true)
 
 ## FMM Conventions
 - The speed of light, vacuum permittivity, and vacuum permeability are all 1.
