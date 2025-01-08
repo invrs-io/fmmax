@@ -41,10 +41,10 @@ examples = [
   "scipy",
 ]
 docs = [
-    "matplotlib",
-    "jupyter-book==1.0.3",
-    "sphinx-autodoc-typehints",
-    "sphinx-click",
+  "matplotlib",
+  "jupyter-book==1.0.3",
+  "sphinx-autodoc-typehints",
+  "sphinx-click",
 ]
 dev = [
   "black",
