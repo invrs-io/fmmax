@@ -40,11 +40,17 @@ examples = [
   "scikit-image",
   "scipy",
 ]
+docs = [
+    "matplotlib",
+    "jupyter-book==1.0.3",
+    "sphinx-autodoc-typehints",
+    "sphinx-click",
+]
 dev = [
   "black",
   "bump-my-version",
   "darglint",
-  "fmmax[examples, tests]",
+  "fmmax[docs, examples, tests]",
   "isort",
   "mypy",
 ]
