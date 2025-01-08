@@ -1,0 +1,25 @@
+# Table of contents
+# Learn more at https://jupyterbook.org/customize/toc.html
+
+format: jb-book
+root: index
+parts:
+ - caption: Examples
+   chapters:
+   - file: notebooks/dipoles
+   - file: notebooks/metal_dipole
+   - file: notebooks/crystal_bz
+ - caption: API
+   chapters:
+   - file: api/basis
+   - file: api/beams
+   - file: api/farfield
+   - file: api/fft
+   - file: api/fields
+   - file: api/fmm
+   - file: api/fmm_matrices
+   - file: api/pml
+   - file: api/scattering
+   - file: api/sources
+   - file: api/utils
+   - file: api/vector
