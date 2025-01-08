@@ -6,6 +6,7 @@ Copyright (c) Meta Platforms, Inc. and affiliates.
 from typing import Tuple
 
 import jax.numpy as jnp
+import numpy as onp
 
 from fmmax import basis, fields, fmm, scattering, utils
 
@@ -93,7 +94,7 @@ def simulate_grating(
         truncation=truncation,
     )
     # Assert that grating vectors all have ky == 0.
-    assert max(abs(expansion.basis_coefficients[:, 1])) == 0
+    assert onp.max(onp.abs(expansion.basis_coefficients[:, 1])) == 0
 
     in_plane_wavevector = basis.plane_wave_in_plane_wavevector(
         wavelength=wavelength_nm,
