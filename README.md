@@ -4,7 +4,9 @@
 ![Continuous integration](https://github.com/facebookresearch/fmmax/actions/workflows/build-ci.yml/badge.svg)
 ![PyPI version](https://img.shields.io/pypi/v/fmmax)
 
-FMMAX is a an implementation of the Fourier modal method (FMM) in [JAX](https://github.com/google/jax). 
+FMMAX is a an implementation of the Fourier modal method (FMM) in [JAX](https://github.com/google/jax), which I originally developed at Meta Reality Labs to address needs for optical design in AR/VR. This repo is a hard fork of the [original repo](https://github.com/facebookresearc/fmmax); this fork was undertaken since I left Meta and my primary collaborator (Alec Hammond) moved on to a role outside Reality Labs. The [FMMAX pypi project](https://pypi.org/project/fmmax/) is based on this repo.
+
+## Fourier modal method
 
 The FMM -- also known as rigorous coupled wave analysis (RCWA) -- is a semianalytical method that solves Maxwell's equations in periodic stratified media, where in-plane directions are treated with a truncated Fourier basis and the normal direction is handled by a scattering matrix approach [1999 Whittaker, 2012 Liu, 2020 Jin]. This allows certain classes of structures to be modeled with relatively low computational cost.
 
@@ -53,16 +55,18 @@ Note: for this to work, it may be necessary to first update your pip installatio
 
 ## Citing FMMAX
 
-If you use FMMAX, please consider citing [our paper](https://arxiv.org/abs/2308.08573),
+If you use FMMAX, please consider citing [our paper](https://opg.optica.org/oe/fulltext.cfm?uri=oe-31-26-42945&id=544113),
 
 ```
-@misc{schubert2023fourier,
-      title={Fourier modal method for inverse design of metasurface-enhanced micro-LEDs}, 
-      author={Martin F. Schubert and Alec M. Hammond},
-      year={2023},
-      eprint={2308.08573},
-      archivePrefix={arXiv},
-      primaryClass={physics.comp-ph}
+@@article{schubert2023fourier,
+  title={Fourier modal method for inverse design of metasurface-enhanced micro-LEDs},
+  author={Schubert, Martin F and Hammond, Alec M},
+  journal={Optics Express},
+  volume={31},
+  number={26},
+  pages={42945--42960},
+  year={2023},
+  publisher={Optica Publishing Group}
 }
 ```
 

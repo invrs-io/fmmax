@@ -27,15 +27,15 @@ VectorFn = Callable[
 class Formulation(enum.Enum):
     """Enumerates supported Fourier modal method formulations."""
 
-    FFT: str = "fft"
-    JONES_DIRECT: str = vector.JONES_DIRECT
-    JONES: str = vector.JONES
-    NORMAL: str = vector.NORMAL
-    POL: str = vector.POL
-    JONES_DIRECT_FOURIER: str = vector.JONES_DIRECT_FOURIER
-    JONES_FOURIER: str = vector.JONES_FOURIER
-    NORMAL_FOURIER: str = vector.NORMAL_FOURIER
-    POL_FOURIER: str = vector.POL_FOURIER
+    FFT = "fft"
+    JONES_DIRECT = vector.JONES_DIRECT
+    JONES = vector.JONES
+    NORMAL = vector.NORMAL
+    POL = vector.POL
+    JONES_DIRECT_FOURIER = vector.JONES_DIRECT_FOURIER
+    JONES_FOURIER = vector.JONES_FOURIER
+    NORMAL_FOURIER = vector.NORMAL_FOURIER
+    POL_FOURIER = vector.POL_FOURIER
 
 
 def eigensolve_isotropic_media(

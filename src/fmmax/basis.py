@@ -79,8 +79,8 @@ class Expansion:
 class Truncation(enum.Enum):
     """Enumerates truncation modes."""
 
-    CIRCULAR: str = "circular"
-    PARALLELOGRAMIC: str = "parallelogramic"
+    CIRCULAR = "circular"
+    PARALLELOGRAMIC = "parallelogramic"
 
 
 def generate_expansion(
