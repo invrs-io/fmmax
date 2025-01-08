@@ -32,7 +32,7 @@ def shifted_rotated_fields(
     """Computes the fields on a rotated coordinate system.
 
     Given `fields_fn(xf, yf, zf) -> (exf, eyf, ezf), (hxf, hyf, hzf)` which
-    returns the fields _in the field coordinate system_, returns the fields
+    returns the fields in the field coordinate system, returns the fields
     at coordinates `(x, y, z)`, which are rotated from `(xf, yf, zf)`, by
     the specified `polar_angle`, `azimuthal_angle`, and `polarization_angle`.
 

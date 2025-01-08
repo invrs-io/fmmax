@@ -1,7 +1,7 @@
 # FMMAX: Fourier Modal Method with Jax
 
-<a href="https://facebookresearch.github.io/fmmax/"><img src="https://img.shields.io/badge/Docs-blue.svg"/></a>
-![Continuous integration](https://github.com/facebookresearch/fmmax/actions/workflows/build-ci.yml/badge.svg)
+<a href="https://mfschubert.github.io/fmmax/"><img src="https://img.shields.io/badge/Docs-blue.svg"/></a>
+![Continuous integration](https://github.com/mfschubert/fmmax/actions/workflows/build-ci.yml/badge.svg)
 ![PyPI version](https://img.shields.io/pypi/v/fmmax)
 
 FMMAX is a an implementation of the Fourier modal method (FMM) in [JAX](https://github.com/google/jax), which I originally developed at Meta Reality Labs to address needs for optical design in AR/VR. This repo is a hard fork of the [original repo](https://github.com/facebookresearc/fmmax); this fork was undertaken since I left Meta and my primary collaborator (Alec Hammond) moved on to a role outside Reality Labs. The [FMMAX pypi project](https://pypi.org/project/fmmax/) is based on this repo.
@@ -15,17 +15,17 @@ Our use of JAX enables GPU acceleration and automatic differentiation of FMM sim
 ## Brillouin zone integration
 Brillouin zone integration [2022 Lopez-Fraguas] allows modeling of localized sources in periodic structures. Check out the `crystal` example to see how we model a Gaussian beam incident upon a photonic crystal slab, or an isolated dipole embedded within the slab. The Gaussian beam fields are shown below.
 
-![Gaussian beam incident on photonic crystal](/img/crystal_beam.gif)
+![Gaussian beam incident on photonic crystal](https://raw.githubusercontent.com/mfschubert/fmmax/refs/heads/main/docs/img/crystal_beam.gif)
 
 ## Vector FMM formulations
 Vector FMM formulations introduce local coordinate systems at each point in the unit cell, which are normal and tangent to all interfaces. This allows normal and tangent field components to be treated differently and improves convergence. FMMAX implements several vector formulations of the FMM, with automatic vector field generation based on functional minimization similar to [2012 Liu]. We implement the _Pol_, _Normal_, and _Jones_ methods of that reference, and introduce a new _Jones direct_ method which we have found to have superior convergence. These are supported also with anisotropic and magnetic materials. The `vector_fields` example computes vector fields by these methods for an example structure.
 
-![Comparison of automatically-generated vector fields](/img/vector_fields.png)
+![Comparison of automatically-generated vector fields](https://raw.githubusercontent.com/mfschubert/fmmax/refs/heads/main/docs/img/vector_fields.png)
 
 ## Anisotropic, magnetic materials
 Our support of anisotropic, magnetic materials allows modeling of uniaxial perfectly matched layers. This is demonstrated in the `metal_dipole` example, which simulates in vaccuum located above a metal substrate. The resulting electric fields are whown below.
 
-![Dipole suspended above metal substrate with PML](/img/metal_dipole.png)
+![Dipole suspended above metal substrate with PML](https://raw.githubusercontent.com/mfschubert/fmmax/refs/heads/main/docs/img/metal_dipole.png)
 
 ## FMM Conventions
 - The speed of light, vacuum permittivity, and vacuum permeability are all 1.
@@ -58,7 +58,7 @@ Note: for this to work, it may be necessary to first update your pip installatio
 If you use FMMAX, please consider citing [our paper](https://opg.optica.org/oe/fulltext.cfm?uri=oe-31-26-42945&id=544113),
 
 ```
-@@article{schubert2023fourier,
+@article{schubert2023fourier,
   title={Fourier modal method for inverse design of metasurface-enhanced micro-LEDs},
   author={Schubert, Martin F and Hammond, Alec M},
   journal={Optics Express},
