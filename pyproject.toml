@@ -1,0 +1,61 @@
+[project]
+
+name = "fmmax"
+version = "v0.11.0"
+description = "Fourier modal method with Jax"
+readme = "README.md"
+requires-python = ">=3.7"
+license = {file = "LICENSE"}
+
+keywords = ["fmm", "rcwa", "jax", "optics"] 
+
+authors = [
+  {name = "Martin Schubert", email = "mfschubert@gmail.com" },
+  {name = "Alec Hammond", email = "alec.m.hammond@gmail.com" },
+]
+
+maintainers = [
+  {name = "Martin Schubert", email = "mfschubert@gmail.com" },
+  {name = "Alec Hammond", email = "alec.m.hammond@gmail.com" },
+]
+
+# TODO add gpu channels
+dependencies = [
+  "jax <= 0.4.38",
+  "jaxlib",
+  "numpy",
+]
+[project.optional-dependencies]
+jeig = [
+  "jeig",
+]
+tests = [
+  "grcwa",
+  "parameterized",
+  "pytest",
+  "pytest-subtests",
+]
+examples = [
+  "matplotlib",
+  "scikit-image",
+  "scipy",
+]
+dev = [
+  "black",
+  "bump-my-version",
+  "darglint",
+  "fmmax[examples, tests]",
+  "isort",
+  "mypy",
+]
+
+[build-system]
+requires = ["setuptools>=43.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.package-data]
+"fmmax" = ["py.typed"]
+
+[tool.pytest.ini_options]
+addopts = ["--import-mode=importlib"]  # Allow tests with same name in different dirs.
+pythonpath = ["src"]
