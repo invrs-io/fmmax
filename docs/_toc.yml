@@ -8,7 +8,7 @@ parts:
    chapters:
    - file: notebooks/dipoles
    - file: notebooks/metal_dipole
-   - file: notebooks/crystal_bz
+   - file: notebooks/crystal_bz_dipole
  - caption: API
    chapters:
    - file: api/basis
