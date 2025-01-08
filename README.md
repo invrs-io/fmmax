@@ -4,7 +4,7 @@
 ![Continuous integration](https://github.com/mfschubert/fmmax/actions/workflows/build-ci.yml/badge.svg)
 ![PyPI version](https://img.shields.io/pypi/v/fmmax)
 
-FMMAX is a an implementation of the Fourier modal method (FMM) in [JAX](https://github.com/google/jax), which I originally developed at Meta Reality Labs to address needs for optical design in AR/VR. This repo is a hard fork of the [original repo](https://github.com/facebookresearc/fmmax); this fork was undertaken since I left Meta and my primary collaborator (Alec Hammond) moved on to a role outside Reality Labs. The [FMMAX pypi project](https://pypi.org/project/fmmax/) is based on this repo.
+FMMAX is a an implementation of the Fourier modal method (FMM) in [JAX](https://github.com/google/jax), which I originally developed at Meta Reality Labs to address needs for optical design in AR/VR. This repo is a hard fork of the [original repo](https://github.com/facebookresearc/fmmax); this fork was undertaken since I left Meta and my primary collaborator moved on to a role at Meta outside Reality Labs. The [FMMAX pypi project](https://pypi.org/project/fmmax/) is based on this repo.
 
 ## Fourier modal method
 
