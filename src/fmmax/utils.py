@@ -140,9 +140,10 @@ def _eig(matrix: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
     if _JEIG_AVAILABLE:
         return jeig.eig(matrix)
     else:
-        return jax.lax.linalg.eig(
+        eigenvalues, eigenvectors = jax.lax.linalg.eig(
             matrix, compute_left_eigenvectors=False, use_magma=False
         )
+        return eigenvalues, eigenvectors
 
 
 def _eig_fwd(
