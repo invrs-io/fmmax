@@ -66,7 +66,8 @@ class AnisotropicMatchesIsotropicGratingTest(unittest.TestCase):
             permittivity=permittivity_metal, **eigensolve_kwargs
         )
 
-        # Perform the isotropic grating eigensolve and compute the zeroth-order reflectivity.
+        # Perform the isotropic grating eigensolve and compute the zeroth-order
+        # reflectivity.
         solve_result_grating_isotropic = fmm.eigensolve_isotropic_media(
             permittivity=permittivity_grating, **eigensolve_kwargs
         )
@@ -83,7 +84,8 @@ class AnisotropicMatchesIsotropicGratingTest(unittest.TestCase):
         r_te_isotropic = s_matrix_isotropic.s21[0, 0]
         r_tm_isotropic = s_matrix_isotropic.s21[n, n]
 
-        # Perform the anisotropic grating eigensolve and compute the zeroth-order reflectivity.
+        # Perform the anisotropic grating eigensolve and compute the zeroth-order
+        # reflectivity.
         solve_result_grating_anisotropic = fmm.eigensolve_general_anisotropic_media(
             permittivity_xx=permittivity_grating,
             permittivity_xy=jnp.zeros_like(permittivity_grating),
@@ -101,7 +103,7 @@ class AnisotropicMatchesIsotropicGratingTest(unittest.TestCase):
             layer_solve_results=[
                 solve_result_ambient,
                 solve_result_passivation,
-                solve_result_grating_anisotropic,  # Use results of anisotropic eigensolve.
+                solve_result_grating_anisotropic,
                 solve_result_metal,
             ],
             layer_thicknesses=thicknesses,
@@ -125,8 +127,8 @@ class AnisotropicMatchesIsotropicGratingTest(unittest.TestCase):
     def test_reflection_with_anisotropic_eignensolve_matches_isotropic_tight_tolerance(
         self, formulation, grating_angle
     ):
-        # Checks that the zeroth order reflection of a grating computed using the anisotropic
-        # codepath matches that using the isotropic material codepath.
+        # Checks that the zeroth order reflection of a grating computed using the
+        # anisotropic codepath matches that using the isotropic material codepath.
         (
             (r_te_anisotropic, r_tm_anisotropic),
             (r_te_isotropic, r_tm_isotropic),
@@ -145,9 +147,10 @@ class AnisotropicMatchesIsotropicGratingTest(unittest.TestCase):
     def test_reflection_with_anisotropic_eignensolve_matches_isotropic_loose_tolerance(
         self, formulation, grating_angle
     ):
-        # Checks that the zeroth order reflection of a grating computed using the anisotropic
-        # codepath matches that using the isotropic material codepath. Gratings that are rotated
-        # result in slightly larger differences between the anisotropic and isotropic codepaths.
+        # Checks that the zeroth order reflection of a grating computed using the
+        # anisotropic codepath matches that using the isotropic material codepath.
+        # Gratings that are rotated result in slightly larger differences between
+        # the anisotropic and isotropic codepaths.
         (
             (r_te_anisotropic, r_tm_anisotropic),
             (r_te_isotropic, r_tm_isotropic),
@@ -382,7 +385,8 @@ class AnisotropicMagneticFresnelReflectionTest(unittest.TestCase):
         n = expansion.num_terms
         amplitudes = jnp.zeros((2 * n, 2))
         # Magnetic field parallel to the extraordinary axis, i.e. electric field
-        # perpendicular to the extrordinary axis. Should experience "ordinary" reflection.
+        # perpendicular to the extrordinary axis. Should experience "ordinary"
+        # reflection.
         amplitudes = amplitudes.at[0, 0].set(jnp.cos(rotation_angle))
         amplitudes = amplitudes.at[n, 0].set(jnp.sin(rotation_angle))
         # Electric field parallel to the extraordinary axis.

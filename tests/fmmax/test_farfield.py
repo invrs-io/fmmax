@@ -16,7 +16,8 @@ from fmmax import basis, farfield, fields, fmm, scattering, sources, utils
 
 class FarfieldProfileTest(unittest.TestCase):
     def test_dipole_farfield_matches_analytical_calculation(self):
-        # Calculate the farfield for a dipole in vacuum, and compare to an analytical result.
+        # Calculate the farfield for a dipole in vacuum, and compare to an analytical
+        # result.
         wavelength = jnp.asarray(0.63)
         primitive_lattice_vectors = basis.LatticeVectors(basis.X, basis.Y)
         expansion = basis.generate_expansion(
