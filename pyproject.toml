@@ -7,7 +7,7 @@ readme = "README.md"
 requires-python = ">=3.7"
 license = {file = "LICENSE"}
 
-keywords = ["fmm", "rcwa", "jax", "optics"] 
+keywords = ["fmm", "rcwa", "jax", "optics"]
 
 authors = [
   {name = "Martin Schubert", email = "mfschubert@gmail.com" },
@@ -53,6 +53,7 @@ dev = [
   "fmmax[docs, examples, tests]",
   "isort",
   "mypy",
+  "pre-commit",
 ]
 
 [build-system]

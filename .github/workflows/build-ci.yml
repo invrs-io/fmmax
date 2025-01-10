@@ -47,10 +47,19 @@ jobs:
             pip install ".[tests,dev]"
 
       - name: mypy type validation
-        run: mypy src
+        run: |
+            mypy src
+            mypy examples
+
+      - name: imports validation
+        run: |
+            find . -name "*.py" | xargs black --check
+            find . -name "*.py" | xargs isort --profile black --check-only
 
       - name: darglint docstring validation
-        run: darglint src --strictness=short --ignore-raise=ValueError
+        run: |
+            darglint src --strictness=short --ignore-raise=ValueError
+            darglint examples --strictness=short --ignore-raise=ValueError
 
   test-fmmax:
     runs-on: ubuntu-latest
@@ -67,7 +76,7 @@ jobs:
       - name: Setup environment
         run: |
             python -m pip install --upgrade pip
-            pip install ".[tests,dev]"        
+            pip install ".[tests,dev]"
       - name: Test fmmax
         run: pytest tests/fmmax
 
@@ -86,7 +95,7 @@ jobs:
       - name: Setup environment
         run: |
             python -m pip install --upgrade pip
-            pip install ".[tests,dev,jeig]"        
+            pip install ".[tests,dev,jeig]"
       - name: Test fmmax
         run: pytest tests/fmmax
 
@@ -124,6 +133,6 @@ jobs:
       - name: Setup environment
         run: |
             python -m pip install --upgrade pip
-            pip install ".[tests,dev]"        
+            pip install ".[tests,dev]"
       - name: Test examples
         run: python -m pytest tests/examples
