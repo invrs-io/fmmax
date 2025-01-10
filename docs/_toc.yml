@@ -23,6 +23,7 @@ parts:
    - file: api/fmm_matrices
    - file: api/pml
    - file: api/scattering
+   - file: api/translate
    - file: api/sources
    - file: api/utils
    - file: api/vector
