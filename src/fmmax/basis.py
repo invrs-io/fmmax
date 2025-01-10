@@ -5,13 +5,15 @@ Copyright (c) Meta Platforms, Inc. and affiliates.
 
 import dataclasses
 import enum
-from typing import Tuple
+from typing import Any, Tuple
 
 import jax
 import jax.numpy as jnp
 import numpy as onp
 
 from fmmax import utils
+
+NDArray = onp.ndarray[Any, Any]
 
 # Officially defines the x- and y- directions. By convention, the x-axis preceeds
 # the y-axis in our array indexing scheme.
@@ -62,7 +64,7 @@ class Expansion:
         num_terms: The number of terms in the expansion.
     """
 
-    basis_coefficients: onp.ndarray
+    basis_coefficients: NDArray
 
     def __post_init__(self) -> None:
         if self.basis_coefficients.ndim != 2 or self.basis_coefficients.shape[-1] != 2:
@@ -321,7 +323,7 @@ def _basis_coefficients_circular(
     magnitude = magnitude[mask]
     G = onp.stack([G1, G2], axis=-1)
 
-    order = onp.argsort(magnitude)
+    order = onp.argsort(magnitude, kind="stable")
     return G[..., order, :]
 
 
@@ -385,7 +387,7 @@ def _basis_coefficients_parallelogramic(
     )
     magnitude = onp.linalg.norm(vectors, axis=-1)
 
-    order = onp.argsort(magnitude)
+    order = onp.argsort(magnitude, kind="stable")
     return G[..., order, :]
 
 

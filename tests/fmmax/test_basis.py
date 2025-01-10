@@ -8,7 +8,7 @@ import unittest
 import jax
 import jax.numpy as jnp
 import numpy as onp
-import parameterized
+from parameterized import parameterized
 
 from fmmax import basis
 
@@ -162,9 +162,45 @@ class ExpansionTest(unittest.TestCase):
         for a, b in zip(leaves, jax.tree_util.tree_leaves(restored)):
             onp.testing.assert_array_equal(a, b)
 
+    @parameterized.expand(
+        [
+            [(1, 0), (0, 1), basis.Truncation.CIRCULAR],
+            [(1, 0), (0, 1), basis.Truncation.PARALLELOGRAMIC],
+            [(2, 0), (0, 1), basis.Truncation.CIRCULAR],
+            [(2, 0), (0, 1), basis.Truncation.PARALLELOGRAMIC],
+            [(1, 1), (1, -1), basis.Truncation.CIRCULAR],
+            [(1, 1), (1, -1), basis.Truncation.PARALLELOGRAMIC],
+        ]
+    )
+    def test_coefficient_ordering_independent_of_num_terms(self, u, v, truncation):
+        primitive_lattice_vectors = basis.LatticeVectors(
+            u=jnp.asarray(u), v=jnp.asarray(v)
+        )
+        expansion_20 = basis.generate_expansion(
+            primitive_lattice_vectors=primitive_lattice_vectors,
+            approximate_num_terms=20,
+            truncation=truncation,
+        )
+        expansion_50 = basis.generate_expansion(
+            primitive_lattice_vectors=primitive_lattice_vectors,
+            approximate_num_terms=100,
+            truncation=truncation,
+        )
+        expansion_100 = basis.generate_expansion(
+            primitive_lattice_vectors=primitive_lattice_vectors,
+            approximate_num_terms=100,
+            truncation=truncation,
+        )
+        coeffs_20 = expansion_20.basis_coefficients
+        coeffs_50 = expansion_50.basis_coefficients
+        coeffs_100 = expansion_100.basis_coefficients
+        onp.testing.assert_array_equal(coeffs_20, coeffs_50[: coeffs_20.shape[0], :])
+        onp.testing.assert_array_equal(coeffs_20, coeffs_100[: coeffs_20.shape[0], :])
+        onp.testing.assert_array_equal(coeffs_50, coeffs_100[: coeffs_50.shape[0], :])
+
 
 class InPlaneWavevectorTest(unittest.TestCase):
-    @parameterized.parameterized.expand([[(1,)], [(1, 2, 3)], [(0, 1)]])
+    @parameterized.expand([[(1,)], [(1, 2, 3)], [(0, 1)]])
     def test_brillouin_grid_shape_validation(self, invalid_shape):
         with self.assertRaisesRegex(
             ValueError, "`brillouin_grid_shape` must be length-2 with"
@@ -174,7 +210,7 @@ class InPlaneWavevectorTest(unittest.TestCase):
                 primitive_lattice_vectors=basis.LatticeVectors(basis.X, basis.Y),
             )
 
-    @parameterized.parameterized.expand(
+    @parameterized.expand(
         [
             [(1, 1), [[[0, 0]]]],
             [(2, 1), [[[-0.25 * jnp.pi, 0]], [[0.25 * jnp.pi, 0]]]],
@@ -189,7 +225,7 @@ class InPlaneWavevectorTest(unittest.TestCase):
         )
         onp.testing.assert_allclose(wavevector, expected_vectors)
 
-    @parameterized.parameterized.expand(
+    @parameterized.expand(
         [
             [1.0, 0.0, 0.0, 1.0, (0, 0)],
             [1.0, jnp.pi / 4, 0.0, 1.0, (2 * jnp.pi / jnp.sqrt(2), 0)],
@@ -209,7 +245,7 @@ class InPlaneWavevectorTest(unittest.TestCase):
 
 
 class UnitCellCoordiantesTest(unittest.TestCase):
-    @parameterized.parameterized.expand(
+    @parameterized.expand(
         [
             [(1, 1), (3, 2), (0, 1, 2), (0, 1)],
             [(1, 1), (4, 3), (0, 1, 2, 3), (0, 1, 2)],
