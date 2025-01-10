@@ -7,9 +7,9 @@ import dataclasses
 import enum
 from typing import Any, Tuple
 
-import jax
 import jax.numpy as jnp
 import numpy as onp
+from jax import tree_util
 
 from fmmax import utils
 
@@ -401,14 +401,14 @@ def _cross_product(x: jnp.ndarray, y: jnp.ndarray) -> jnp.ndarray:
 # -----------------------------------------------------------------------------
 
 
-jax.tree_util.register_pytree_node(
+tree_util.register_pytree_node(
     LatticeVectors,
     lambda lv: ((lv.u, lv.v), None),
     lambda _, uv: LatticeVectors(*uv),
 )
 
 
-jax.tree_util.register_pytree_node(
+tree_util.register_pytree_node(
     Truncation,
     lambda x: ((), x.value),
     lambda value, _: Truncation(value),
@@ -426,7 +426,7 @@ def unflatten_expansion(
     return Expansion(basis_coefficients=coeffs)
 
 
-jax.tree_util.register_pytree_node(
+tree_util.register_pytree_node(
     Expansion,
     lambda e: ((), (_HashableArray(e.basis_coefficients),)),
     unflatten_func=unflatten_expansion,

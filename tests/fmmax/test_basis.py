@@ -5,9 +5,9 @@ Copyright (c) Meta Platforms, Inc. and affiliates.
 
 import unittest
 
-import jax
 import jax.numpy as jnp
 import numpy as onp
+from jax import tree_util
 from parameterized import parameterized
 
 from fmmax import basis
@@ -143,7 +143,7 @@ class ExpansionTest(unittest.TestCase):
             approximate_num_terms=20,
             truncation=basis.Truncation.PARALLELOGRAMIC,
         )
-        treedef = jax.tree_util.tree_structure(expansion)
+        treedef = tree_util.tree_structure(expansion)
         self.assertEqual(treedef, treedef)
 
     def test_expansion_flatten_unflatten(self):
@@ -156,10 +156,10 @@ class ExpansionTest(unittest.TestCase):
             approximate_num_terms=20,
             truncation=basis.Truncation.PARALLELOGRAMIC,
         )
-        leaves, treedef = jax.tree_util.tree_flatten(expansion)
-        restored = jax.tree_util.tree_unflatten(treedef, leaves)
-        self.assertEqual(treedef, jax.tree_util.tree_structure(restored))
-        for a, b in zip(leaves, jax.tree_util.tree_leaves(restored)):
+        leaves, treedef = tree_util.tree_flatten(expansion)
+        restored = tree_util.tree_unflatten(treedef, leaves)
+        self.assertEqual(treedef, tree_util.tree_structure(restored))
+        for a, b in zip(leaves, tree_util.tree_leaves(restored)):
             onp.testing.assert_array_equal(a, b)
 
     @parameterized.expand(

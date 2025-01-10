@@ -8,7 +8,7 @@ import unittest
 import jax
 import jax.numpy as jnp
 import numpy as onp
-import parameterized
+from parameterized import parameterized
 
 from fmmax import basis, fft
 
@@ -96,7 +96,7 @@ class ToeplitzIndicesTest(unittest.TestCase):
 
 
 class ShapeValidationTest(unittest.TestCase):
-    @parameterized.parameterized.expand(
+    @parameterized.expand(
         [
             (onp.asarray([[-2, -2], [2, 2]]), (5, 5)),
             (onp.asarray([[-5, -2], [5, 2]]), (11, 5)),

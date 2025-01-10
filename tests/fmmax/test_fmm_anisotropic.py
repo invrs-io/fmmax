@@ -8,7 +8,7 @@ import unittest
 import jax
 import jax.numpy as jnp
 import numpy as onp
-import parameterized
+from parameterized import parameterized
 
 from fmmax import basis, fmm, scattering, utils
 
@@ -113,7 +113,7 @@ class AnisotropicMatchesIsotropicGratingTest(unittest.TestCase):
 
         return (r_te_anisotropic, r_tm_anisotropic), (r_te_isotropic, r_tm_isotropic)
 
-    @parameterized.parameterized.expand(
+    @parameterized.expand(
         [
             (fmm.Formulation.FFT, 0.0),
             (fmm.Formulation.FFT, jnp.pi / 4),
@@ -136,7 +136,7 @@ class AnisotropicMatchesIsotropicGratingTest(unittest.TestCase):
         onp.testing.assert_allclose(r_te_anisotropic, r_te_isotropic, rtol=1e-4)
         onp.testing.assert_allclose(r_tm_anisotropic, r_tm_isotropic, rtol=1e-4)
 
-    @parameterized.parameterized.expand(
+    @parameterized.expand(
         [
             (fmm.Formulation.JONES_DIRECT, jnp.pi / 3),
             (fmm.Formulation.JONES_DIRECT, 2 * jnp.pi / 3),
@@ -160,7 +160,7 @@ class AnisotropicMatchesIsotropicGratingTest(unittest.TestCase):
 
 
 class AnisotropicMagneticFresnelReflectionTest(unittest.TestCase):
-    @parameterized.parameterized.expand(
+    @parameterized.expand(
         [
             # Cases with permittivity and permeability arrays with shape (1, 1)
             # exercise the uniform media eigensolve.
@@ -290,7 +290,7 @@ class AnisotropicMagneticFresnelReflectionTest(unittest.TestCase):
             jnp.abs(r_te) ** 2, jnp.abs(reflection_s) ** 2, rtol=1e-6, atol=1e-6
         )
 
-    @parameterized.parameterized.expand(
+    @parameterized.expand(
         [
             # Cases with permittivity and permeability arrays with shape (1, 1)
             # exercise the uniform media eigensolve.
@@ -408,7 +408,7 @@ class AnisotropicMagneticFresnelReflectionTest(unittest.TestCase):
             atol=1e-6,
         )
 
-    @parameterized.parameterized.expand(
+    @parameterized.expand(
         [
             # Cases with permittivity and permeability arrays with shape (1, 1)
             # exercise the uniform media eigensolve.

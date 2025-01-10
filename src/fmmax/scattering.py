@@ -574,7 +574,7 @@ def set_start_layer_thickness(
 # -----------------------------------------------------------------------------
 
 
-jax.tree_util.register_pytree_node(
+tree_util.register_pytree_node(
     ScatteringMatrix,
     lambda x: (
         (

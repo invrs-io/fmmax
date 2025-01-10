@@ -8,7 +8,7 @@ import unittest
 import jax
 import jax.numpy as jnp
 import numpy as onp
-import parameterized
+from parameterized import parameterized
 
 from fmmax import basis, fft, fields, fmm, scattering, sources
 
@@ -276,7 +276,7 @@ class FieldSourcesTest(unittest.TestCase):
 
 
 class InternalSourcesTest(unittest.TestCase):
-    @parameterized.parameterized.expand([[(2,)], [(1, 3)], [(1, 3, 2)]])
+    @parameterized.expand([[(2,)], [(1, 3)], [(1, 3, 2)]])
     def test_gaussian_location_shape_validation(self, invalid_shape):
         with self.assertRaisesRegex(
             ValueError, "`location` must be rank-2 with a trailing axis size of 2"
@@ -289,7 +289,7 @@ class InternalSourcesTest(unittest.TestCase):
                 expansion=EXPANSION,
             )
 
-    @parameterized.parameterized.expand([[(2,)], [(1, 3)], [(1, 3, 2)]])
+    @parameterized.expand([[(2,)], [(1, 3)], [(1, 3, 2)]])
     def test_dirac_delta_location_shape_validation(self, invalid_shape):
         with self.assertRaisesRegex(
             ValueError, "`location` must be rank-2 with a trailing axis size of 2"
@@ -324,7 +324,7 @@ class InternalSourcesTest(unittest.TestCase):
                 expansion=EXPANSION,
             )
 
-    @parameterized.parameterized.expand(
+    @parameterized.expand(
         [
             [(1, 1), 0.4, (0.5, 0.5)],
             [(2, 2), 0.4, (0.5, 0.5)],
@@ -412,7 +412,7 @@ class InternalSourcesTest(unittest.TestCase):
 
         onp.testing.assert_allclose(hmag, expected, atol=0.05)
 
-    @parameterized.parameterized.expand([[(0, 0)], [(0.5, 0.5)]])
+    @parameterized.expand([[(0, 0)], [(0.5, 0.5)]])
     def test_dirac_delta_matches_gaussian_with_zero_fwhm(self, dipole_location):
         in_plane_wavevector = basis.brillouin_zone_in_plane_wavevector(
             brillouin_grid_shape=(3, 4),
@@ -435,7 +435,7 @@ class InternalSourcesTest(unittest.TestCase):
 
 
 class AmplitudesFromInternalSourcesTest(unittest.TestCase):
-    @parameterized.parameterized.expand(
+    @parameterized.expand(
         [
             (1, 0, True, False),
             (0, 1, False, True),
@@ -606,7 +606,7 @@ class AmplitudesFromInternalSourcesTest(unittest.TestCase):
             jz = jnp.ones((20, 20))
             sources.polarization_terms(jx, jy, jz, LAYER_SOLVE_RESULT)
 
-    @parameterized.parameterized.expand(
+    @parameterized.expand(
         [
             [(20, 30, 1), (-1, 1)],
             [(30, 20, 2), (-1, 2)],
@@ -624,7 +624,7 @@ class AmplitudesFromInternalSourcesTest(unittest.TestCase):
         expected_shape[-2] = 4 * LAYER_SOLVE_RESULT.expansion.num_terms
         self.assertSequenceEqual(pol.shape, expected_shape)
 
-    @parameterized.parameterized.expand(
+    @parameterized.expand(
         [
             [(20, 30, 1), (1, 1, 2, -1, 1)],
             [(30, 20, 2), (1, 1, 2, -1, 2)],
