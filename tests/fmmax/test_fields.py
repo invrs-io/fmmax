@@ -7,7 +7,6 @@ import dataclasses
 import unittest
 
 import jax
-
 import jax.numpy as jnp
 import numpy as onp
 import parameterized
