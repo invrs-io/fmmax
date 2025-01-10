@@ -9,7 +9,7 @@ import unittest
 import jax
 import jax.numpy as jnp
 import numpy as onp
-import parameterized
+from parameterized import parameterized
 
 from fmmax import basis, fields, fmm, scattering
 
@@ -61,7 +61,7 @@ def time_average_z_poynting_flux(electric_fields, magnetic_fields):
 
 
 class ShapesTest(unittest.TestCase):
-    @parameterized.parameterized.expand(
+    @parameterized.expand(
         [
             # permittivity, wavelength, and excitation batch shape.
             [(), (), (1,)],
@@ -152,7 +152,7 @@ class ShapesTest(unittest.TestCase):
 
 
 class FieldsOnCoordinatesTest(unittest.TestCase):
-    @parameterized.parameterized.expand([[()], [(3,)]])
+    @parameterized.expand([[()], [(3,)]])
     def test_fields_on_coordinates_match_fields_on_grid(self, batch_shape):
         in_plane_wavevector = jnp.zeros((2,))
         primitive_lattice_vectors = basis.LatticeVectors(u=basis.X, v=basis.Y)
@@ -210,7 +210,7 @@ class FieldsOnCoordinatesTest(unittest.TestCase):
             onp.testing.assert_allclose(efield, expected_efield, rtol=1e-4)
             onp.testing.assert_allclose(hfield, expected_hfield, rtol=1e-4)
 
-    @parameterized.parameterized.expand([[()], [(3,)]])
+    @parameterized.expand([[()], [(3,)]])
     def test_layer_fields_on_coordinates_match_fields_on_grid(self, batch_shape):
         in_plane_wavevector = jnp.zeros((2,))
         primitive_lattice_vectors = basis.LatticeVectors(u=basis.X, v=basis.Y)
@@ -275,7 +275,7 @@ class FieldsOnCoordinatesTest(unittest.TestCase):
             onp.testing.assert_allclose(efield, expected_efield, rtol=2e-4)
             onp.testing.assert_allclose(hfield, expected_hfield, rtol=2e-4)
 
-    @parameterized.parameterized.expand([[()], [(3,)]])
+    @parameterized.expand([[()], [(3,)]])
     def test_stack_fields_on_coordinates_match_fields_on_grid(self, batch_shape):
         layer_solve_results, thicknesses, s_matrices_interior = example_solve(
             batch_shape, ()
@@ -311,7 +311,7 @@ class FieldsOnCoordinatesTest(unittest.TestCase):
 
 
 class PoyntingFluxTest(unittest.TestCase):
-    @parameterized.parameterized.expand(
+    @parameterized.expand(
         [
             [(), ()],
             [(3,), ()],
@@ -341,7 +341,7 @@ class PoyntingFluxTest(unittest.TestCase):
         expected_eigenmode_flux = jnp.sum(expected_eigenmode_flux, axis=-2)
         onp.testing.assert_allclose(eigenmode_flux, expected_eigenmode_flux)
 
-    @parameterized.parameterized.expand(
+    @parameterized.expand(
         [
             [(), (), (1,)],
             [(3,), (), (1,)],
@@ -405,7 +405,7 @@ class PoyntingFluxTest(unittest.TestCase):
                 rtol=1e-5,
             )
 
-    @parameterized.parameterized.expand(
+    @parameterized.expand(
         [
             [(), (), (1,)],
             [(3,), (), (1,)],
@@ -493,7 +493,7 @@ class PoyntingFluxTest(unittest.TestCase):
 
 
 class Fields3DTest(unittest.TestCase):
-    @parameterized.parameterized.expand(
+    @parameterized.expand(
         [
             # permittivity, wavelength, and excitation batch shape.
             [(), (), (1,), (1, 1)],

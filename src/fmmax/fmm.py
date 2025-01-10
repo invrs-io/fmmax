@@ -8,8 +8,8 @@ import enum
 import functools
 from typing import Callable, Optional, Tuple
 
-import jax
 import jax.numpy as jnp
+from jax import tree_util
 
 from fmmax import basis, fft, fmm_matrices, utils, vector
 
@@ -1132,14 +1132,14 @@ def _select_eigenvalues_sign(eigenvalues: jnp.ndarray) -> jnp.ndarray:
 # -----------------------------------------------------------------------------
 
 
-jax.tree_util.register_pytree_node(
+tree_util.register_pytree_node(
     Formulation,
     lambda x: ((), x.value),
     lambda value, _: Formulation(value),
 )
 
 
-jax.tree_util.register_pytree_node(
+tree_util.register_pytree_node(
     LayerSolveResult,
     lambda x: (
         (

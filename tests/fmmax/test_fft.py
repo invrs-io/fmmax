@@ -96,7 +96,7 @@ class ToeplitzIndicesTest(unittest.TestCase):
 
 
 class ShapeValidationTest(unittest.TestCase):
-    @parameterized.parameterized.expand(
+    @parameterized.expand(
         [
             (onp.asarray([[-2, -2], [2, 2]]), (5, 5)),
             (onp.asarray([[-5, -2], [5, 2]]), (11, 5)),

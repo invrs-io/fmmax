@@ -7,13 +7,13 @@ import unittest
 
 import jax.numpy as jnp
 import numpy as onp
-import parameterized
+from parameterized import parameterized
 
 from fmmax import beams
 
 
 class RotatedFieldsTest(unittest.TestCase):
-    @parameterized.parameterized.expand(
+    @parameterized.expand(
         [
             [0, 0, 0],
             [0, 0, jnp.pi / 2],
@@ -121,7 +121,7 @@ class RotatedFieldsTest(unittest.TestCase):
         with self.subTest("hz"):
             onp.testing.assert_allclose(fields[1][2], expected_fields[1][2], atol=2e-5)
 
-    @parameterized.parameterized.expand(
+    @parameterized.expand(
         [
             [0, 0, 0],
             [0.5, 0, 0],
@@ -156,7 +156,7 @@ class RotatedFieldsTest(unittest.TestCase):
 
 
 class RotationMatrixTest(unittest.TestCase):
-    @parameterized.parameterized.expand(
+    @parameterized.expand(
         [
             # Check that rotations move the z-axis.
             [(0, 0, 1), (0, 0, 1), 0, 0, 0],

@@ -9,7 +9,7 @@ import unittest
 import jax
 import jax.numpy as jnp
 import numpy as onp
-import parameterized
+from parameterized import parameterized
 
 from fmmax import basis, fmm
 
@@ -54,9 +54,7 @@ def _sort_eigs(eigvals, eigvecs):
 
 
 class LayerEigensolveTest(unittest.TestCase):
-    @parameterized.parameterized.expand(
-        [(formulation,) for formulation in fmm.Formulation]
-    )
+    @parameterized.expand([(formulation,) for formulation in fmm.Formulation])
     def test_uniform_matches_patterned(self, formulation):
         permittivity = jnp.asarray([[3.14]])
         uniform_result = fmm._eigensolve_uniform_isotropic_media(
@@ -133,9 +131,7 @@ class LayerEigensolveTest(unittest.TestCase):
                         single_result.omega_script_k_matrix,
                     )
 
-    @parameterized.parameterized.expand(
-        [(formulation,) for formulation in fmm.Formulation]
-    )
+    @parameterized.expand([(formulation,) for formulation in fmm.Formulation])
     def test_patterned_layer_batch_matches_single(self, formulation):
         wavelength = jnp.asarray([[[0.2]], [[0.3]], [[0.4]]])
         in_plane_wavevector = jnp.asarray([[[0.0, 0.0]], [[0.05, 0.08]]])
@@ -197,7 +193,7 @@ class LayerEigensolveTest(unittest.TestCase):
 
 
 class EigensolveJitTest(unittest.TestCase):
-    @parameterized.parameterized.expand(
+    @parameterized.expand(
         [
             (fmm.Formulation.FFT,),
             (fmm.Formulation.POL,),
@@ -414,7 +410,7 @@ class AnistropicLayerFFTMatrixTest(unittest.TestCase):
 
 
 class FourierMatrixBatchMatchesSingleTest(unittest.TestCase):
-    @parameterized.parameterized.expand(
+    @parameterized.expand(
         [
             (fmm.Formulation.FFT,),
             (fmm.Formulation.JONES_DIRECT,),
@@ -465,7 +461,7 @@ class FourierMatrixBatchMatchesSingleTest(unittest.TestCase):
                 atol=1e-15,
             )
 
-    @parameterized.parameterized.expand(
+    @parameterized.expand(
         [
             (fmm.Formulation.FFT,),
             (fmm.Formulation.JONES_DIRECT,),
@@ -575,7 +571,7 @@ class SignSelectionTest(unittest.TestCase):
 
 
 class LayerSolveResultInputValidationTest(unittest.TestCase):
-    @parameterized.parameterized.expand(
+    @parameterized.expand(
         [
             ("wavelength", jnp.ones((1,))),
             ("in_plane_wavevector", jnp.ones((1,))),

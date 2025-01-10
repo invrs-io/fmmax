@@ -6,14 +6,14 @@ Copyright (c) Meta Platforms, Inc. and affiliates.
 import unittest
 
 import numpy as onp
-import parameterized
+from parameterized import parameterized
 
 from examples import metal_grating
 from fmmax import basis, fmm
 
 
 class MetalGratingTest(unittest.TestCase):
-    @parameterized.parameterized.expand(
+    @parameterized.expand(
         [
             (
                 fmm.Formulation.FFT,

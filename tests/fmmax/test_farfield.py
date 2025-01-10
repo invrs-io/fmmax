@@ -9,7 +9,7 @@ import unittest
 import jax
 import jax.numpy as jnp
 import numpy as onp
-import parameterized
+from parameterized import parameterized
 
 from fmmax import basis, farfield, fields, fmm, scattering, sources, utils
 
@@ -95,7 +95,7 @@ class FarfieldProfileTest(unittest.TestCase):
             rtol=1e-5,
         )
 
-    @parameterized.parameterized.expand(
+    @parameterized.expand(
         (
             [(1, 1), (0, 1), jnp.pi / 2],
             [(4, 5), (0, 1), jnp.pi / 2],
@@ -209,7 +209,7 @@ class IntegratedFluxTest(unittest.TestCase):
         upsampled = jax.image.resize(arr, shape=(30, 30), method="linear")
         self.assertSequenceEqual(upsampled.shape, (30, 30))
 
-    @parameterized.parameterized.expand(
+    @parameterized.expand(
         (
             [(4, 4), (0, 1), 1, 1],
             [(2, 4, 4), (1, 2), 1, 1],
@@ -403,7 +403,7 @@ class IntegratedFluxTest(unittest.TestCase):
 
 
 class UnflattenTest(unittest.TestCase):
-    @parameterized.parameterized.expand(
+    @parameterized.expand(
         (
             ([[1, 2, 3], [4, 5, 6]],),
             ([[[1, 2, 3], [4, 5, 6]]],),
@@ -446,7 +446,7 @@ class UnflattenTest(unittest.TestCase):
         )
         onp.testing.assert_array_equal(expected, unstacked)
 
-    @parameterized.parameterized.expand(
+    @parameterized.expand(
         (
             [(4, 5), (0, 1)],
             [(2, 4, 5), (1, 2)],
@@ -510,7 +510,7 @@ class UnflattenTest(unittest.TestCase):
         )
         onp.testing.assert_array_equal(expected, unstacked)
 
-    @parameterized.parameterized.expand(
+    @parameterized.expand(
         (
             [(4, 5), (0, 1)],
             [(2, 4, 5), (1, 2)],
@@ -572,7 +572,7 @@ class UnflattenTest(unittest.TestCase):
         )
         onp.testing.assert_array_equal(expected, unstacked)
 
-    @parameterized.parameterized.expand(
+    @parameterized.expand(
         (
             [(1, 1), basis.LatticeVectors(basis.X, basis.Y)],
             [(3, 4), basis.LatticeVectors(basis.X, basis.Y)],
