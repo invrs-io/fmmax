@@ -1,6 +1,6 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 
-__version__ = "v0.11.0"
+__version__ = "v0.11.1"
 
 from fmmax import basis as basis
 from fmmax import beams as beams
