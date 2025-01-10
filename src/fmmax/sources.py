@@ -73,8 +73,9 @@ def amplitudes_for_fields(
         or ex.shape[-2] % brillouin_grid_shape[1] != 0
     ):
         raise ValueError(
-            f"Field shapes must be evenly divisible by the Brillouin grid shape, but got "
-            f"shape {ex.shape} when inferred Brillouin grid shape is {brillouin_grid_shape}."
+            f"Field shapes must be evenly divisible by the Brillouin grid shape, but "
+            f"got shape {ex.shape} when inferred Brillouin grid shape is "
+            f"{brillouin_grid_shape}."
         )
 
     unit_cell_shape = (

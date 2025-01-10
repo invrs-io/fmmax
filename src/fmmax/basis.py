@@ -57,7 +57,8 @@ class Expansion:
 
     Attributes:
         basis_coefficients: The integer coefficients of the primitive reciprocal lattice
-            vectors, which generate the full set of reciprocal-space vectors in the expansion.
+            vectors, which generate the full set of reciprocal-space vectors in the
+            expansion.
         num_terms: The number of terms in the expansion.
     """
 
@@ -134,7 +135,7 @@ def unit_cell_coordinates(
     shape: Tuple[int, int],
     num_unit_cells: Tuple[int, int],
 ) -> Tuple[jnp.ndarray, jnp.ndarray]:
-    """Computes coordinates within unit cells, given the shape and number of unit cells."""
+    """Compute spatial coordinates given the grid shape and number of unit cells."""
     i_stop = num_unit_cells[0] * shape[0]
     j_stop = num_unit_cells[1] * shape[1]
     i, j = tuple(

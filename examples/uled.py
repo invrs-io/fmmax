@@ -378,7 +378,8 @@ if __name__ == "__main__":
             approximate_num_terms=approximate_num_terms,
         )
         print(
-            f"Results with approximate_num_terms = {approximate_num_terms} (time = {time.time() - t0:.2f}s):\n"
+            f"Results with approximate_num_terms = {approximate_num_terms} "
+            f"(time = {time.time() - t0:.2f}s):\n"
             f"    Extraction efficiency = {jnp.squeeze(extraction_efficiency * 100)}%\n"
             f"      Total emitted power = {jnp.squeeze(total_emitted_power)}"
         )

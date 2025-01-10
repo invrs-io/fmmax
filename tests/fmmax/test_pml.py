@@ -99,7 +99,9 @@ class GaussianBeamInPMLDecayTest(unittest.TestCase):
                     1j
                     * (
                         (k * z)  # Phase
-                        + (k * r**2 / 2) * z / (z**2 + z_r**2)  # Wavefront curvature
+                        + (k * r**2 / 2)
+                        * z
+                        / (z**2 + z_r**2)  # Wavefront curvature
                         - jnp.arctan(z / z_r)  # Gouy phase
                     )
                 )
@@ -233,7 +235,7 @@ class DipoleFieldsInPMLDecayTest(unittest.TestCase):
         )
         s_matrices_interior_after_source = s_matrices_interior_before_source
 
-        # Extract the scattering matrices relating fields at the two ends of each substack.
+        # Extract scattering matrices relating fields at the two ends of each substack.
         s_matrix_before_source = s_matrices_interior_before_source[-1][0]
         s_matrix_after_source = s_matrices_interior_after_source[-1][0]
 

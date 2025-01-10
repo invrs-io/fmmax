@@ -344,14 +344,15 @@ def _simulate_polarization_sorter(
     mask = mask.at[xdim:, :ydim, 0, 2].set(1)
     mask = mask.at[xdim:, ydim:, 0, 3].set(1)
 
-    # Use the mask to compute the time average Poynting flux into each quadrant. The axes for
-    # `quadrant_sz` are `(wavelength, excitation, quadrant)`. Normalize this using incident power.
+    # Use the mask to compute the time average Poynting flux into each quadrant. The
+    # axes for `quadrant_sz` are `(wavelength, excitation, quadrant)`. Normalize this
+    # using incident power.
     quadrant_sz = jnp.mean(mask * sz[..., jnp.newaxis], axis=(-4, -3))
     quadrant_sz /= sz_fwd_ambient_sum[..., jnp.newaxis]
 
-    # The response consists of the power into each quadrant, and the reflected power. The
-    # axes for `response` are `(wavelength, excitation, port)`, where the ports correspond tos
-    # reflection or transmission into one of the quadrants.
+    # The response consists of the power into each quadrant, and the reflected power.
+    # The axes for `response` are `(wavelength, excitation, port)`, where the ports
+    # correspond to reflection or transmission into one of the quadrants.
     response = jnp.concatenate([reflection[..., jnp.newaxis], quadrant_sz], axis=-1)
 
     aux = {"x": x, "y": y, "ex": ex, "ey": ey, "ez": ez, "hx": hx, "hy": hy, "hz": hz}
@@ -363,7 +364,7 @@ def _time_average_z_poynting_flux(
     electric_fields: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
     magnetic_fields: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
 ) -> jnp.ndarray:
-    """Computes the time-average z-directed Poynting flux, given the physical fields."""
+    """Computes the time-average z-directed Poynting flux given the physical fields."""
     ex, ey, _ = electric_fields
     hx, hy, _ = magnetic_fields
     return jnp.real(ex * jnp.conj(hy) - ey * jnp.conj(hx))

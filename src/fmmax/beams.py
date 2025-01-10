@@ -68,7 +68,7 @@ def shifted_rotated_fields(
     coords = jnp.stack([x, y, z], axis=-1)
     rotated_coords = jnp.linalg.solve(mat, coords[..., jnp.newaxis])[..., 0]
     rotated_coords = jnp.split(rotated_coords, 3, axis=-1)
-    xf, yf, zf = [jnp.squeeze(r, axis=-1) for r in rotated_coords]
+    xf, yf, zf = (jnp.squeeze(r, axis=-1) for r in rotated_coords)
 
     # Solve for the rotated origin.
     origin = jnp.stack([beam_origin_x, beam_origin_y, beam_origin_z], axis=-1)
@@ -76,7 +76,7 @@ def shifted_rotated_fields(
     rotated_origin = jnp.linalg.solve(mat, origin[..., jnp.newaxis])[..., 0]
     assert rotated_origin.size == 3
     rotated_origin = jnp.split(rotated_origin, 3, axis=-1)
-    xf0, yf0, zf0 = [jnp.squeeze(r) for r in rotated_origin]
+    xf0, yf0, zf0 = (jnp.squeeze(r) for r in rotated_origin)
 
     # Compute the fields on the rotated, shifted coordinate system.
     (exr, eyr, ezr), (hxr, hyr, hzr) = field_fn(xf - xf0, yf - yf0, zf - zf0)

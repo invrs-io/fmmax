@@ -366,9 +366,9 @@ class InternalSourcesTest(unittest.TestCase):
             expansion=EXPANSION,
             formulation=fmm.Formulation.FFT,
         )
-        s_matrices_before_source = s_matrices_after_source = (
-            scattering.stack_s_matrices_interior([layer_solve_result], [1.0])
-        )
+        s_matrices_before_source = (
+            s_matrices_after_source
+        ) = scattering.stack_s_matrices_interior([layer_solve_result], [1.0])
         s_matrix_before_source = s_matrices_before_source[-1][0]
         s_matrix_after_source = s_matrices_after_source[-1][0]
         bwd_amplitude_ambient_end, *_ = sources.amplitudes_for_source(
@@ -576,13 +576,15 @@ class AmplitudesFromInternalSourcesTest(unittest.TestCase):
             )
 
         with self.subTest("Compare x- and z-oriented dipoles"):
-            # x- and z-oriented dipoles may differ, since the structure is periodic in x/y.
+            # x- and z-oriented dipoles may differ since the x/y and z directions are
+            # treated differently in the FMM.
             onp.testing.assert_allclose(
                 forward_power[:, 2], forward_power[:, 0], rtol=0.2
             )
 
-        # Check that the calculation is scale-invariant as expected. Increase the refractive
-        # index by 2, and reduce the pitch by 2. The power should be lower by a factor of 2.
+        # Check that the calculation is scale-invariant as expected. Increase the
+        # refractive index by 2, and reduce the pitch by 2. The power should be lower
+        # by a factor of 2.
         forward_power_scaled, backward_power_scaled = _compute_power(
             pitch=1.2, permittivity=4, wavelength=jnp.asarray([0.295, 0.59])
         )

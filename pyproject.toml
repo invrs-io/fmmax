@@ -4,10 +4,10 @@ name = "fmmax"
 version = "v0.11.0"
 description = "Fourier modal method with Jax"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.10"
 license = {file = "LICENSE"}
 
-keywords = ["fmm", "rcwa", "jax", "optics"] 
+keywords = ["fmm", "rcwa", "jax", "optics"]
 
 authors = [
   {name = "Martin Schubert", email = "mfschubert@gmail.com" },
@@ -26,6 +26,17 @@ dependencies = [
   "numpy",
 ]
 [project.optional-dependencies]
+docs = [
+  "matplotlib",
+  "jupyter-book==1.0.3",
+  "sphinx-autodoc-typehints",
+  "sphinx-click",
+]
+examples = [
+  "matplotlib",
+  "scikit-image",
+  "scipy",
+]
 jeig = [
   "jeig",
 ]
@@ -35,24 +46,14 @@ tests = [
   "pytest",
   "pytest-subtests",
 ]
-examples = [
-  "matplotlib",
-  "scikit-image",
-  "scipy",
-]
-docs = [
-    "matplotlib",
-    "jupyter-book==1.0.3",
-    "sphinx-autodoc-typehints",
-    "sphinx-click",
-]
 dev = [
   "black",
   "bump-my-version",
   "darglint",
-  "fmmax[docs, examples, tests]",
+  "fmmax[docs,examples,tests]",
   "isort",
   "mypy",
+  "pre-commit",
 ]
 
 [build-system]

@@ -8,10 +8,10 @@ import unittest
 import jax
 import numpy as onp
 
+from examples import crystal
+
 # Enable 64-bit precision for higher accuracy.
 jax.config.update("jax_enable_x64", True)
-
-from examples import crystal
 
 
 class CrystalDipoleTest(unittest.TestCase):

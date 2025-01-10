@@ -2,16 +2,14 @@
 
 __version__ = "v0.11.0"
 
-from . import (
-    basis,
-    beams,
-    farfield,
-    fft,
-    fields,
-    fmm,
-    fmm_matrices,
-    scattering,
-    sources,
-    utils,
-    vector,
-)
+from fmmax import basis as basis
+from fmmax import beams as beams
+from fmmax import farfield as farfield
+from fmmax import fft as fft
+from fmmax import fields as fields
+from fmmax import fmm as fmm
+from fmmax import fmm_matrices as fmm_matrices
+from fmmax import scattering as scattering
+from fmmax import sources as sources
+from fmmax import utils as utils
+from fmmax import vector as vector

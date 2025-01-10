@@ -158,6 +158,9 @@ class ExpansionTest(unittest.TestCase):
         )
         leaves, treedef = jax.tree_util.tree_flatten(expansion)
         restored = jax.tree_util.tree_unflatten(treedef, leaves)
+        self.assertEqual(treedef, jax.tree_util.tree_structure(restored))
+        for a, b in zip(leaves, jax.tree_util.tree_leaves(restored)):
+            onp.testing.assert_array_equal(a, b)
 
 
 class InPlaneWavevectorTest(unittest.TestCase):

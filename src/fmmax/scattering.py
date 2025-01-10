@@ -218,9 +218,9 @@ def stack_s_matrix_scan(
     """Computes the scattering matrix for a stack of layers by a scan operation.
 
     Unlike `stack_s_matrix`, this function uses a scan operation rather than a python
-    for loop, which can lead to significantly smaller programs and shorter compile times.
-    However, it requires that the layer solve results and thicknesses for be represented
-    in the leading batch dimension of the arguments.
+    for loop, which can lead to significantly smaller programs and shorter compile
+    times. However, it requires that the layer solve results and thicknesses for be
+    represented in the leading batch dimension of the arguments.
 
     This function is best used when the eigensolve for each layer is also done in a
     batched manner.
@@ -452,7 +452,8 @@ def _extend_s_matrix(
     # s11_next = inv(i11 - diag(fd) @ s12 @ i21) @ diag(fd) @ s11
     term3 = i11 - fd[..., jnp.newaxis] * s12 @ i21
     s11_next = _solve(term3, fd[..., jnp.newaxis] * s11)
-    # s12_next = inv(i11 - diag(fd) @ s12 @ i21) @ (diag(fd) @ s12 @ i22 - i12) @ diag(fd_next)
+    # s12_next = inv(i11 - diag(fd) @ s12 @ i21)
+    #            @ (diag(fd) @ s12 @ i22 - i12) @ diag(fd_next)
     s12_next = _solve(
         term3,
         (fd[..., jnp.newaxis] * s12 @ i22 - i12) * fd_next[..., jnp.newaxis, :],

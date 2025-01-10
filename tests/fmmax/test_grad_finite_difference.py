@@ -10,7 +10,6 @@ import jax
 import jax.numpy as jnp
 import numpy as onp
 from parameterized import parameterized
-from scipy import ndimage
 
 from fmmax import basis, fields, fmm, scattering
 
@@ -94,8 +93,9 @@ class FiniteDifferenceGradientTest(unittest.TestCase):
                 jnp.abs(ex) ** 2 + jnp.abs(ey) ** 2 + jnp.abs(ez) ** 2
             )
 
-            # Figure of merit is the field magnitude near the half-maximum of the intensity. Small
-            # shifts in the lens will have a large impact on the field amplitude.
+            # Figure of merit is the field magnitude near the half-maximum of the
+            # intensity. Small shifts in the lens will have a large impact on the field
+            # amplitude.
             fom = efield_magnitude[28, 28, 25, 0]
 
             return fom, (efield_magnitude, (x, y, z), permittivity_pattern)

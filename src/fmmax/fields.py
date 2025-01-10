@@ -148,7 +148,7 @@ def amplitude_poynting_flux(
     )
     s_backward = jnp.asarray(0.5, dtype=forward_amplitude.dtype) * (
         -(jnp.conj(beta_e) * beta_h + jnp.conj(beta_h) * beta_e)
-        + jnp.conj((jnp.conj(beta_h) * alpha_e - jnp.conj(beta_e) * alpha_h))
+        + jnp.conj(jnp.conj(beta_h) * alpha_e - jnp.conj(beta_e) * alpha_h)
     )
     return jnp.real(s_forward), jnp.real(s_backward)
 
@@ -252,7 +252,7 @@ def eigenmode_poynting_flux(
     alpha_h = layer_solve_result.eigenvectors
     alpha_e = _poynting_flux_a_matrix(layer_solve_result)
     s_eigenmode = jnp.asarray(0.5) * (
-        (jnp.conj(alpha_e) * alpha_h + jnp.conj(alpha_h) * alpha_e)
+        jnp.conj(alpha_e) * alpha_h + jnp.conj(alpha_h) * alpha_e
     )
     flux = jnp.sum(jnp.real(s_eigenmode), axis=-2)
     assert flux.shape == layer_solve_result.eigenvalues.shape
@@ -1036,5 +1036,5 @@ def _layer_fields_3d(
 def _validate_matching_lengths(*sequences: Sequence) -> None:
     """Validates that all of `args` have matching length."""
     lengths = [len(s) for s in sequences]
-    if not all([l == lengths[0] for l in lengths]):
+    if not all([length == lengths[0] for length in lengths]):
         raise ValueError(f"Encountered incompatible lengths, got lengths of {lengths}")

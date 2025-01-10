@@ -138,7 +138,8 @@ class FresnelComparisonTest(unittest.TestCase):
             backward_amplitude=jnp.zeros_like(fwd_amplitude_substrate_start),
             layer_solve_result=solve_result_substrate,
         )
-        # Squeeze out the Fourier coefficient axis, since we only deal with zeroth order.
+        # Squeeze out the Fourier coefficient axis, since we only deal with the
+        # zeroth order.
         e_incident = jnp.squeeze(jnp.asarray(e_incident), axis=1)
         e_reflected = jnp.squeeze(jnp.asarray(e_reflected), axis=1)
         e_transmitted = jnp.squeeze(jnp.asarray(e_transmitted), axis=1)

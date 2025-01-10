@@ -230,7 +230,7 @@ class DiffractionGratingGradientTest(unittest.TestCase):
             expansion: basis.Expansion,
             formulation: fmm.Formulation,
         ):
-            """Compute the per-order transmission and reflection efficiency for a grating."""
+            # Compute per-order transmission and reflection efficiency for a grating.
 
             permittivities = (
                 jnp.full((1, 1), 1.0),
@@ -257,8 +257,8 @@ class DiffractionGratingGradientTest(unittest.TestCase):
                 for p in permittivities
             ]
 
-            # Layer thicknesses for the ambient and substrate are set to zero; these do not
-            # affect the result of the calculation.
+            # Layer thicknesses for the ambient and substrate are set to zero; these do
+            # not affect the result of the calculation.
             layer_thicknesses = (jnp.zeros(()), jnp.asarray(0.325), jnp.zeros(()))
 
             s_matrix = scattering.stack_s_matrix(layer_solve_results, layer_thicknesses)
@@ -272,8 +272,8 @@ class DiffractionGratingGradientTest(unittest.TestCase):
             bwd_amplitude_silica_end = jnp.zeros((2 * n, 1), dtype=complex)
             bwd_amplitude_silica_end = bwd_amplitude_silica_end.at[n, 0].set(1.0)
 
-            # Calculate the incident power in the silca. Since the substrate thickness has
-            # been set to zero, the forward and backward amplitudes are already colocated.
+            # Calculate the incident power in the silca. Since the substrate thickness
+            # is zero, the forward and backward amplitudes are already colocated.
             fwd_amplitude_silica_start = s_matrix.s12 @ bwd_amplitude_silica_end
             _, bwd_flux_silica = fields.amplitude_poynting_flux(
                 forward_amplitude=fwd_amplitude_silica_start,

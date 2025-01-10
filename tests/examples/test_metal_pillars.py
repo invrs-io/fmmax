@@ -9,11 +9,11 @@ import jax
 import jax.numpy as jnp
 import numpy as onp
 
-# Enable 64-bit precision for higher accuracy.
-jax.config.update("jax_enable_x64", True)
-
 from examples import metal_pillars
 from fmmax import fmm
+
+# Enable 64-bit precision for higher accuracy.
+jax.config.update("jax_enable_x64", True)
 
 
 class MetalPillarsTest(unittest.TestCase):
