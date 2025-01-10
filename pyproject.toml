@@ -4,7 +4,7 @@ name = "fmmax"
 version = "v0.11.0"
 description = "Fourier modal method with Jax"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.10"
 license = {file = "LICENSE"}
 
 keywords = ["fmm", "rcwa", "jax", "optics"]
