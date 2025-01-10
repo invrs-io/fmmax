@@ -9,10 +9,9 @@ import unittest
 import jax
 import jax.numpy as jnp
 import numpy as onp
-from fmmax import basis, fmm, scattering
 from parameterized import parameterized
 
-from fmmax import translate
+from fmmax import basis, fmm, scattering, translate
 
 jax.config.update("jax_enable_x64", True)
 

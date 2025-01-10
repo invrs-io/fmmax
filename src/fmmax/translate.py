@@ -6,6 +6,7 @@ Copyright (c) 2024 Martin F. Schubert
 import functools
 
 import jax.numpy as jnp
+
 from fmmax import basis, fft, fmm
 
 
