@@ -12,7 +12,7 @@ import numpy as onp
 from fmmax import basis, fmm, scattering
 from parameterized import parameterized
 
-from invrs_gym2.utils import slant
+from fmmax import translate
 
 jax.config.update("jax_enable_x64", True)
 
@@ -81,7 +81,7 @@ class TranslateLayerSolveResultTest(unittest.TestCase):
             formulation=fmm.Formulation.FFT,
         )
         solve_result = eigensolve(permittivity=permittivity)
-        solve_result_shifted = slant.translate_layer_solve_result(
+        solve_result_shifted = translate.translate_layer_solve_result(
             solve_result, dx=jnp.asarray(dx), dy=jnp.asarray(dy)
         )
         solve_result_expected = eigensolve(permittivity=permittivity_shifted)
@@ -160,7 +160,7 @@ class TranslateLayerSolveResultTest(unittest.TestCase):
             shape=(100, 100),
         )
         solve_result_circle = eigensolve(permittivity=permittivity)
-        solve_result_circle_shifted = slant.translate_layer_solve_result(
+        solve_result_circle_shifted = translate.translate_layer_solve_result(
             solve_result_circle,
             dx=jnp.asarray(dx),
             dy=jnp.asarray(dy),
