@@ -4,6 +4,9 @@
 format: jb-book
 root: index
 parts:
+ - caption: FMM Formulations
+   chapters:
+   - file: notebooks/formulations
  - caption: Examples
    chapters:
    - file: notebooks/dipoles
