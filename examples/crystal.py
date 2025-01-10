@@ -368,7 +368,7 @@ def simulate_crystal_with_gaussian_beam(
         ey = jnp.zeros_like(ex)
         ez = jnp.zeros_like(ex)
         hx = jnp.zeros_like(ex)
-        hy = ex / jnp.sqrt(permittivity_ambient)
+        hy = ex * jnp.sqrt(permittivity_ambient)
         hz = jnp.zeros_like(ex)
         return (ex, ey, ez), (hx, hy, hz)
 
