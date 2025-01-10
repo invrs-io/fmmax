@@ -11,5 +11,6 @@ from fmmax import fmm as fmm
 from fmmax import fmm_matrices as fmm_matrices
 from fmmax import scattering as scattering
 from fmmax import sources as sources
+from fmmax import translate as translate
 from fmmax import utils as utils
 from fmmax import vector as vector
