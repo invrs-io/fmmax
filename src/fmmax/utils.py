@@ -61,7 +61,7 @@ def atleast_nd(x: jnp.ndarray, n: int) -> jnp.ndarray:
 
 
 def absolute_axes(axes: Tuple[int, ...], ndim: int) -> Tuple[int, ...]:
-    """Returns the absolute axes for given relative axes and number of array dimensions."""
+    """Returns the absolute axes for given relative axes and array dimensionality."""
     if not all(a in list(range(-ndim, ndim)) for a in axes):
         raise ValueError(
             f"All elements of `axes` must be in the range ({ndim}, {ndim - 1}) "

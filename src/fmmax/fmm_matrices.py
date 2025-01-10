@@ -195,7 +195,7 @@ def transverse_permittivity_fft_anisotropic(
     permittivity_yy: jnp.ndarray,
     expansion: basis.Expansion,
 ) -> jnp.ndarray:
-    """Compute the transverse permittivity matrix for anisotropic media using the fft scheme."""
+    """Compute anisotropic transverse permittivity matrix using the fft scheme."""
     _transform = functools.partial(fft.fourier_convolution_matrix, expansion=expansion)
     return jnp.block(
         [
@@ -212,7 +212,7 @@ def transverse_permeability_fft_anisotropic(
     permeability_yy: jnp.ndarray,
     expansion: basis.Expansion,
 ) -> jnp.ndarray:
-    """Compute the transverse permeability matrix for anisotropic media using the fft scheme."""
+    """Compute anisotropic transverse permeability matrix using the fft scheme."""
     _transform = functools.partial(fft.fourier_convolution_matrix, expansion=expansion)
     return jnp.block(
         [
@@ -286,11 +286,12 @@ def transverse_permittivity_vector_anisotropic(
         rotation_matrix, permittivity_tensor @ rotation_matrix
     )
 
-    # The Fourier permittivity matrix is the central matrix in equation 45 of [2012 Liu].
-    # The top left block relates the tangential E and D fields, while the bottom right
-    # block relates the normal E and D fields. Consequently, these use Laurent's rule and
-    # the inverse rule, respectively. Note that the non-diagonal blocks also use Laurent's
-    # rule, as these tensor elements may be zero, making the inverse rule problematic.
+    # The Fourier permittivity matrix is the central matrix in equation 45 of
+    # [2012 Liu]. The top left block relates the tangential E and D fields, while
+    # the bottom right block relates the normal E and D fields. Consequently, these
+    # use Laurent's rule and the inverse rule, respectively. Note that the
+    # non-diagonal blocks also use Laurent's rule, as these tensor elements may be
+    # zero, making the inverse rule problematic.
     fourier_permittivity_matrix = jnp.block(
         [
             [
@@ -382,8 +383,8 @@ def transverse_permeability_vector_anisotropic(
     # of [2012 Liu], in that its top-left block relates the tangential magnetic and
     # magnetic flux density fields, and the bottom-right block relates the normal
     # fields. Consequently, these use Laurent's rule and the inverse rule, respectively.
-    # Note that the non-diagonal blocks also use Laurent's rule, as these tensor elements
-    # may be zero, making the inverse rule problematic.
+    # Note that the non-diagonal blocks also use Laurent's rule, as these tensor
+    # elements may be zero, making the inverse rule problematic.
     fourier_permeability_matrix = jnp.block(
         [
             [

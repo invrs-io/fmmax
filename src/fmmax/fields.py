@@ -1036,5 +1036,5 @@ def _layer_fields_3d(
 def _validate_matching_lengths(*sequences: Sequence) -> None:
     """Validates that all of `args` have matching length."""
     lengths = [len(s) for s in sequences]
-    if not all([l == lengths[0] for l in lengths]):
+    if not all([length == lengths[0] for length in lengths]):
         raise ValueError(f"Encountered incompatible lengths, got lengths of {lengths}")
