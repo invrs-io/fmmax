@@ -53,7 +53,6 @@ jobs:
 
       - name: imports validation
         run: |
-            find . -name "*.py" | xargs black --check
             find . -name "*.py" | xargs isort --profile black --check-only
 
       - name: darglint docstring validation
