@@ -50,7 +50,7 @@ dev = [
   "black",
   "bump-my-version",
   "darglint",
-  "fmmax[docs, examples, jeig, tests]",
+  "fmmax[docs,examples,tests]",
   "isort",
   "mypy",
   "pre-commit",
