@@ -8,7 +8,7 @@ from typing import Tuple
 
 import jax.numpy as jnp
 
-from fmmax import basis, fft, utils
+from fmmax import _fft, basis, utils
 
 
 def omega_script_k_matrix_patterned(
@@ -107,7 +107,7 @@ def transverse_permittivity_fft(
     Returns:
         The transverse permittivity matrix.
     """
-    eps_hat = fft.fourier_convolution_matrix(permittivity, expansion)
+    eps_hat = _fft.fourier_convolution_matrix(permittivity, expansion)
     zeros = jnp.zeros_like(eps_hat)
     return jnp.block([[eps_hat, zeros], [zeros, eps_hat]])
 
@@ -131,7 +131,7 @@ def transverse_permittivity_vector(
     Returns:
         The `eps` matrix.
     """
-    _transform = functools.partial(fft.fourier_convolution_matrix, expansion=expansion)
+    _transform = functools.partial(_fft.fourier_convolution_matrix, expansion=expansion)
 
     eps_hat = _transform(permittivity)
     zeros = jnp.zeros_like(eps_hat)
@@ -196,7 +196,7 @@ def transverse_permittivity_fft_anisotropic(
     expansion: basis.Expansion,
 ) -> jnp.ndarray:
     """Compute anisotropic transverse permittivity matrix using the fft scheme."""
-    _transform = functools.partial(fft.fourier_convolution_matrix, expansion=expansion)
+    _transform = functools.partial(_fft.fourier_convolution_matrix, expansion=expansion)
     return jnp.block(
         [
             [_transform(permittivity_yy), _transform(-permittivity_yx)],
@@ -213,7 +213,7 @@ def transverse_permeability_fft_anisotropic(
     expansion: basis.Expansion,
 ) -> jnp.ndarray:
     """Compute anisotropic transverse permeability matrix using the fft scheme."""
-    _transform = functools.partial(fft.fourier_convolution_matrix, expansion=expansion)
+    _transform = functools.partial(_fft.fourier_convolution_matrix, expansion=expansion)
     return jnp.block(
         [
             [_transform(permeability_xx), _transform(permeability_xy)],
@@ -251,7 +251,7 @@ def transverse_permittivity_vector_anisotropic(
     Returns:
         The transverse permittivity matrix.
     """
-    _transform = functools.partial(fft.fourier_convolution_matrix, expansion=expansion)
+    _transform = functools.partial(_fft.fourier_convolution_matrix, expansion=expansion)
 
     # Define the real-space and Fourier transformed rotation matrices. The rotation
     # matrix is defined such that T [Et, En]^T = [-Ey, Ex].
@@ -343,7 +343,7 @@ def transverse_permeability_vector_anisotropic(
     Returns:
         The transverse permeability matrix.
     """
-    _transform = functools.partial(fft.fourier_convolution_matrix, expansion=expansion)
+    _transform = functools.partial(_fft.fourier_convolution_matrix, expansion=expansion)
 
     # Define the real-space and Fourier transformed rotation matrices. The rotation
     # matrix is defined such that T [Ht, Hn]^T = [Hx, Hy], and differs from that
@@ -428,7 +428,7 @@ def _rotation_matrices(
     )
 
     # Blockwise Fourier transform of the rotation matrix.
-    _transform = functools.partial(fft.fourier_convolution_matrix, expansion=expansion)
+    _transform = functools.partial(_fft.fourier_convolution_matrix, expansion=expansion)
     fourier_rotation_matrix = jnp.block(
         [
             [_transform(t00), _transform(t01)],

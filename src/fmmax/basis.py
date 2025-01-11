@@ -7,6 +7,7 @@ import dataclasses
 import enum
 from typing import Any, Tuple
 
+import jax
 import jax.numpy as jnp
 import numpy as onp
 from jax import tree_util
@@ -47,7 +48,7 @@ class LatticeVectors:
     @property
     def reciprocal(self) -> "LatticeVectors":
         """Returns the corresponding vectors on the reciprocal lattice."""
-        return reciprocal(self)
+        return _reciprocal(self)
 
 
 @dataclasses.dataclass
@@ -86,6 +87,25 @@ class Truncation(enum.Enum):
     PARALLELOGRAMIC = "parallelogramic"
 
 
+def min_array_shape_for_expansion(expansion: Expansion) -> Tuple[int, int]:
+    """Returns the minimum allowed shape for an array to be expanded."""
+    with jax.ensure_compile_time_eval():
+        return (
+            int(2 * onp.amax(onp.abs(expansion.basis_coefficients[:, 0])) + 1),
+            int(2 * onp.amax(onp.abs(expansion.basis_coefficients[:, 1])) + 1),
+        )
+
+
+def validate_shape_for_expansion(shape: Tuple[int, ...], expansion: Expansion) -> None:
+    """Validates that the shape is sufficient for the provided expansion."""
+    min_shape = min_array_shape_for_expansion(expansion)
+    if any([d < dmin for d, dmin in zip(shape[-2:], min_shape)]):
+        raise ValueError(
+            f"`shape` is insufficient for `expansion`, the minimum shape for the "
+            f"final two axes is {min_shape} but got shape {shape}."
+        )
+
+
 def generate_expansion(
     primitive_lattice_vectors: LatticeVectors,
     approximate_num_terms: int,
@@ -118,7 +138,7 @@ def generate_expansion(
     return Expansion(basis_coefficients)
 
 
-def reciprocal(lattice_vectors: LatticeVectors) -> LatticeVectors:
+def _reciprocal(lattice_vectors: LatticeVectors) -> LatticeVectors:
     """Computes the reciprocal vectors for the `basis`."""
     cross_product = _cross_product(lattice_vectors.u, lattice_vectors.v)
     uprime = (
@@ -415,7 +435,7 @@ tree_util.register_pytree_node(
 )
 
 
-def unflatten_expansion(
+def _unflatten_expansion(
     aux_tuple: Tuple["_HashableArray"],
     leaves: Tuple,
 ) -> Expansion:
@@ -429,7 +449,7 @@ def unflatten_expansion(
 tree_util.register_pytree_node(
     Expansion,
     lambda e: ((), (_HashableArray(e.basis_coefficients),)),
-    unflatten_func=unflatten_expansion,
+    unflatten_func=_unflatten_expansion,
 )
 
 

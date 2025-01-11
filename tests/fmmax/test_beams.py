@@ -180,7 +180,9 @@ class RotationMatrixTest(unittest.TestCase):
         azimuthal_angle,
         polarization_angle,
     ):
-        matrix = beams.rotation_matrix(polar_angle, azimuthal_angle, polarization_angle)
+        matrix = beams._rotation_matrix(
+            polar_angle, azimuthal_angle, polarization_angle
+        )
         rotated_coords = matrix @ jnp.asarray(coords)[:, jnp.newaxis]
         rotated_coords = jnp.squeeze(rotated_coords, axis=-1)
         onp.testing.assert_allclose(

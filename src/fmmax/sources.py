@@ -7,7 +7,7 @@ from typing import Optional, Tuple
 
 import jax.numpy as jnp
 
-from fmmax import basis, fft, fields, fmm, scattering, utils
+from fmmax import _fft, basis, fields, fmm, scattering, utils
 
 
 def amplitudes_for_fields(
@@ -102,7 +102,7 @@ def amplitudes_for_fields(
                 )
             )
         )
-        field_fft = fft.fft(
+        field_fft = _fft.fft(
             field_split, expansion=layer_solve_result.expansion, axes=(-3, -2)
         )
         return jnp.sum(field_fft, axis=(0, 1))
@@ -279,10 +279,10 @@ def amplitudes_for_source(
             forward_amplitude_N_start: The forward-going wave amplitude at the start
                 of the final layer.
     """
-    pol = polarization_terms(
+    pol = _polarization_terms(
         jx, jy, jz, layer_solve_result=s_matrix_before_source.end_layer_solve_result
     )
-    matrix = emission_matrix(
+    matrix = _emission_matrix(
         s_matrix_before_source=s_matrix_before_source,
         s_matrix_after_source=s_matrix_after_source,
     )
@@ -308,7 +308,7 @@ def amplitudes_for_source(
     )
 
 
-def polarization_terms(
+def _polarization_terms(
     jx: jnp.ndarray,
     jy: jnp.ndarray,
     jz: jnp.ndarray,
@@ -364,7 +364,7 @@ def polarization_terms(
     return jnp.concatenate([pz, p_parallel], axis=-2)
 
 
-def emission_matrix(
+def _emission_matrix(
     s_matrix_before_source: scattering.ScatteringMatrix,
     s_matrix_after_source: scattering.ScatteringMatrix,
 ) -> jnp.ndarray:

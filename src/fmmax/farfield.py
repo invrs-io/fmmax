@@ -58,7 +58,7 @@ def farfield_profile(
         primitive_lattice_vectors=primitive_lattice_vectors,
         expansion=expansion,
     )
-    transverse_wavevectors = unflatten_transverse_wavevectors(
+    transverse_wavevectors = _unflatten_transverse_wavevectors(
         transverse_wavevectors, expansion, brillouin_grid_axes
     )
     flux = unflatten_flux(flux, expansion, brillouin_grid_axes)
@@ -67,7 +67,7 @@ def farfield_profile(
     # with the unflattened flux and transverse wavevectors.
     wavelength = jnp.squeeze(wavelength, axis=brillouin_grid_axes)
 
-    polar_angle, azimuthal_angle = angles_from_unflattened_transverse_wavevectors(
+    polar_angle, azimuthal_angle = _angles_from_unflattened_transverse_wavevectors(
         transverse_wavevectors=transverse_wavevectors,
         wavelength=wavelength,
     )
@@ -75,7 +75,7 @@ def farfield_profile(
     # Transform flux form units of power per unit Brillouin zone area to
     # power per unit solid angle. Add dummy dimensions for the polarization
     # and sources.
-    solid_angle = solid_angle_from_unflattened_transverse_wavevectors(
+    solid_angle = _solid_angle_from_unflattened_transverse_wavevectors(
         transverse_wavevectors=transverse_wavevectors,
         wavelength=wavelength,
     )
@@ -83,7 +83,7 @@ def farfield_profile(
     return polar_angle, azimuthal_angle, solid_angle, transformed_flux
 
 
-def angles_from_unflattened_transverse_wavevectors(
+def _angles_from_unflattened_transverse_wavevectors(
     transverse_wavevectors: jnp.ndarray,
     wavelength: jnp.ndarray,
 ) -> Tuple[jnp.ndarray, jnp.ndarray]:
@@ -114,7 +114,7 @@ def angles_from_unflattened_transverse_wavevectors(
     return polar_angle, azimuthal_angle
 
 
-def solid_angle_from_unflattened_transverse_wavevectors(
+def _solid_angle_from_unflattened_transverse_wavevectors(
     transverse_wavevectors: jnp.ndarray,
     wavelength: jnp.ndarray,
 ) -> jnp.ndarray:
@@ -296,7 +296,7 @@ def _integrated_flux_upsampled(
     )
 
     flux = unflatten_flux(flux, expansion, brillouin_grid_axes)
-    transverse_wavevectors = unflatten_transverse_wavevectors(
+    transverse_wavevectors = _unflatten_transverse_wavevectors(
         transverse_wavevectors, expansion, brillouin_grid_axes
     )
 
@@ -332,7 +332,7 @@ def _integrated_flux_upsampled(
     wavelength = jnp.squeeze(wavelength, brillouin_grid_axes)
 
     # Compute polar and azimuthal angles.
-    polar_angle, azimuthal_angle = angles_from_unflattened_transverse_wavevectors(
+    polar_angle, azimuthal_angle = _angles_from_unflattened_transverse_wavevectors(
         transverse_wavevectors, wavelength
     )
 
@@ -351,7 +351,7 @@ def _integrated_flux_upsampled(
 # -----------------------------------------------------------------------------
 
 
-def unflatten(flat: jnp.ndarray, expansion: basis.Expansion) -> jnp.ndarray:
+def _unflatten(flat: jnp.ndarray, expansion: basis.Expansion) -> jnp.ndarray:
     """Unflattens an array for a given expansion and Brillouin integration scheme.
 
     The returned array combines the values associated with all terms in the
@@ -443,14 +443,14 @@ def unflatten_flux(
     axes = batch_axes + tuple([i for i in range(flux.ndim) if i not in batch_axes])
     flux = jnp.transpose(flux, axes)
 
-    flux = unflatten(flux, expansion)
+    flux = _unflatten(flux, expansion)
 
     # Transpose so that polarization and sources are returned to the trailing axes.
     axes = tuple(range(flux.ndim - 4)) + (-2, -1, -4, -3)
     return jnp.transpose(flux, axes)
 
 
-def unflatten_transverse_wavevectors(
+def _unflatten_transverse_wavevectors(
     transverse_wavevectors: jnp.ndarray,
     expansion: basis.Expansion,
     brillouin_grid_axes: Tuple[int, int],
@@ -483,7 +483,7 @@ def unflatten_transverse_wavevectors(
     )
     transverse_wavevectors = jnp.transpose(transverse_wavevectors, axes)
 
-    transverse_wavevectors = unflatten(transverse_wavevectors, expansion)
+    transverse_wavevectors = _unflatten(transverse_wavevectors, expansion)
 
     # Transpose so the trailing axis is for the wavevector direction.
     axes = tuple(range(transverse_wavevectors.ndim - 3)) + (-2, -1, -3)

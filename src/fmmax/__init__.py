@@ -2,13 +2,14 @@
 
 __version__ = "v0.12.0"
 
+from fmmax import _fft as _fft
+from fmmax import _fmm_matrices as _fmm_matrices
+
 from fmmax import basis as basis
 from fmmax import beams as beams
 from fmmax import farfield as farfield
-from fmmax import fft as fft
 from fmmax import fields as fields
 from fmmax import fmm as fmm
-from fmmax import fmm_matrices as fmm_matrices
 from fmmax import scattering as scattering
 from fmmax import sources as sources
 from fmmax import translate as translate

@@ -298,3 +298,22 @@ class GenerateBasisTest(unittest.TestCase):
             num_terms.append(coeffs.shape[0])
         for n, n_next in zip(num_terms[:-1], num_terms[1:]):
             self.assertGreaterEqual(n_next, n)
+
+
+class ShapeValidationTest(unittest.TestCase):
+    @parameterized.expand(
+        [
+            (onp.asarray([[-2, -2], [2, 2]]), (5, 5)),
+            (onp.asarray([[-5, -2], [5, 2]]), (11, 5)),
+            (onp.asarray([[0, -2], [8, 3]]), (17, 7)),
+        ]
+    )
+    def test_min_shape(self, basis_coefficients, expected_min_shape):
+        expansion = basis.Expansion(basis_coefficients=basis_coefficients)
+        min_shape = basis.min_array_shape_for_expansion(expansion)
+        self.assertSequenceEqual(min_shape, expected_min_shape)
+
+    def test_shape_validation(self):
+        expansion = basis.Expansion(basis_coefficients=jnp.asarray([[-2, -2], [2, 2]]))
+        with self.assertRaisesRegex(ValueError, "`shape` is insufficient for"):
+            basis.validate_shape_for_expansion((8, 4), expansion)

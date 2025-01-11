@@ -361,7 +361,7 @@ class AnistropicLayerFFTMatrixTest(unittest.TestCase):
             z_permittivity_matrix_expected,
             transverse_permittivity_matrix_expected,
             tangent_vector_field_expected,
-        ) = fmm.fourier_matrices_patterned_isotropic_media(
+        ) = fmm._fourier_matrices_patterned_isotropic_media(
             primitive_lattice_vectors=PRIMITIVE_LATTICE_VECTORS,
             permittivity=permittivity,
             expansion=EXPANSION,
@@ -375,7 +375,7 @@ class AnistropicLayerFFTMatrixTest(unittest.TestCase):
             _,
             _,
             tangent_vector_field,
-        ) = fmm.fourier_matrices_patterned_anisotropic_media(
+        ) = fmm._fourier_matrices_patterned_anisotropic_media(
             primitive_lattice_vectors=PRIMITIVE_LATTICE_VECTORS,
             permittivities=(
                 permittivity,
@@ -434,7 +434,7 @@ class FourierMatrixBatchMatchesSingleTest(unittest.TestCase):
             batch_z_permittivity_matrix,
             batch_transverse_permittivity_matrix,
             batch_tangent_vector_field,
-        ) = fmm.fourier_matrices_patterned_isotropic_media(
+        ) = fmm._fourier_matrices_patterned_isotropic_media(
             PRIMITIVE_LATTICE_VECTORS, permittivity, EXPANSION, formulation
         )
 
@@ -444,7 +444,7 @@ class FourierMatrixBatchMatchesSingleTest(unittest.TestCase):
                 z_permittivity_matrix,
                 transverse_permittivity_matrix,
                 tangent_vector_field,
-            ) = fmm.fourier_matrices_patterned_isotropic_media(
+            ) = fmm._fourier_matrices_patterned_isotropic_media(
                 PRIMITIVE_LATTICE_VECTORS, p, EXPANSION, formulation
             )
             onp.testing.assert_allclose(
@@ -491,7 +491,7 @@ class FourierMatrixBatchMatchesSingleTest(unittest.TestCase):
             batch_z_permeability_matrix,
             batch_transverse_permeability_matrix,
             batch_tangent_vector_field,
-        ) = fmm.fourier_matrices_patterned_anisotropic_media(
+        ) = fmm._fourier_matrices_patterned_anisotropic_media(
             PRIMITIVE_LATTICE_VECTORS,
             tuple(permittivities),
             tuple(permeabilities),
@@ -509,7 +509,7 @@ class FourierMatrixBatchMatchesSingleTest(unittest.TestCase):
                 z_permeability_matrix,
                 transverse_permeability_matrix,
                 tangent_vector_field,
-            ) = fmm.fourier_matrices_patterned_anisotropic_media(
+            ) = fmm._fourier_matrices_patterned_anisotropic_media(
                 PRIMITIVE_LATTICE_VECTORS,
                 tuple(permittivities[:, i, ...]),
                 tuple(permeabilities[:, i, ...]),

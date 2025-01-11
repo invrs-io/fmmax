@@ -9,7 +9,7 @@ from typing import Callable, Dict, List, Tuple
 import jax
 import jax.numpy as jnp
 
-from fmmax import basis, fft, utils
+from fmmax import _fft, basis, utils
 
 # Absolute tolerance for detecting whether a field is 1D. If the angle of the field at
 # every point differs by less than this value from a reference value, the field is 1D.
@@ -68,7 +68,7 @@ def compute_field_jones(
         fourier_loss_weight=fourier_loss_weight,
         smoothness_loss_weight=smoothness_loss_weight,
     )
-    jxjy = normalize_jones(jnp.stack([tx, ty], axis=-1))
+    jxjy = _normalize_jones(jnp.stack([tx, ty], axis=-1))
     jx = jxjy[..., 0]
     jy = jxjy[..., 1]
     return jx, jy
@@ -90,7 +90,7 @@ def compute_field_normal(
         fourier_loss_weight=fourier_loss_weight,
         smoothness_loss_weight=smoothness_loss_weight,
     )
-    txty = normalize_elementwise(jnp.stack([tx, ty], axis=-1))
+    txty = _normalize_elementwise(jnp.stack([tx, ty], axis=-1))
     tx = txty[..., 0]
     ty = txty[..., 1]
     return tx, ty
@@ -203,10 +203,10 @@ def _compute_tangent_field_no_batch(
     fourier_loss_weight /= expansion.num_terms
     smoothness_loss_weight /= expansion.num_terms
 
-    grad = compute_gradient(arr, primitive_lattice_vectors)
+    grad = _compute_gradient(arr, primitive_lattice_vectors)
     gx = _filter_and_adjust_resolution(grad[..., 0], expansion)
     gy = _filter_and_adjust_resolution(grad[..., 1], expansion)
-    grad = normalize(jnp.stack([gx, gy], axis=-1))
+    grad = _normalize(jnp.stack([gx, gy], axis=-1))
 
     elementwise_alignment_weight = _field_magnitude(grad)
 
@@ -218,17 +218,17 @@ def _compute_tangent_field_no_batch(
 
     # Compute the target field with which the tangent field should be aligned.
     target_field = jnp.stack([grad[..., 1], -grad[..., 0]], axis=-1)
-    target_field = normalize_elementwise(target_field)
+    target_field = _normalize_elementwise(target_field)
     if use_jones_direct:
-        target_field = normalize_jones(target_field)
+        target_field = _normalize_jones(target_field)
         initial_field = target_field
     else:
-        initial_field = normalize(jnp.stack([grad[..., 1], -grad[..., 0]], axis=-1))
-    fourier_field = fft.fft(initial_field, expansion=expansion, axes=(-3, -2))
+        initial_field = _normalize(jnp.stack([grad[..., 1], -grad[..., 0]], axis=-1))
+    fourier_field = _fft.fft(initial_field, expansion=expansion, axes=(-3, -2))
 
     flat_fourier_field = fourier_field.flatten()
     for _ in range(steps):
-        _, jac, hessian = field_loss_value_jac_and_hessian(
+        _, jac, hessian = _field_loss_value_jac_and_hessian(
             flat_fourier_field=flat_fourier_field,
             expansion=expansion,
             primitive_lattice_vectors=primitive_lattice_vectors,
@@ -240,12 +240,12 @@ def _compute_tangent_field_no_batch(
         flat_fourier_field -= jnp.linalg.solve(hessian, jac.conj())
     fourier_field = flat_fourier_field.reshape((expansion.num_terms, 2))
 
-    field = fft.ifft(fourier_field, expansion=expansion, shape=grid_shape, axis=-2)
+    field = _fft.ifft(fourier_field, expansion=expansion, shape=grid_shape, axis=-2)
 
     # Manually set the tangent field in the 1d case.
     field_1d = jnp.stack([jnp.sin(grad_angle), jnp.cos(grad_angle)])
     field = jnp.where(is_1d, field_1d, field)
-    return normalize(field)
+    return _normalize(field)
 
 
 # -------------------------------------------------------------------------------------
@@ -253,10 +253,10 @@ def _compute_tangent_field_no_batch(
 # -------------------------------------------------------------------------------------
 
 
-def normalize_jones(field: jnp.ndarray) -> jnp.ndarray:
+def _normalize_jones(field: jnp.ndarray) -> jnp.ndarray:
     """Generates a Jones vector field following the "Jones" method of [2012 Liu]."""
     assert field.shape[-1] == 2
-    field = normalize(field)
+    field = _normalize(field)
     magnitude = _field_magnitude(field)
 
     magnitude_near_zero = jnp.isclose(magnitude, 0.0)
@@ -280,14 +280,14 @@ def normalize_jones(field: jnp.ndarray) -> jnp.ndarray:
     return jnp.concatenate([jx, jy], axis=-1)
 
 
-def normalize_elementwise(field: jnp.ndarray) -> jnp.ndarray:
+def _normalize_elementwise(field: jnp.ndarray) -> jnp.ndarray:
     """Normalize the elements of `field` to have magnitude `1` everywhere."""
     magnitude = _field_magnitude(field)
     magnitude_safe = jnp.where(jnp.isclose(magnitude, 0), 1, magnitude)
     return field / magnitude_safe
 
 
-def normalize(field: jnp.ndarray) -> jnp.ndarray:
+def _normalize(field: jnp.ndarray) -> jnp.ndarray:
     """Normalize `field` so that it has maximum magnitude `1`."""
     max_magnitude = _max_field_magnitude(field)
     max_magnitude_safe = jnp.where(jnp.isclose(max_magnitude, 0), 1, max_magnitude)
@@ -321,15 +321,15 @@ def _filter_and_adjust_resolution(
     expansion: basis.Expansion,
 ) -> jnp.ndarray:
     """Filter `x` and adjust its resolution for the given `expansion`."""
-    y = fft.fft(x, expansion=expansion)
-    min_shape = fft.min_array_shape_for_expansion(expansion)
+    y = _fft.fft(x, expansion=expansion)
+    min_shape = basis.min_array_shape_for_expansion(expansion)
     assert x.ndim == 2
     # Singleton dimensions remain singleton.
     doubled_min_shape = (
         min_shape[0] * (2 if x.shape[0] > 1 else 1),
         min_shape[1] * (2 if x.shape[1] > 1 else 1),
     )
-    return fft.ifft(y, expansion=expansion, shape=doubled_min_shape)
+    return _fft.ifft(y, expansion=expansion, shape=doubled_min_shape)
 
 
 def _is_1d_field(field: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
@@ -371,7 +371,7 @@ def _field_at_max_magnitude(field: jnp.ndarray) -> jnp.ndarray:
 # -------------------------------------------------------------------------------------
 
 
-def field_loss_value_jac_and_hessian(
+def _field_loss_value_jac_and_hessian(
     flat_fourier_field: jnp.ndarray,
     expansion: basis.Expansion,
     primitive_lattice_vectors: basis.LatticeVectors,
@@ -418,7 +418,7 @@ def _field_loss(
 ) -> jnp.ndarray:
     """Compute loss that favors smooth"""
     shape: Tuple[int, int] = target_field.shape[-3:-1]  # type: ignore[assignment]
-    field = fft.ifft(
+    field = _fft.ifft(
         y=fourier_field,
         expansion=expansion,
         shape=shape,
@@ -509,7 +509,7 @@ def _smoothness_loss(
 # -------------------------------------------------------------------------------------
 
 
-def compute_gradient(
+def _compute_gradient(
     arr: jnp.ndarray,
     primitive_lattice_vectors: basis.LatticeVectors,
 ) -> jnp.ndarray:

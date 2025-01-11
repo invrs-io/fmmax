@@ -8,7 +8,7 @@ from typing import Callable, Sequence, Tuple
 
 import jax.numpy as jnp
 
-from fmmax import basis, fft, fmm, scattering, utils
+from fmmax import _fft, basis, fmm, scattering, utils
 
 
 def propagate_amplitude(
@@ -467,7 +467,7 @@ def _fields_on_grid(
     )
 
     def _field_on_grid(fourier_field):
-        field = fft.ifft(fourier_field, expansion, shape, axis=-2)
+        field = _fft.ifft(fourier_field, expansion, shape, axis=-2)
         return jnp.tile(field, num_unit_cells + (1,))
 
     ex, ey, ez = electric_field
