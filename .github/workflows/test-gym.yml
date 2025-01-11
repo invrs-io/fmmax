@@ -1,4 +1,6 @@
-name: gym
+# This workflow exists to ensure that we never unknowingly break the invrs-gym repo,
+# which heavily relies upon fmmax.
+name: test-gym
 
 on:
   pull_request:
@@ -30,4 +32,8 @@ jobs:
           cd ..
           git clone https://github.com/invrs-io/gym
           cd gym
-          pytest
+          pip install ".[dev]"
+
+      - name: run invrs-gym tests
+        run: |
+          pytest tests/
