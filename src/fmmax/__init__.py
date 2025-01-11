@@ -4,7 +4,6 @@ __version__ = "v0.12.0"
 
 from fmmax import _fft as _fft
 from fmmax import _fmm_matrices as _fmm_matrices
-
 from fmmax import basis as basis
 from fmmax import beams as beams
 from fmmax import farfield as farfield
