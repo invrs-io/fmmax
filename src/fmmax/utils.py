@@ -135,15 +135,35 @@ def eig(
     return _eig(matrix)
 
 
+def _eig_jax(matrix: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
+    """Eigendecomposition using `jax.numpy.linalg.eig`."""
+    # If using CPU backend, using `pure_callback` to call a jit-compiled version of
+    # `jnp.linalg.eig` is flaky and can cause deadlocks. Directly call it instead.
+    if jax.devices()[0] == jax.devices("cpu")[0]:
+        return jnp.linalg.eig(matrix)
+    else:
+        dtype = jnp.promote_types(matrix.dtype, jnp.complex64)
+        return jax.pure_callback(
+            _eig_jax_cpu,
+            (
+                jnp.ones(matrix.shape[:-1], dtype=dtype),  # Eigenvalues
+                jnp.ones(matrix.shape, dtype=dtype),  # Eigenvectors
+            ),
+            matrix.astype(dtype),
+            vectorized=True,
+        )
+
+
+with jax.default_device(jax.devices("cpu")[0]):
+    _eig_jax_cpu = jax.jit(jnp.linalg.eig)
+
+
 def _eig(matrix: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
-    """Eigendecomposition using `jeig` if available, and `jax.lax.linalg.eig` if not."""
+    """Eigendecomposition using `jeig` if available, and `_eig_jax` if not."""
     if _JEIG_AVAILABLE:
         return jeig.eig(matrix)
     else:
-        eigenvalues, eigenvectors = jax.lax.linalg.eig(
-            matrix, compute_left_eigenvectors=False, use_magma=False
-        )
-        return eigenvalues, eigenvectors
+        return _eig_jax(matrix)
 
 
 def _eig_fwd(
