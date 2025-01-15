@@ -4,11 +4,11 @@ Copyright (c) Meta Platforms, Inc. and affiliates.
 """
 
 import functools
-from packaging import version
 from typing import Tuple
 
 import jax
 import jax.numpy as jnp
+from packaging import version
 
 # The `jeig` package offers several jax-wrapped implementations of eigendecomposition,
 # some of which have performance benefits. However, since `jeig` has a dependency on
