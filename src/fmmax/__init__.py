@@ -1,6 +1,6 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 
-__version__ = "v0.13.0"
+__version__ = "v0.13.1"
 
 from fmmax import _fft as _fft
 from fmmax import _fmm_matrices as _fmm_matrices

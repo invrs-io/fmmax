@@ -94,12 +94,12 @@ jobs:
       - name: Setup environment
         run: |
             python -m pip install --upgrade pip
+            pip install --upgrade "jax[cpu]==0.4.35"
             pip install ".[dev]"
-            pip install --upgrade "jax==0.4.35"
       - name: Test fmmax
         run: pytest tests/fmmax
 
-  test-fmmax-jax-0_4_31:
+  test-fmmax-jax-0_4_27:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -114,8 +114,8 @@ jobs:
       - name: Setup environment
         run: |
             python -m pip install --upgrade pip
+            pip install --upgrade "jax[cpu]==0.4.27"
             pip install ".[dev]"
-            pip install --upgrade "jax==0.4.31"
       - name: Test fmmax
         run: pytest tests/fmmax
 
