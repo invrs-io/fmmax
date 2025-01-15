@@ -59,7 +59,7 @@ def shifted_rotated_fields(
     Returns:
         The fields `((ex, ey, ez), (hx, hy, hz))` at the specified coordinates.
     """
-    mat = rotation_matrix(polar_angle, azimuthal_angle, polarization_angle)
+    mat = _rotation_matrix(polar_angle, azimuthal_angle, polarization_angle)
     mat = jnp.expand_dims(mat, range(x.ndim))
 
     # Solve for the `(xf, yf, zf)` locations in the field coordinate system
@@ -100,7 +100,7 @@ def shifted_rotated_fields(
     return (ex, ey, ez), (hx, hy, hz)
 
 
-def rotation_matrix(
+def _rotation_matrix(
     polar_angle: jnp.ndarray,
     azimuthal_angle: jnp.ndarray,
     polarization_angle: jnp.ndarray,

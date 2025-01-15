@@ -290,14 +290,14 @@ def redheffer_star_product(
     a11, a12, a21, a22 = a_extended.s11, a_extended.s12, a_extended.s21, a_extended.s22
     b11, b12, b21, b22 = b.s11, b.s12, b.s21, b.s22
 
-    _solve = functools.partial(solve, force_x64_solve=force_x64_solve)
+    solve = functools.partial(_solve, force_x64_solve=force_x64_solve)
 
     # See https://en.wikipedia.org/wiki/Redheffer_star_product
     eye = utils.diag(jnp.ones_like(a11[..., 0]))
-    s11 = b11 @ _solve(eye - a12 @ b21, a11)
-    s12 = b12 + b11 @ _solve(eye - a12 @ b21, a12 @ b22)
-    s21 = a21 + a22 @ _solve(eye - b21 @ a12, b21 @ a11)
-    s22 = a22 @ _solve(eye - b21 @ a12, b22)
+    s11 = b11 @ solve(eye - a12 @ b21, a11)
+    s12 = b12 + b11 @ solve(eye - a12 @ b21, a12 @ b22)
+    s21 = a21 + a22 @ solve(eye - b21 @ a12, b21 @ a11)
+    s22 = a22 @ solve(eye - b21 @ a12, b22)
     return ScatteringMatrix(
         s11=s11,
         s12=s12,
@@ -420,7 +420,7 @@ def _extend_s_matrix(
     next_phi = next_layer_solve_result.eigenvectors
     next_omega_k = next_layer_solve_result.omega_script_k_matrix
 
-    _solve = functools.partial(solve, force_x64_solve=force_x64_solve)
+    solve = functools.partial(_solve, force_x64_solve=force_x64_solve)
 
     # Compute the interface matrices following equation 5.3 of [1999 Whittaker].
     # These make use the matrix form of the orthogonality relation of equation 3.9
@@ -431,12 +431,12 @@ def _extend_s_matrix(
     #
     # phi_T = jnp.linalg.inv(omega_k @ phi)
     # term1 = diag(q) @ phi_T @ next_omega_k @ next_phi @ diag(1 / next_q)
-    term1 = q[..., jnp.newaxis] * _solve(
+    term1 = q[..., jnp.newaxis] * solve(
         omega_k @ phi,
         next_omega_k @ next_phi * (1 / next_q)[..., jnp.newaxis, :],
     )
     # term2 = phi_T @ omega_k @ next_phi
-    term2 = _solve(omega_k @ phi, omega_k @ next_phi)
+    term2 = solve(omega_k @ phi, omega_k @ next_phi)
     i11 = i22 = 0.5 * (term1 + term2)
     i12 = i21 = 0.5 * (-term1 + term2)
 
@@ -451,10 +451,10 @@ def _extend_s_matrix(
 
     # s11_next = inv(i11 - diag(fd) @ s12 @ i21) @ diag(fd) @ s11
     term3 = i11 - fd[..., jnp.newaxis] * s12 @ i21
-    s11_next = _solve(term3, fd[..., jnp.newaxis] * s11)
+    s11_next = solve(term3, fd[..., jnp.newaxis] * s11)
     # s12_next = inv(i11 - diag(fd) @ s12 @ i21)
     #            @ (diag(fd) @ s12 @ i22 - i12) @ diag(fd_next)
-    s12_next = _solve(
+    s12_next = solve(
         term3,
         (fd[..., jnp.newaxis] * s12 @ i22 - i12) * fd_next[..., jnp.newaxis, :],
     )
@@ -482,13 +482,13 @@ def _pair_s_matrix(
     next_phi = next_layer_solve_result.eigenvectors
     next_omega_k = next_layer_solve_result.omega_script_k_matrix
 
-    _solve = functools.partial(solve, force_x64_solve=force_x64_solve)
+    solve = functools.partial(_solve, force_x64_solve=force_x64_solve)
 
-    term1 = q[..., jnp.newaxis] * _solve(
+    term1 = q[..., jnp.newaxis] * solve(
         omega_k @ phi,
         next_omega_k @ next_phi * (1 / next_q)[..., jnp.newaxis, :],
     )
-    term2 = _solve(omega_k @ phi, omega_k @ next_phi)
+    term2 = solve(omega_k @ phi, omega_k @ next_phi)
     i11 = i22 = 0.5 * (term1 + term2)
     i12 = i21 = 0.5 * (-term1 + term2)
 
@@ -498,8 +498,8 @@ def _pair_s_matrix(
     # The computation is identical to that in `_extend_s_matrix` with `s11` and `s22`
     # being the identity, and `s12` and `s21` being zero.
     fd_diag = jnp.expand_dims(utils.diag(fd), tuple(range(i11.ndim - fd.ndim - 1)))
-    s11 = _solve(i11, fd_diag)
-    s12 = _solve(i11, -i12 * fd_next[..., jnp.newaxis, :])
+    s11 = solve(i11, fd_diag)
+    s12 = solve(i11, -i12 * fd_next[..., jnp.newaxis, :])
     s21 = i21 @ s11
     s22 = i21 @ s12 + i22 * fd_next[..., jnp.newaxis, :]
 
@@ -593,7 +593,7 @@ tree_util.register_pytree_node(
 )
 
 
-def solve(a: jnp.ndarray, b: jnp.ndarray, *, force_x64_solve: bool) -> jnp.ndarray:
+def _solve(a: jnp.ndarray, b: jnp.ndarray, *, force_x64_solve: bool) -> jnp.ndarray:
     """Solves `A @ x = b`, optionally using 64-bit precision."""
     output_dtype = jnp.promote_types(a.dtype, b.dtype)
     if force_x64_solve and jax.config.read("jax_enable_x64"):

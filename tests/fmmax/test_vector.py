@@ -371,17 +371,17 @@ class NormalizeTest(unittest.TestCase):
     @parameterized.expand(
         [
             (
-                vector.normalize_elementwise,
+                vector._normalize_elementwise,
                 [[1 / jnp.sqrt(2), 1.0, 0.0, 1.0, 0.0]],
                 [[1 / jnp.sqrt(2), 0.0, 1.0, 0.0, 0.0]],
             ),
             (
-                vector.normalize,
+                vector._normalize,
                 [[1 / jnp.sqrt(2), 0.2 / jnp.sqrt(2), 0.0, 0.01 / jnp.sqrt(2), 0.0]],
                 [[1 / jnp.sqrt(2), 0.0, 0.2 / jnp.sqrt(2), 0.0, 0.0]],
             ),
             (
-                vector.normalize_jones,
+                vector._normalize_jones,
                 [[0.5 + 0.5j, 0.734, 0.680, 0.707, 0.707]],
                 [[0.5 + 0.5j, 0.680j, 0.734j, 0.707j, 0.707j]],
             ),
@@ -397,9 +397,9 @@ class NormalizeTest(unittest.TestCase):
 
     @parameterized.expand(
         [
-            (vector.normalize_elementwise,),
-            (vector.normalize,),
-            (vector.normalize_jones,),
+            (vector._normalize_elementwise,),
+            (vector._normalize,),
+            (vector._normalize_jones,),
         ]
     )
     def test_zeros_no_nan(self, normalize_fn):
@@ -412,9 +412,9 @@ class NormalizeTest(unittest.TestCase):
 
     @parameterized.expand(
         [
-            (vector.normalize_elementwise,),
-            (vector.normalize,),
-            (vector.normalize_jones,),
+            (vector._normalize_elementwise,),
+            (vector._normalize,),
+            (vector._normalize_jones,),
         ]
     )
     def test_gradient_no_nan(self, normalize_fn):
@@ -429,9 +429,9 @@ class NormalizeTest(unittest.TestCase):
 
     @parameterized.expand(
         [
-            [vector.normalize_elementwise],
-            [vector.normalize],
-            [vector.normalize_jones],
+            [vector._normalize_elementwise],
+            [vector._normalize],
+            [vector._normalize_jones],
         ]
     )
     def test_batch_calculation_matches_single(self, normalize_fn):

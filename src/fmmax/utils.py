@@ -3,10 +3,12 @@
 Copyright (c) Meta Platforms, Inc. and affiliates.
 """
 
+import functools
 from typing import Tuple
 
 import jax
 import jax.numpy as jnp
+from packaging import version
 
 # The `jeig` package offers several jax-wrapped implementations of eigendecomposition,
 # some of which have performance benefits. However, since `jeig` has a dependency on
@@ -135,15 +137,40 @@ def eig(
     return _eig(matrix)
 
 
+if version.Version(jax.__version__) > version.Version("0.4.31"):
+    callback = functools.partial(jax.pure_callback, vmap_method="expand_dims")
+else:
+    callback = functools.partial(jax.pure_callback, vectorized=True)
+
+
+def _eig_jax(matrix: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
+    """Eigendecomposition using `jax.numpy.linalg.eig`."""
+    # If using CPU backend, using `pure_callback` to call a jit-compiled version of
+    # `jnp.linalg.eig` is flaky and can cause deadlocks. Directly call it instead.
+    if jax.devices()[0] == jax.devices("cpu")[0]:
+        return jnp.linalg.eig(matrix)
+    else:
+        dtype = jnp.promote_types(matrix.dtype, jnp.complex64)
+        return callback(
+            _eig_jax_cpu,
+            (
+                jnp.ones(matrix.shape[:-1], dtype=dtype),  # Eigenvalues
+                jnp.ones(matrix.shape, dtype=dtype),  # Eigenvectors
+            ),
+            matrix.astype(dtype),
+        )
+
+
+with jax.default_device(jax.devices("cpu")[0]):
+    _eig_jax_cpu = jax.jit(jnp.linalg.eig)
+
+
 def _eig(matrix: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
-    """Eigendecomposition using `jeig` if available, and `jax.lax.linalg.eig` if not."""
+    """Eigendecomposition using `jeig` if available, and `_eig_jax` if not."""
     if _JEIG_AVAILABLE:
         return jeig.eig(matrix)
     else:
-        eigenvalues, eigenvectors = jax.lax.linalg.eig(
-            matrix, compute_left_eigenvectors=False, use_magma=False
-        )
-        return eigenvalues, eigenvectors
+        return _eig_jax(matrix)
 
 
 def _eig_fwd(

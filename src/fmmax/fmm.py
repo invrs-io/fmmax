@@ -11,7 +11,7 @@ from typing import Callable, Optional, Tuple
 import jax.numpy as jnp
 from jax import tree_util
 
-from fmmax import basis, fft, fmm_matrices, utils, vector
+from fmmax import _fft, _fmm_matrices, basis, utils, vector
 
 # xx, xy, yx, yy, and zz components of permittivity or permeability.
 TensorComponents = Tuple[
@@ -271,7 +271,7 @@ class LayerSolveResult:
     @property
     def omega_script_k_matrix(self):
         """Compute omega-script-k matrix from equation 26 of [2012 Liu]."""
-        return fmm_matrices.omega_script_k_matrix_patterned(
+        return _fmm_matrices.omega_script_k_matrix_patterned(
             wavelength=self.wavelength,
             z_permittivity_matrix=self.z_permittivity_matrix,
             transverse_permeability_matrix=self.transverse_permeability_matrix,
@@ -516,7 +516,7 @@ def _eigensolve_patterned_isotropic_media(
         z_permittivity_matrix,
         transverse_permittivity_matrix,
         tangent_vector_field,
-    ) = fourier_matrices_patterned_isotropic_media(
+    ) = _fourier_matrices_patterned_isotropic_media(
         primitive_lattice_vectors=primitive_lattice_vectors,
         permittivity=permittivity,
         expansion=expansion,
@@ -727,7 +727,7 @@ def _eigensolve_patterned_general_anisotropic_media(
         z_permeability_matrix,
         transverse_permeability_matrix,
         tangent_vector_field,
-    ) = fourier_matrices_patterned_anisotropic_media(
+    ) = _fourier_matrices_patterned_anisotropic_media(
         primitive_lattice_vectors=primitive_lattice_vectors,
         permittivities=(
             permittivity_xx,
@@ -815,11 +815,11 @@ def _numerical_eigensolve(
     )
 
     # The k matrix from equation 23 of [2012 Liu], modified for magnetic materials.
-    k_matrix = fmm_matrices.k_matrix_patterned(
+    k_matrix = _fmm_matrices.k_matrix_patterned(
         z_permeability_matrix, transverse_wavevectors
     )
 
-    omega_script_k_matrix = fmm_matrices.omega_script_k_matrix_patterned(
+    omega_script_k_matrix = _fmm_matrices.omega_script_k_matrix_patterned(
         wavelength=wavelength,
         z_permittivity_matrix=z_permittivity_matrix,
         transverse_permeability_matrix=transverse_permeability_matrix,
@@ -855,7 +855,7 @@ def _numerical_eigensolve(
 # -----------------------------------------------------------------------------
 
 
-def fourier_matrices_patterned_isotropic_media(
+def _fourier_matrices_patterned_isotropic_media(
     primitive_lattice_vectors: basis.LatticeVectors,
     permittivity: jnp.ndarray,
     expansion: basis.Expansion,
@@ -888,7 +888,7 @@ def fourier_matrices_patterned_isotropic_media(
     """
     if formulation is Formulation.FFT:
         _transverse_permittivity_fn = functools.partial(
-            fmm_matrices.transverse_permittivity_fft,
+            _fmm_matrices.transverse_permittivity_fft,
             expansion=expansion,
         )
         tangent_vector_field = None
@@ -899,14 +899,14 @@ def fourier_matrices_patterned_isotropic_media(
             vector_fn = formulation
         tx, ty = vector_fn(permittivity, expansion, primitive_lattice_vectors)
         _transverse_permittivity_fn = functools.partial(
-            fmm_matrices.transverse_permittivity_vector,
+            _fmm_matrices.transverse_permittivity_vector,
             tx=tx,
             ty=ty,
             expansion=expansion,
         )
         tangent_vector_field = (tx, ty)
 
-    _transform = functools.partial(fft.fourier_convolution_matrix, expansion=expansion)
+    _transform = functools.partial(_fft.fourier_convolution_matrix, expansion=expansion)
 
     inverse_z_permittivity_matrix = _transform(1 / permittivity)
     z_permittivity_matrix = _transform(permittivity)
@@ -920,7 +920,7 @@ def fourier_matrices_patterned_isotropic_media(
     )
 
 
-def fourier_matrices_patterned_anisotropic_media(
+def _fourier_matrices_patterned_anisotropic_media(
     primitive_lattice_vectors: basis.LatticeVectors,
     permittivities: TensorComponents,
     permeabilities: TensorComponents,
@@ -978,11 +978,11 @@ def fourier_matrices_patterned_anisotropic_media(
     """
     if formulation is Formulation.FFT:
         _transverse_permittivity_fn = functools.partial(
-            fmm_matrices.transverse_permittivity_fft_anisotropic,
+            _fmm_matrices.transverse_permittivity_fft_anisotropic,
             expansion=expansion,
         )
         _transverse_permeability_fn = functools.partial(
-            fmm_matrices.transverse_permeability_fft_anisotropic,
+            _fmm_matrices.transverse_permeability_fft_anisotropic,
             expansion=expansion,
         )
         tangent_vector_field = None
@@ -993,20 +993,20 @@ def fourier_matrices_patterned_anisotropic_media(
             vector_fn = formulation
         tx, ty = vector_fn(vector_field_source, expansion, primitive_lattice_vectors)
         _transverse_permittivity_fn = functools.partial(
-            fmm_matrices.transverse_permittivity_vector_anisotropic,
+            _fmm_matrices.transverse_permittivity_vector_anisotropic,
             tx=tx,
             ty=ty,
             expansion=expansion,
         )
         _transverse_permeability_fn = functools.partial(
-            fmm_matrices.transverse_permeability_vector_anisotropic,
+            _fmm_matrices.transverse_permeability_vector_anisotropic,
             tx=tx,
             ty=ty,
             expansion=expansion,
         )
         tangent_vector_field = (tx, ty)
 
-    _transform = functools.partial(fft.fourier_convolution_matrix, expansion=expansion)
+    _transform = functools.partial(_fft.fourier_convolution_matrix, expansion=expansion)
 
     (
         permittivity_xx,

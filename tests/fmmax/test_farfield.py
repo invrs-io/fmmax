@@ -13,6 +13,8 @@ from parameterized import parameterized
 
 from fmmax import basis, farfield, fields, fmm, scattering, sources, utils
 
+jax.config.update("jax_enable_x64", True)
+
 
 class FarfieldProfileTest(unittest.TestCase):
     def test_dipole_farfield_matches_analytical_calculation(self):
@@ -425,7 +427,7 @@ class UnflattenTest(unittest.TestCase):
         data = jnp.broadcast_to(
             bz_data[..., jnp.newaxis], bz_data.shape + (expansion.num_terms,)
         )
-        unstacked = farfield.unflatten(data, expansion)
+        unstacked = farfield._unflatten(data, expansion)
 
         i_min = onp.amin(expansion.basis_coefficients[:, 0])
         i_max = onp.amax(expansion.basis_coefficients[:, 0])
@@ -544,7 +546,7 @@ class UnflattenTest(unittest.TestCase):
             batch_shape + (expansion.num_terms, 2),
         )
 
-        unstacked = farfield.unflatten_transverse_wavevectors(
+        unstacked = farfield._unflatten_transverse_wavevectors(
             wavevectors, expansion, bz_axes
         )
 
@@ -601,7 +603,7 @@ class UnflattenTest(unittest.TestCase):
             primitive_lattice_vectors=primitive_lattice_vectors,
             expansion=expansion,
         )
-        unflattened_transverse_wavevectors = farfield.unflatten_transverse_wavevectors(
+        unflattened_transverse_wavevectors = farfield._unflatten_transverse_wavevectors(
             transverse_wavevectors=transverse_wavevectors,
             expansion=expansion,
             brillouin_grid_axes=(0, 1),

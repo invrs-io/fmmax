@@ -5,9 +5,7 @@ Copyright (c) Meta Platforms, Inc. and affiliates.
 
 from typing import Tuple
 
-import jax
 import jax.numpy as jnp
-import numpy as onp
 
 from fmmax import basis, utils
 
@@ -30,7 +28,7 @@ def fourier_convolution_matrix(
     Returns:
         The coefficients, with shape `(num_vectors, num_vectors)`.
     """
-    _validate_shape_for_expansion(x.shape, expansion)
+    basis.validate_shape_for_expansion(x.shape, expansion)
 
     x_fft = jnp.fft.fft2(x)
     x_fft /= jnp.prod(jnp.asarray(x.shape[-2:])).astype(x.dtype)
@@ -73,7 +71,7 @@ def fft(
         The transformed `x`.
     """
     axes: Tuple[int, int] = utils.absolute_axes(axes, x.ndim)  # type: ignore[no-redef]
-    _validate_shape_for_expansion(tuple([x.shape[ax] for ax in axes]), expansion)
+    basis.validate_shape_for_expansion(tuple([x.shape[ax] for ax in axes]), expansion)
 
     x_fft = jnp.fft.fft2(x, axes=axes, norm="forward")
 
@@ -110,7 +108,7 @@ def ifft(
     x_shape = y.shape[:axis] + shape + y.shape[axis + 1 :]
     assert len(x_shape) == y.ndim + 1
 
-    _validate_shape_for_expansion(shape, expansion)
+    basis.validate_shape_for_expansion(shape, expansion)
 
     leading_dims = len(y.shape[:axis])
     trailing_dims = len(y.shape[axis + 1 :])
@@ -123,25 +121,3 @@ def ifft(
     x = jnp.zeros(x_shape, y.dtype)
     x = x.at[tuple(slices)].set(y)
     return jnp.fft.ifft2(x, axes=(leading_dims, leading_dims + 1), norm="forward")
-
-
-def _validate_shape_for_expansion(
-    shape: Tuple[int, ...],
-    expansion: basis.Expansion,
-) -> None:
-    """Validates that the shape is sufficient for the provided expansion."""
-    min_shape = min_array_shape_for_expansion(expansion)
-    if any([d < dmin for d, dmin in zip(shape[-2:], min_shape)]):
-        raise ValueError(
-            f"`shape` is insufficient for `expansion`, the minimum shape for the "
-            f"final two axes is {min_shape} but got shape {shape}."
-        )
-
-
-def min_array_shape_for_expansion(expansion: basis.Expansion) -> Tuple[int, int]:
-    """Returns the minimum allowed shape for an array to be expanded."""
-    with jax.ensure_compile_time_eval():
-        return (
-            int(2 * onp.amax(onp.abs(expansion.basis_coefficients[:, 0])) + 1),
-            int(2 * onp.amax(onp.abs(expansion.basis_coefficients[:, 1])) + 1),
-        )
