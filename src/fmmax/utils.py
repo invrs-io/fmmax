@@ -3,6 +3,8 @@
 Copyright (c) Meta Platforms, Inc. and affiliates.
 """
 
+import functools
+from packaging import version
 from typing import Tuple
 
 import jax
@@ -135,6 +137,12 @@ def eig(
     return _eig(matrix)
 
 
+if version.Version(jax.__version__) > version.Version("0.4.31"):
+    callback = functools.partial(jax.pure_callback, vmap_method="expand_dims")
+else:
+    callback = functools.partial(jax.pure_callback, vectorized=True)
+
+
 def _eig_jax(matrix: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
     """Eigendecomposition using `jax.numpy.linalg.eig`."""
     # If using CPU backend, using `pure_callback` to call a jit-compiled version of
@@ -143,14 +151,13 @@ def _eig_jax(matrix: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
         return jnp.linalg.eig(matrix)
     else:
         dtype = jnp.promote_types(matrix.dtype, jnp.complex64)
-        return jax.pure_callback(
+        return callback(
             _eig_jax_cpu,
             (
                 jnp.ones(matrix.shape[:-1], dtype=dtype),  # Eigenvalues
                 jnp.ones(matrix.shape, dtype=dtype),  # Eigenvectors
             ),
             matrix.astype(dtype),
-            vectorized=True,
         )
 
 
