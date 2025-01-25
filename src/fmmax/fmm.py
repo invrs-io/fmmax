@@ -9,6 +9,7 @@ import functools
 from typing import Callable, Optional, Tuple
 
 import jax.numpy as jnp
+import numpy as onp
 from jax import tree_util
 
 from fmmax import _fft, _fmm_matrices, basis, utils, vector
@@ -284,6 +285,9 @@ class LayerSolveResult:
 
     def __post_init__(self) -> None:
         """Validates shapes of the `LayerSolveResult` attributes."""
+        # Avoid validation when attributes are e.g. tracers.
+        if not isinstance(self.eigenvalues, (jnp.ndarray, onp.ndarray)):
+            return
 
         def _incompatible(arr: jnp.ndarray, reference_shape: Tuple[int, ...]) -> bool:
             ndim_mismatch = arr.ndim != len(reference_shape)
