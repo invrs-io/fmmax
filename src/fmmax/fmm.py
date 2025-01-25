@@ -1058,7 +1058,7 @@ def _fourier_matrices_patterned_anisotropic_media(
 
 
 def _validate_and_broadcast(
-    angular_frequency: jnp.ndarray,
+    wavelength: jnp.ndarray,
     in_plane_wavevector: jnp.ndarray,
     primitive_lattice_vectors: basis.LatticeVectors,
     *permittivities: jnp.ndarray,
@@ -1075,30 +1075,30 @@ def _validate_and_broadcast(
 
     permittivity = permittivities[0]
     if not utils.batch_compatible_shapes(
-        angular_frequency.shape,
+        wavelength.shape,
         in_plane_wavevector.shape[:-1],
         primitive_lattice_vectors.u.shape[:-1],
         primitive_lattice_vectors.v.shape[:-1],
         permittivity.shape[:-2],
     ):
         raise ValueError(
-            f"`angular_frequency`, `in_plane_wavevector`, `primitive_lattice_vectors` "
+            f"`wavelength`, `in_plane_wavevector`, `primitive_lattice_vectors` "
             f"and `permittivity` must be batch-compatible, but got shapes of "
-            f"{angular_frequency.shape}, {in_plane_wavevector.shape}, "
+            f"{wavelength.shape}, {in_plane_wavevector.shape}, "
             f"{primitive_lattice_vectors.u.shape}, "
             f"{primitive_lattice_vectors.v.shape}, and {permittivity.shape}."
         )
 
     num_batch_dims = max(
         [
-            angular_frequency.ndim,
+            wavelength.ndim,
             in_plane_wavevector.ndim - 1,
             primitive_lattice_vectors.u.ndim - 1,
             primitive_lattice_vectors.v.ndim - 1,
             permittivity.ndim - 2,
         ]
     )
-    angular_frequency = utils.atleast_nd(angular_frequency, n=num_batch_dims)
+    wavelength = utils.atleast_nd(wavelength, n=num_batch_dims)
     in_plane_wavevector = utils.atleast_nd(in_plane_wavevector, n=num_batch_dims + 1)
     primitive_lattice_vectors = basis.LatticeVectors(
         u=utils.atleast_nd(primitive_lattice_vectors.u, n=num_batch_dims + 1),
@@ -1109,7 +1109,7 @@ def _validate_and_broadcast(
         [utils.atleast_nd(p, n=num_batch_dims + 2) for p in permittivities]
     )
     return (
-        angular_frequency,
+        wavelength,
         in_plane_wavevector,
         primitive_lattice_vectors,
         permittivities,
