@@ -3,11 +3,10 @@
 Copyright (c) Martin F. Schubert
 """
 
+import dataclasses
 import unittest
 
 import jax.numpy as jnp
-import numpy as onp
-from jax import tree_util
 from parameterized import parameterized
 
 from fmmax import basis, fmm
@@ -22,10 +21,20 @@ EXPANSION = basis.generate_expansion(
 BATCH_SHAPES = [
     [(), (), ()],
     [(3,), (), (10, 1)],
+    [(3,), (), (10, 3)],
+    [(3,), (2, 1), (10, 3)],
 ]
 
 
 class ShapesTest(unittest.TestCase):
+    def _assert_shapes_match(self, a, b):
+        for key in dataclasses.asdict(a).keys():
+            la = a.__dict__[key]
+            lb = b.__dict__[key]
+            if not isinstance(la, jnp.ndarray):
+                continue
+            self.assertSequenceEqual(la.shape, lb.shape, msg=f"`{key}` shape mismatch.")
+
     @parameterized.expand(BATCH_SHAPES)
     def test_patterned_isotropic(
         self,
@@ -49,9 +58,8 @@ class ShapesTest(unittest.TestCase):
             formulation=fmm.Formulation.FFT,
             expansion=EXPANSION,
         )
-        for a, b in zip(tree_util.tree_leaves(result), tree_util.tree_leaves(reference)):
-            self.assertSequenceEqual(a.shape, b.shape)
-        
+        self._assert_shapes_match(reference, result)
+
     @parameterized.expand(BATCH_SHAPES)
     def test_uniform_anisotropic(
         self,
@@ -79,8 +87,7 @@ class ShapesTest(unittest.TestCase):
             formulation=fmm.Formulation.FFT,
             expansion=EXPANSION,
         )
-        for a, b in zip(tree_util.tree_leaves(result), tree_util.tree_leaves(reference)):
-            self.assertSequenceEqual(a.shape, b.shape)
+        self._assert_shapes_match(reference, result)
 
     @parameterized.expand(BATCH_SHAPES)
     def test_patterned_anisotropic(
@@ -109,8 +116,7 @@ class ShapesTest(unittest.TestCase):
             formulation=fmm.Formulation.FFT,
             expansion=EXPANSION,
         )
-        for a, b in zip(tree_util.tree_leaves(result), tree_util.tree_leaves(reference)):
-            self.assertSequenceEqual(a.shape, b.shape)
+        self._assert_shapes_match(reference, result)
 
     @parameterized.expand(BATCH_SHAPES)
     def test_uniform_general_anisotropic(
@@ -144,8 +150,7 @@ class ShapesTest(unittest.TestCase):
             formulation=fmm.Formulation.FFT,
             expansion=EXPANSION,
         )
-        for a, b in zip(tree_util.tree_leaves(result), tree_util.tree_leaves(reference)):
-            self.assertSequenceEqual(a.shape, b.shape)
+        self._assert_shapes_match(reference, result)
 
     @parameterized.expand(BATCH_SHAPES)
     def test_patterned_general_anisotropic(
@@ -179,5 +184,4 @@ class ShapesTest(unittest.TestCase):
             formulation=fmm.Formulation.FFT,
             expansion=EXPANSION,
         )
-        for a, b in zip(tree_util.tree_leaves(result), tree_util.tree_leaves(reference)):
-            self.assertSequenceEqual(a.shape, b.shape)
+        self._assert_shapes_match(reference, result)
