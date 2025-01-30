@@ -596,3 +596,64 @@ class Fields3DTest(unittest.TestCase):
                 grid_shape=(10, 10),
                 num_unit_cells=(1, 1),
             )
+
+
+class PlaneWaveFieldsTest(unittest.TestCase):
+    def test_fwd_bwd_plane_wave_have_expected_relationship(self):
+        primitive_lattice_vectors = basis.LatticeVectors(u=basis.X, v=basis.Y)
+        expansion = basis.generate_expansion(
+            primitive_lattice_vectors=primitive_lattice_vectors,
+            approximate_num_terms=20,
+            truncation=basis.Truncation.CIRCULAR,
+        )
+        solve_result = fmm.eigensolve_isotropic_media(
+            wavelength=jnp.asarray(0.66),
+            in_plane_wavevector=jnp.zeros((2,)),
+            primitive_lattice_vectors=primitive_lattice_vectors,
+            permittivity=jnp.ones((1, 1), dtype=complex),
+            expansion=expansion,
+            formulation=fmm.Formulation.FFT,
+        )
+
+        n = expansion.num_terms
+        amplitude = jnp.zeros((2 * n, 1), dtype=complex).at[0, 0].set(1.0)
+
+        def fields_on_grid(forward_amplitude, backward_amplitude):
+            efield_fourier, hfield_fourier = fields.fields_from_wave_amplitudes(
+                forward_amplitude=forward_amplitude,
+                backward_amplitude=backward_amplitude,
+                layer_solve_result=solve_result,
+            )
+            efield, hfield, _ = fields.fields_on_grid(
+                electric_field=efield_fourier,
+                magnetic_field=hfield_fourier,
+                layer_solve_result=solve_result,
+                shape=(100, 100),
+                num_unit_cells=(1, 1),
+            )
+            return jnp.asarray(efield), jnp.asarray(hfield)
+
+        n = expansion.num_terms
+
+        with self.subTest("normal_incidence"):
+            amplitude = jnp.zeros((2 * n, 1), dtype=complex).at[0, 0].set(1.0)
+            efield_fwd, hfield_fwd = fields_on_grid(
+                amplitude, jnp.zeros_like(amplitude)
+            )
+            efield_bwd, hfield_bwd = fields_on_grid(
+                jnp.zeros_like(amplitude), -amplitude
+            )
+            onp.testing.assert_allclose(efield_fwd, efield_bwd)
+            onp.testing.assert_allclose(hfield_fwd, -hfield_bwd)
+
+        with self.subTest("non_normal_incidence"):
+            amplitude_fwd = jnp.zeros((2 * n, 1), dtype=complex).at[5, 0].set(1.0)
+            amplitude_bwd = jnp.zeros((2 * n, 1), dtype=complex).at[8, 0].set(-1.0)
+            efield_fwd, hfield_fwd = fields_on_grid(
+                amplitude_fwd, jnp.zeros_like(amplitude_fwd)
+            )
+            efield_bwd, hfield_bwd = fields_on_grid(
+                jnp.zeros_like(amplitude_bwd), amplitude_bwd
+            )
+            onp.testing.assert_allclose(efield_fwd.conj(), efield_bwd)
+            onp.testing.assert_allclose(hfield_fwd.conj(), -hfield_bwd)
