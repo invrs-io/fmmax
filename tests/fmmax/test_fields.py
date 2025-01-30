@@ -599,7 +599,7 @@ class Fields3DTest(unittest.TestCase):
 
 
 class PlaneWaveFieldsTest(unittest.TestCase):
-    def test_plane_wave(self):
+    def test_fwd_bwd_plane_wave_have_expected_relationship(self):
         primitive_lattice_vectors = basis.LatticeVectors(u=basis.X, v=basis.Y)
         expansion = basis.generate_expansion(
             primitive_lattice_vectors=primitive_lattice_vectors,
