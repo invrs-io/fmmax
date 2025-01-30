@@ -633,8 +633,27 @@ class PlaneWaveFieldsTest(unittest.TestCase):
             )
             return jnp.asarray(efield), jnp.asarray(hfield)
 
-        efield_fwd, hfield_fwd = fields_on_grid(amplitude, jnp.zeros_like(amplitude))
-        efield_bwd, hfield_bwd = fields_on_grid(jnp.zeros_like(amplitude), -amplitude)
+        n = expansion.num_terms
 
-        onp.testing.assert_allclose(efield_fwd, efield_bwd)
-        onp.testing.assert_allclose(hfield_fwd, -hfield_bwd)
+        with self.subTest("normal_incidence"):
+            amplitude = jnp.zeros((2 * n, 1), dtype=complex).at[0, 0].set(1.0)
+            efield_fwd, hfield_fwd = fields_on_grid(
+                amplitude, jnp.zeros_like(amplitude)
+            )
+            efield_bwd, hfield_bwd = fields_on_grid(
+                jnp.zeros_like(amplitude), -amplitude
+            )
+            onp.testing.assert_allclose(efield_fwd, efield_bwd)
+            onp.testing.assert_allclose(hfield_fwd, -hfield_bwd)
+
+        with self.subTest("non_normal_incidence"):
+            amplitude_fwd = jnp.zeros((2 * n, 1), dtype=complex).at[5, 0].set(1.0)
+            amplitude_bwd = jnp.zeros((2 * n, 1), dtype=complex).at[8, 0].set(-1.0)
+            efield_fwd, hfield_fwd = fields_on_grid(
+                amplitude_fwd, jnp.zeros_like(amplitude_fwd)
+            )
+            efield_bwd, hfield_bwd = fields_on_grid(
+                jnp.zeros_like(amplitude_bwd), amplitude_bwd
+            )
+            onp.testing.assert_allclose(efield_fwd.conj(), efield_bwd)
+            onp.testing.assert_allclose(hfield_fwd.conj(), -hfield_bwd)
