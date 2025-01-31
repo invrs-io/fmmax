@@ -1038,3 +1038,25 @@ def _validate_matching_lengths(*sequences: Sequence) -> None:
     lengths = [len(s) for s in sequences]
     if not all([length == lengths[0] for length in lengths]):
         raise ValueError(f"Encountered incompatible lengths, got lengths of {lengths}")
+
+
+def time_average_z_poynting_flux(
+    electric_fields: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
+    magnetic_fields: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
+) -> jnp.ndarray:
+    """Computes the time-average z-directed Poynting flux, given the physical fields.
+
+    The calculation of Poynting flux is an element-wise operation. When the Poynting
+    flux is calculated over a single unit cell, the resulting array may be *averaged*
+    to yield a flux equal to that in all orders computed by `amplitude_poynting_flux`.
+
+    Args:
+        electric_fields: The tuple of electric fields `(ex, ey, ez)`.
+        magnetic_fields: The tuple of magnetic fields `(hx, hy, hz)`.
+
+    Returns:
+        The time-average z-directed Poynting flux, with the same shape as `ex`.
+    """
+    ex, ey, _ = electric_fields
+    hx, hy, _ = magnetic_fields
+    return jnp.real(ex * jnp.conj(hy) - ey * jnp.conj(hx))

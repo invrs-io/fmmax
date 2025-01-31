@@ -657,3 +657,67 @@ class PlaneWaveFieldsTest(unittest.TestCase):
             )
             onp.testing.assert_allclose(efield_fwd.conj(), efield_bwd)
             onp.testing.assert_allclose(hfield_fwd.conj(), -hfield_bwd)
+
+
+class TimeAveragePoyntingFluxTest(unittest.TestCase):
+    @parameterized.expand([1.0, 3.0])
+    def test_poynting_flux_matches_expected(self, permittivity):
+        primitive_lattice_vectors = basis.LatticeVectors(u=basis.X, v=basis.Y)
+        expansion = basis.generate_expansion(
+            primitive_lattice_vectors=primitive_lattice_vectors,
+            approximate_num_terms=20,
+            truncation=basis.Truncation.CIRCULAR,
+        )
+        solve_result = fmm.eigensolve_isotropic_media(
+            wavelength=jnp.asarray(0.66),
+            in_plane_wavevector=jnp.zeros((2,)),
+            primitive_lattice_vectors=primitive_lattice_vectors,
+            permittivity=jnp.full((1, 1), permittivity, dtype=complex),
+            expansion=expansion,
+            formulation=fmm.Formulation.FFT,
+        )
+        (fwd_real, fwd_imag), (bwd_real, bwd_imag) = jax.random.normal(
+            jax.random.PRNGKey(0), (2, 2, 2 * expansion.num_terms, 1)
+        )
+        fwd = fwd_real + 1j * fwd_imag
+        bwd = bwd_real + 1j * bwd_imag
+        zeros = jnp.zeros_like(fwd)
+
+        def grid_fields(forward_amplitude, backward_amplitude):
+            efield_fourier, hfield_fourier = fields.fields_from_wave_amplitudes(
+                forward_amplitude=forward_amplitude,
+                backward_amplitude=backward_amplitude,
+                layer_solve_result=solve_result,
+            )
+            efield, hfield, _ = fields.fields_on_grid(
+                electric_field=efield_fourier,
+                magnetic_field=hfield_fourier,
+                layer_solve_result=solve_result,
+                shape=(100, 100),
+                num_unit_cells=(1, 1),
+            )
+            return jnp.asarray(efield), jnp.asarray(hfield)
+
+        with self.subTest("forward_amplitudes_only"):
+            onp.testing.assert_allclose(
+                onp.mean(
+                    fields.time_average_z_poynting_flux(*grid_fields(fwd, zeros)),
+                ),
+                onp.sum(fields.amplitude_poynting_flux(fwd, zeros, solve_result)),
+            )
+
+        with self.subTest("backward_amplitudes_only"):
+            onp.testing.assert_allclose(
+                onp.mean(
+                    fields.time_average_z_poynting_flux(*grid_fields(zeros, bwd)),
+                ),
+                onp.sum(fields.amplitude_poynting_flux(zeros, bwd, solve_result)),
+            )
+
+        with self.subTest("forward_and_backward_amplitudes"):
+            onp.testing.assert_allclose(
+                onp.mean(
+                    fields.time_average_z_poynting_flux(*grid_fields(fwd, bwd)),
+                ),
+                onp.sum(fields.amplitude_poynting_flux(fwd, bwd, solve_result)),
+            )
