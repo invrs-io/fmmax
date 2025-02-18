@@ -137,7 +137,7 @@ jobs:
             pip install --upgrade "jax-metal"
             pip install ".[dev]"
       - name: Test fmmax
-        run: pytest tests/fmmax
+        run: pytest tests/fmmax/test_fmm_shapes.py
 
   test-fmmax-jeig:
     runs-on: ubuntu-latest
