@@ -26,7 +26,44 @@ VectorFn = Callable[
 
 @enum.unique
 class Formulation(enum.Enum):
-    """Enumerates supported Fourier modal method formulations."""
+    """Enumerates supported Fourier modal method formulations.
+
+    Each formulation specifies an algorithm to compute the transverse permittivity
+    matrix used in the Fourier modal method. The simplest formulation is `FFT`, in
+    which the blocks of the transverse permittivity matrix are simply the Fourier
+    convolution matrices for their respective permittivity tensor components.
+
+    The remaining formulations are so-called vector formulations, which make use of a
+    vector field generated in the unit cell of the FMM calculation. The vector field
+    defines a local coordinate system that tangent and normal to the interfaces of
+    features in the unit cell, allowing improved convergence through independent
+    treatment of field components that are tangent and normal to the interfaces.
+
+    Formulations:
+        FFT: The simplest formulation.
+        POL: generates a complex linear vector field which has maximum magnitude 1 and
+            a null in the interior of features. In the objective, the gradient of the
+            vector field on the real-space grid is computed; a penalty term discourages
+            non-smooth fields (i.e. fields whose gradient is large).
+        NORMAL: takes the field computed by `POL`, but then normalizes so the magnitude
+            is 1 evereywhere in the unit cell. Where `POL` has zeros, `NORMAL` has
+            discontinuities.
+        JONES: takes the field computed by `POL`, and converts it to a complex
+            elliptical field which has magnitude 1 everywhere and lacks discontinuities.
+        JONES_DIRECT: directly computes a complex elliptical vector field without first
+            finding a linear vector field. Smoothness is evaluated on the real-space
+            grid.
+        POL_FOURIER: generates a complex linear vector field, but with an alternate
+            method of penalizing non-smoothness. Specifically, the Fourier components
+            corresponding to high spatial frequencies are penalized. Compared to `POL`,
+            `POL_FOURIER` can be computed more efficiently.
+        NORMAL_FOURIER: takes the field computed by `POL_FOURIER`, but then normalizes
+            so the magnitude is 1 evereywhere in the unit cell.
+        JONES_FOURIER: takes the field computed by `POL_FOURIER` and converts it to a
+            complex elliptical field.
+        JONES_DIRECT_FOURIER: directly computes a complex elliptical vector field, using
+            Fourier coefficients to penalize non-smoothness.
+    """
 
     FFT = "fft"
     JONES_DIRECT = vector.JONES_DIRECT
@@ -45,7 +82,7 @@ def eigensolve_isotropic_media(
     primitive_lattice_vectors: basis.LatticeVectors,
     permittivity: jnp.ndarray,
     expansion: basis.Expansion,
-    formulation: Formulation | VectorFn,
+    formulation: Formulation | VectorFn = Formulation.JONES_DIRECT_FOURIER,
 ) -> "LayerSolveResult":
     """Performs the eigensolve for a layer with isotropic permittivity.
 
@@ -61,7 +98,8 @@ def eigensolve_isotropic_media(
         permittivity: The permittivity array.
         expansion: The field expansion to be used.
         formulation: Specifies the formulation to be used, or a callable which computes
-            the tangent vector field for a custom vector FMM formulation.
+            the tangent vector field for a custom vector FMM formulation. The default
+            is `Formulation.JONES_DIRECT_FOURIER`.
 
     Returns:
         The `LayerSolveResult`.
