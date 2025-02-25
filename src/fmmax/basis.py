@@ -109,7 +109,7 @@ def validate_shape_for_expansion(shape: Tuple[int, ...], expansion: Expansion) -
 def generate_expansion(
     primitive_lattice_vectors: LatticeVectors,
     approximate_num_terms: int,
-    truncation: Truncation,
+    truncation: Truncation = Truncation.CIRCULAR,
 ) -> Expansion:
     """Generates the expansion for the specified real-space basis.
 
@@ -118,7 +118,8 @@ def generate_expansion(
         approximate_num_terms: The approximate number of terms in the expansion. To
             maintain a symmetric expansion, the total number of terms may differ from
             this value.
-        truncation: The truncation to be used for the expansion.
+        truncation: The truncation to be used for the expansion. The default is
+            `Truncation.CIRCULAR`.
 
     Returns:
         The `Expansion`. The basis coefficients of the expansion are sorted so that
