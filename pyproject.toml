@@ -28,7 +28,7 @@ dependencies = [
 [project.optional-dependencies]
 docs = [
   "matplotlib",
-  "jupyter-book==1.0.3",
+  "jupyter-book==1.0.4",
   "sphinx-autodoc-typehints",
   "sphinx-click",
 ]
