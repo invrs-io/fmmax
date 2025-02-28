@@ -76,13 +76,16 @@ class Formulation(enum.Enum):
     POL_FOURIER = vector.POL_FOURIER
 
 
+_DEFAULT_FORMULATION = Formulation.JONES_DIRECT_FOURIER
+
+
 def eigensolve_isotropic_media(
     wavelength: jnp.ndarray,
     in_plane_wavevector: jnp.ndarray,
     primitive_lattice_vectors: basis.LatticeVectors,
     permittivity: jnp.ndarray,
     expansion: basis.Expansion,
-    formulation: Formulation | VectorFn = Formulation.JONES_DIRECT_FOURIER,
+    formulation: Formulation | VectorFn = _DEFAULT_FORMULATION,
 ) -> "LayerSolveResult":
     """Performs the eigensolve for a layer with isotropic permittivity.
 
@@ -130,7 +133,7 @@ def eigensolve_anisotropic_media(
     permittivity_yy: jnp.ndarray,
     permittivity_zz: jnp.ndarray,
     expansion: basis.Expansion,
-    formulation: Formulation | VectorFn,
+    formulation: Formulation | VectorFn = _DEFAULT_FORMULATION,
 ) -> "LayerSolveResult":
     """Performs the eigensolve for a layer with anisotropic permittivity.
 
@@ -191,7 +194,7 @@ def eigensolve_general_anisotropic_media(
     permeability_yy: jnp.ndarray,
     permeability_zz: jnp.ndarray,
     expansion: basis.Expansion,
-    formulation: Formulation | VectorFn,
+    formulation: Formulation | VectorFn = _DEFAULT_FORMULATION,
     vector_field_source: Optional[jnp.ndarray] = None,
 ) -> "LayerSolveResult":
     """Performs the eigensolve for a general anistropic layer.
