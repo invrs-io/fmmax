@@ -1124,7 +1124,7 @@ def layer_integrated_absorption(
             backward_amplitude=backward_amplitude,
             layer_solve_result=layer_solve_result,
         )
-        efield, hfield, _ = fields_on_grid(
+        (ex, ey, ez), (hx, hy, hz), _ = fields_on_grid(
             electric_field=efield_fourier,
             magnetic_field=hfield_fourier,
             layer_solve_result=layer_solve_result,
@@ -1132,8 +1132,9 @@ def layer_integrated_absorption(
             num_unit_cells=num_unit_cells,
         )
         # Perform Brillouin zone integration.
-        efield = tuple(jnp.sum(field, axis=brillouin_grid_axes) for field in efield)
-        hfield = tuple(jnp.sum(field, axis=brillouin_grid_axes) for field in hfield)
+        bz_integrate = functools.partial(jnp.sum, axis=brillouin_grid_axes)
+        efield = (bz_integrate(ex), bz_integrate(ey), bz_integrate(ez))
+        hfield = (bz_integrate(hx), bz_integrate(hy), bz_integrate(hz))
         return efield, hfield
 
     def scan_fn(
@@ -1151,8 +1152,8 @@ def layer_integrated_absorption(
             jnp.stack([f0, f1], axis=-2) for f0, f1 in zip(hfield_prev, hfield)
         )
         absorption_at_offset = _poynting_vector_divergence(
-            efield=stacked_efield,
-            hfield=stacked_hfield,
+            efield=stacked_efield,  # type: ignore[arg-type]
+            hfield=stacked_hfield,  # type: ignore[arg-type]
             primitive_lattice_vectors=layer_solve_result.primitive_lattice_vectors,
             num_unit_cells=num_unit_cells,
             dz=dz,
