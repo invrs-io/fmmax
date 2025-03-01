@@ -660,17 +660,30 @@ class PlaneWaveFieldsTest(unittest.TestCase):
 
 
 class TimeAveragePoyntingFluxTest(unittest.TestCase):
-    @parameterized.expand([1.0, 3.0])
-    def test_poynting_flux_matches_expected(self, permittivity):
+    @parameterized.expand(
+        [
+            [1.0, 0.0],
+            [1.0, 70.0],
+            [3.0, 0.0],
+            [3.0, 70.0],
+        ]
+    )
+    def test_poynting_flux_matches_expected(self, permittivity, incident_angle_deg):
         primitive_lattice_vectors = basis.LatticeVectors(u=basis.X, v=basis.Y)
         expansion = basis.generate_expansion(
             primitive_lattice_vectors=primitive_lattice_vectors,
             approximate_num_terms=20,
             truncation=basis.Truncation.CIRCULAR,
         )
+        in_plane_wavevector = basis.plane_wave_in_plane_wavevector(
+            wavelength=jnp.asarray(0.55),
+            polar_angle=jnp.deg2rad(incident_angle_deg),
+            azimuthal_angle=jnp.zeros(()),
+            permittivity=jnp.asarray(permittivity),
+        )
         solve_result = fmm.eigensolve_isotropic_media(
             wavelength=jnp.asarray(0.66),
-            in_plane_wavevector=jnp.zeros((2,)),
+            in_plane_wavevector=in_plane_wavevector,
             primitive_lattice_vectors=primitive_lattice_vectors,
             permittivity=jnp.full((1, 1), permittivity, dtype=complex),
             expansion=expansion,
