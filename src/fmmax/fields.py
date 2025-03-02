@@ -4,9 +4,8 @@ Copyright (c) Meta Platforms, Inc. and affiliates.
 """
 
 import functools
-from typing import Callable, Optional, Sequence, Tuple
+from typing import Callable, Sequence, Tuple
 
-import jax
 import jax.numpy as jnp
 
 from fmmax import _fft, basis, fmm, scattering, utils
