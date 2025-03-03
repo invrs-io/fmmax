@@ -3,6 +3,7 @@
 ## Unreleased
 - Set `Formulation.JONES_DIRECT_FOURIER` as the default formulation for all eigensolve functions in `fmm` module.
 - Remove redundant definitions of Poynting flux calculations and use `fields.time_average_z_poynting_flux` instead.
+- Include a missing factor of 0.5 in the flux returned by `amplitude_poynting_flux`, `directional_poynting_flux`, `eigenmode_poynting_flux`, and `time_average_z_poynting_flux` functions. The result is that the time-average Poynting flux is computed from the fields by, `sz = 0.5 * real(ex * hy.conj() - ey * hx.conj())`, as it should be. The factor of 0.5 is also missing from S4, GRCWA, and the [S4 reference paper](https://web.stanford.edu/group/fan/publication/Liu_ComputerPhysicsCommunications_183_2233_2012.pdf#page=3.75) (section 5.1), which is how it came to exist in this code.
 
 ## 0.14.4 (February 25, 2025)
 - Set `Formulation.JONES_DIRECT_FOURIER` as the default formulation for `fmm.eigensolve_isotropic_media`.
