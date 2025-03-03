@@ -261,7 +261,7 @@ def eigenmode_poynting_flux(
     alpha_e = _poynting_flux_a_matrix(layer_solve_result)
     # Note the prefactor of 0.25 (0.5**2) instead of 0.5, as is seen in [2012 Liu].
     # The additional factor comes from `Re(x) = 0.5 * (x + x.conj())`, which is
-    # omitted in that reference.s
+    # omitted in that reference.
     s_eigenmode = jnp.asarray(0.25) * (
         jnp.conj(alpha_e) * alpha_h + jnp.conj(alpha_h) * alpha_e
     )
