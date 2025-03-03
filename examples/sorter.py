@@ -333,7 +333,7 @@ def _simulate_polarization_sorter(
     assert ex.shape == wavelength.shape + field_grid_shape + (4,)
 
     # Compute the Poynting flux on the real-space grid in the substrate.
-    sz = _time_average_z_poynting_flux((ex, ey, ez), (hx, hy, hz))
+    sz = fields.time_average_z_poynting_flux((ex, ey, ez), (hx, hy, hz))
 
     # Create masks for the four quadrants.
     mask = jnp.zeros(field_grid_shape + (1, 4))
@@ -358,16 +358,6 @@ def _simulate_polarization_sorter(
     aux = {"x": x, "y": y, "ex": ex, "ey": ey, "ez": ez, "hx": hx, "hy": hy, "hz": hz}
 
     return response, aux
-
-
-def _time_average_z_poynting_flux(
-    electric_fields: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
-    magnetic_fields: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
-) -> jnp.ndarray:
-    """Computes the time-average z-directed Poynting flux given the physical fields."""
-    ex, ey, _ = electric_fields
-    hx, hy, _ = magnetic_fields
-    return jnp.real(ex * jnp.conj(hy) - ey * jnp.conj(hx))
 
 
 def optimize(steps: int = 1000, approximate_num_terms: int = 400) -> List[jnp.ndarray]:
