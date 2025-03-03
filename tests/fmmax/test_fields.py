@@ -727,3 +727,27 @@ class TimeAveragePoyntingFluxTest(unittest.TestCase):
                 ),
                 onp.sum(fields.amplitude_poynting_flux(fwd, bwd, solve_result)),
             )
+
+
+class PlaneWaveFluxMatchesExpected(unittest.TestCase):
+    def test(self):
+        solve_result = fmm.eigensolve_isotropic_media(
+            wavelength=jnp.asarray(0.55),
+            in_plane_wavevector=jnp.zeros((2,)),
+            primitive_lattice_vectors=basis.LatticeVectors(basis.X, basis.Y),
+            permittivity=jnp.ones((1, 1), dtype=jnp.complex64),
+            expansion=basis.Expansion(onp.asarray([[0, 0]])),
+        )
+
+        fwd = jnp.zeros((2, 1), jnp.complex64).at[0, 0].set(1)
+        bwd = jnp.zeros_like(fwd)
+        (ex, ey, ez), (hx, hy, hz) = fields.fields_from_wave_amplitudes(
+            forward_amplitude=fwd,
+            backward_amplitude=bwd,
+            layer_solve_result=solve_result,
+        )
+        expected_s = 0.5 * (ex * hy.conj() - ey * hx.conj()).real
+        s_fwd, s_bwd = fields.amplitude_poynting_flux(fwd, bwd, solve_result)
+
+        onp.testing.assert_allclose(onp.sum(s_fwd), expected_s)
+        onp.testing.assert_allclose(onp.sum(s_bwd), 0.0)
