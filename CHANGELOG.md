@@ -2,6 +2,7 @@
 
 ## Unreleased
 - Set `Formulation.JONES_DIRECT_FOURIER` as the default formulation for all eigensolve functions in `fmm` module.
+- Remove redundant definitions of Poynting flux calculations and use `fields.time_average_z_poynting_flux` instead.
 
 ## 0.14.4 (February 25, 2025)
 - Set `Formulation.JONES_DIRECT_FOURIER` as the default formulation for `fmm.eigensolve_isotropic_media`.
