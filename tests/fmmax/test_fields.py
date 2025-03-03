@@ -53,13 +53,6 @@ def example_solve(permittivity_batch_shape, wavelength_batch_shape):
     return layer_solve_results, thicknesses, s_matrices_interior
 
 
-def time_average_z_poynting_flux(electric_fields, magnetic_fields):
-    ex, ey, _ = electric_fields
-    hx, hy, _ = magnetic_fields
-    smz = ex * jnp.conj(hy) - ey * jnp.conj(hx)
-    return jnp.real(smz)
-
-
 class ShapesTest(unittest.TestCase):
     @parameterized.expand(
         [
@@ -395,7 +388,7 @@ class PoyntingFluxTest(unittest.TestCase):
                 shape=grid_shape,
                 num_unit_cells=(1, 1),
             )
-            sgz = time_average_z_poynting_flux(eg, hg)
+            sgz = fields.time_average_z_poynting_flux(eg, hg)
             s_forward, s_backward = fields.amplitude_poynting_flux(
                 a, b, layer_solve_result
             )
@@ -459,7 +452,7 @@ class PoyntingFluxTest(unittest.TestCase):
                 shape=grid_shape,
                 num_unit_cells=(1, 1),
             )
-            sgz = time_average_z_poynting_flux(eg, hg)
+            sgz = fields.time_average_z_poynting_flux(eg, hg)
             s_forward, s_backward = fields.directional_poynting_flux(
                 a, b, layer_solve_result
             )
