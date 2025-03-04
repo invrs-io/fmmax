@@ -144,11 +144,14 @@ def amplitude_poynting_flux(
     alpha_e = A @ forward_amplitude
     beta_e = A @ backward_amplitude
 
-    s_forward = jnp.asarray(0.5, dtype=forward_amplitude.dtype) * (
+    # Note the prefactor of 0.25 (0.5**2) instead of 0.5, as is seen in [2012 Liu].
+    # The additional factor comes from `Re(x) = 0.5 * (x + x.conj())`, which is
+    # omitted in that reference.
+    s_forward = jnp.asarray(0.25, dtype=forward_amplitude.dtype) * (
         (jnp.conj(alpha_e) * alpha_h + jnp.conj(alpha_h) * alpha_e)
         + (jnp.conj(beta_h) * alpha_e - jnp.conj(beta_e) * alpha_h)
     )
-    s_backward = jnp.asarray(0.5, dtype=forward_amplitude.dtype) * (
+    s_backward = jnp.asarray(0.25, dtype=forward_amplitude.dtype) * (
         -(jnp.conj(beta_e) * beta_h + jnp.conj(beta_h) * beta_e)
         + jnp.conj(jnp.conj(beta_h) * alpha_e - jnp.conj(beta_e) * alpha_h)
     )
@@ -216,7 +219,10 @@ def directional_poynting_flux(
         a_subset: jnp.ndarray,
         b_subset: jnp.ndarray,
     ) -> jnp.ndarray:
-        return jnp.asarray(0.5) * (
+        # Note the prefactor of 0.25 (0.5**2) instead of 0.5, as is seen in [2012 Liu].
+        # The additional factor comes from `Re(x) = 0.5 * (x + x.conj())`, which is
+        # omitted in that reference.
+        return jnp.asarray(0.25) * (
             jnp.conj(A @ (a_total - b_total)) * (phi @ (a_subset + b_subset))
             + jnp.conj(phi @ (a_total + b_total)) * (A @ (a_subset - b_subset))
         )
@@ -253,7 +259,10 @@ def eigenmode_poynting_flux(
     """
     alpha_h = layer_solve_result.eigenvectors
     alpha_e = _poynting_flux_a_matrix(layer_solve_result)
-    s_eigenmode = jnp.asarray(0.5) * (
+    # Note the prefactor of 0.25 (0.5**2) instead of 0.5, as is seen in [2012 Liu].
+    # The additional factor comes from `Re(x) = 0.5 * (x + x.conj())`, which is
+    # omitted in that reference.
+    s_eigenmode = jnp.asarray(0.25) * (
         jnp.conj(alpha_e) * alpha_h + jnp.conj(alpha_h) * alpha_e
     )
     flux = jnp.sum(jnp.real(s_eigenmode), axis=-2)
@@ -1061,4 +1070,4 @@ def time_average_z_poynting_flux(
     """
     ex, ey, _ = electric_fields
     hx, hy, _ = magnetic_fields
-    return jnp.real(ex * jnp.conj(hy) - ey * jnp.conj(hx))
+    return 0.5 * jnp.real(ex * jnp.conj(hy) - ey * jnp.conj(hx))
