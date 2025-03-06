@@ -10,7 +10,7 @@ import jax
 import jax.numpy as jnp
 import numpy as onp
 
-from fmmax import basis, fmm, _misc
+from fmmax import _misc, basis, fmm
 
 # Enable 64-bit precision for higher accuracy.
 jax.config.update("jax_enable_x64", True)
