@@ -485,7 +485,7 @@ class UnflattenTest(unittest.TestCase):
         )
         flux = flux.reshape(batch_shape + (2 * expansion.num_terms, num_sources))
 
-        unstacked = farfield.unflatten_flux(flux, expansion, bz_axes)
+        unstacked = farfield._unflatten_flux(flux, expansion, bz_axes)
 
         # Compute expected shape of the unflattend flux array.
         bz_axes = tuple([b % flux.ndim for b in bz_axes])
