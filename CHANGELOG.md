@@ -1,6 +1,8 @@
 # Change log
 
 ## Unreleased
+- Make some additional functions and modules private, including the `vector` module.
+- Update docstrings to improve formatting of sphinx auto-docs.
 
 ## 0.14.1 (March 4, 2025)
 - Set `Formulation.JONES_DIRECT_FOURIER` as the default formulation for all eigensolve functions in `fmm` module.
