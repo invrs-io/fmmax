@@ -21,7 +21,6 @@ parts:
    - file: api/fmm
    - file: api/pml
    - file: api/scattering
-   - file: api/translate
    - file: api/sources
+   - file: api/translate
    - file: api/utils
-   - file: api/vector
