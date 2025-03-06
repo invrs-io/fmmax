@@ -12,9 +12,7 @@ import jax.numpy as jnp
 import numpy as onp
 from jax import tree_util
 
-from fmmax import utils
-
-NDArray = onp.ndarray[Any, Any]
+from fmmax import _misc
 
 # Officially defines the x- and y- directions. By convention, the x-axis preceeds
 # the y-axis in our array indexing scheme.
@@ -65,7 +63,7 @@ class Expansion:
         num_terms: The number of terms in the expansion.
     """
 
-    basis_coefficients: NDArray
+    basis_coefficients: onp.ndarray[Any, Any]
 
     def __post_init__(self) -> None:
         if self.basis_coefficients.ndim != 2 or self.basis_coefficients.shape[-1] != 2:
@@ -81,7 +79,15 @@ class Expansion:
 
 @enum.unique
 class Truncation(enum.Enum):
-    """Enumerates truncation modes."""
+    """Enumerates truncation modes.
+
+    Members:
+      - CIRCULAR: Fourier orders are truncated based on the total magnitude of their
+            associated wavevectors.
+      - PARALLELOGRAMIC: Fourier orders are truncated based on the magnitude of
+            their component along ``u`` and ``v`` directions, without regard for their
+            total magnitude.
+    """
 
     CIRCULAR = "circular"
     PARALLELOGRAMIC = "parallelogramic"
@@ -119,10 +125,10 @@ def generate_expansion(
             maintain a symmetric expansion, the total number of terms may differ from
             this value.
         truncation: The truncation to be used for the expansion. The default is
-            `Truncation.CIRCULAR`.
+            ``Truncation.CIRCULAR``.
 
     Returns:
-        The `Expansion`. The basis coefficients of the expansion are sorted so that
+        The ``Expansion``. The basis coefficients of the expansion are sorted so that
         the zeroth-order term is first.
     """
     reciprocal_vectors = primitive_lattice_vectors.reciprocal
@@ -200,9 +206,9 @@ def plane_wave_in_plane_wavevector(
             and azimuthal angle are specified.
 
     Returns:
-        The fundamental transverse wavevector, i.e. `(kx0, ky0)`.
+        The fundamental transverse wavevector, i.e. ``(kx0, ky0)``.
     """
-    angular_frequency = utils.angular_frequency_for_wavelength(wavelength)
+    angular_frequency = _misc.angular_frequency_for_wavelength(wavelength)
     kx0 = (
         angular_frequency
         * jnp.sin(polar_angle)
@@ -232,7 +238,7 @@ def brillouin_zone_in_plane_wavevector(
         primitive_lattice_vectors: The primitive vectors for the real-space lattice.
 
     Returns:
-        The in-plane wavevectors, with shape `brillouin_grid_shape + (2,)`.
+        The in-plane wavevectors, with shape ``brillouin_grid_shape + (2,)``.
     """
     if len(brillouin_grid_shape) != 2 or brillouin_grid_shape < (1, 1):
         raise ValueError(
@@ -301,7 +307,7 @@ def _basis_coefficients_circular(
 
     The coefficients generate a set of lattice vectors from a basis using a circular
     truncation, so that all lattice vectors lying within a circular region with area
-    given by `num * u ⨉ v` are included, where `⨉` is the cross product. The size of
+    given by ``num * u ⨉ v`` are included, where ``⨉`` is the cross product. The size of
     the set will generally be close to `approximate_num_terms`.
 
     Args:
@@ -311,7 +317,7 @@ def _basis_coefficients_circular(
             this value.
 
     Returns:
-        The coefficients, with shape `(num_vectors, 2)`. The final axis gives the
+        The coefficients, with shape ``(num_vectors, 2)``. The final axis gives the
         coefficient for the first and second vector in the basis.
     """
     # Generate candidate coefficients. These will include more coefficients than needed;
@@ -356,7 +362,7 @@ def _basis_coefficients_parallelogramic(
 
     The coefficients generate a set of lattice vectors from a basis using a
     parallelogramic truncation. The size of the set will generally be close to
-    `approximate_num_terms`.
+    ``approximate_num_terms``.
 
     Args:
         primitive_lattice_vectors: Primitive vectors for the reciprocal-space lattice.
@@ -365,7 +371,7 @@ def _basis_coefficients_parallelogramic(
             differ from this value.
 
     Returns:
-        The coefficients, with shape `(num_vectors, 2)`. The final axis gives the
+        The coefficients, with shape ``(num_vectors, 2)``. The final axis gives the
         coefficient for the first and second vector in the basis.
     """
 
@@ -413,7 +419,7 @@ def _basis_coefficients_parallelogramic(
 
 
 def _cross_product(x: jnp.ndarray, y: jnp.ndarray) -> jnp.ndarray:
-    """Computes the cross product of 2D vectors `x` and `y`."""
+    """Computes the cross product of 2D vectors ``x`` and ``y``."""
     return x[..., 0] * y[..., 1] - x[..., 1] * y[..., 0]
 
 

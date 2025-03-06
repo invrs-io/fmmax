@@ -51,10 +51,12 @@ def apply_uniaxial_pml(
 
     Returns:
         The permittivity and permeability tensor elements,
-        `(
-            (eps_xx, eps_xy, eps_yx, eps_yy, eps_zz),
-            (mu_xx, mu_xy, mu_yx, mu_yy, mu_zz),
-        )`.
+        ::
+
+            (
+                (eps_xx, eps_xy, eps_yx, eps_yy, eps_zz),
+                (mu_xx, mu_xy, mu_yx, mu_yy, mu_zz)
+            )
     """
     permittivity = _crop_and_edge_pad_pml_region(
         permittivity, widths=(pml_params.num_x, pml_params.num_y)

@@ -9,7 +9,7 @@ from typing import Callable, Dict, List, Tuple
 import jax
 import jax.numpy as jnp
 
-from fmmax import _fft, basis, utils
+from fmmax import _fft, _misc, basis
 
 # Absolute tolerance for detecting whether a field is 1D. If the angle of the field at
 # every point differs by less than this value from a reference value, the field is 1D.
@@ -148,7 +148,7 @@ def compute_tangent_field(
     """
     arr = jax.lax.stop_gradient(arr)
     batch_shape = arr.shape[:-2]
-    arr = utils.atleast_nd(arr, n=3)
+    arr = _misc.atleast_nd(arr, n=3)
     arr = arr.reshape((-1,) + arr.shape[-2:])
 
     primitive_lattice_vectors = basis.LatticeVectors(

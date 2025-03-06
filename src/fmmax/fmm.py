@@ -12,7 +12,7 @@ import jax.numpy as jnp
 import numpy as onp
 from jax import tree_util
 
-from fmmax import _fft, _fmm_matrices, basis, utils, vector
+from fmmax import _eig, _fft, _fmm_matrices, _misc, _vector, basis
 
 # xx, xy, yx, yy, and zz components of permittivity or permeability.
 TensorComponents = Tuple[
@@ -29,7 +29,7 @@ class Formulation(enum.Enum):
     """Enumerates supported Fourier modal method formulations.
 
     Each formulation specifies an algorithm to compute the transverse permittivity
-    matrix used in the Fourier modal method. The simplest formulation is `FFT`, in
+    matrix used in the Fourier modal method. The simplest formulation is ``FFT``, in
     which the blocks of the transverse permittivity matrix are simply the Fourier
     convolution matrices for their respective permittivity tensor components.
 
@@ -39,41 +39,42 @@ class Formulation(enum.Enum):
     features in the unit cell, allowing improved convergence through independent
     treatment of field components that are tangent and normal to the interfaces.
 
-    Formulations:
-        FFT: The simplest formulation.
+    Members:
+        FFT: The simplest formulation, which does not consider the orientation of
+            interfaces of features in a permittivity array.
         POL: generates a complex linear vector field which has maximum magnitude 1 and
             a null in the interior of features. In the objective, the gradient of the
             vector field on the real-space grid is computed; a penalty term discourages
             non-smooth fields (i.e. fields whose gradient is large).
-        NORMAL: takes the field computed by `POL`, but then normalizes so the magnitude
-            is 1 evereywhere in the unit cell. Where `POL` has zeros, `NORMAL` has
-            discontinuities.
-        JONES: takes the field computed by `POL`, and converts it to a complex
+        NORMAL: takes the field computed by ``POL``, but then normalizes so the
+            magnitude is 1 evereywhere in the unit cell. Where ``POL`` has zeros,
+            ``NORMAL`` has discontinuities.
+        JONES: takes the field computed by ``POL``, and converts it to a complex
             elliptical field which has magnitude 1 everywhere and lacks discontinuities.
         JONES_DIRECT: directly computes a complex elliptical vector field without first
             finding a linear vector field. Smoothness is evaluated on the real-space
             grid.
         POL_FOURIER: generates a complex linear vector field, but with an alternate
             method of penalizing non-smoothness. Specifically, the Fourier components
-            corresponding to high spatial frequencies are penalized. Compared to `POL`,
-            `POL_FOURIER` can be computed more efficiently.
-        NORMAL_FOURIER: takes the field computed by `POL_FOURIER`, but then normalizes
+            corresponding to high spatial frequencies are penalized. Compared to
+            ``POL``, ``POL_FOURIER`` can be computed more efficiently.
+        NORMAL_FOURIER: takes the field computed by ``POL_FOURIER``, but then normalizes
             so the magnitude is 1 evereywhere in the unit cell.
-        JONES_FOURIER: takes the field computed by `POL_FOURIER` and converts it to a
+        JONES_FOURIER: takes the field computed by ``POL_FOURIER`` and converts it to a
             complex elliptical field.
         JONES_DIRECT_FOURIER: directly computes a complex elliptical vector field, using
             Fourier coefficients to penalize non-smoothness.
     """
 
     FFT = "fft"
-    JONES_DIRECT = vector.JONES_DIRECT
-    JONES = vector.JONES
-    NORMAL = vector.NORMAL
-    POL = vector.POL
-    JONES_DIRECT_FOURIER = vector.JONES_DIRECT_FOURIER
-    JONES_FOURIER = vector.JONES_FOURIER
-    NORMAL_FOURIER = vector.NORMAL_FOURIER
-    POL_FOURIER = vector.POL_FOURIER
+    JONES_DIRECT = _vector.JONES_DIRECT
+    JONES = _vector.JONES
+    NORMAL = _vector.NORMAL
+    POL = _vector.POL
+    JONES_DIRECT_FOURIER = _vector.JONES_DIRECT_FOURIER
+    JONES_FOURIER = _vector.JONES_FOURIER
+    NORMAL_FOURIER = _vector.NORMAL_FOURIER
+    POL_FOURIER = _vector.POL_FOURIER
 
 
 _DEFAULT_FORMULATION = Formulation.JONES_DIRECT_FOURIER
@@ -91,21 +92,21 @@ def eigensolve_isotropic_media(
 
     This function performs either a uniform-layer or patterned-layer eigensolve,
     depending on the shape of the trailing dimensions of a given layer permittivity.
-    When the final two dimensions have shape `(1, 1)`, the layer is treated as
+    When the final two dimensions have shape ``(1, 1)``, the layer is treated as
     uniform. Otherwise, it is patterned.
 
     Args:
         wavelength: The free space wavelength of the excitation.
-        in_plane_wavevector: `(kx0, ky0)`.
+        in_plane_wavevector: ``(kx0, ky0)``.
         primitive_lattice_vectors: The primitive vectors for the real-space lattice.
-        permittivity: The permittivity array.
+        permittivity: The permittivity array, with shape ``(..., nx, ny)``.
         expansion: The field expansion to be used.
         formulation: Specifies the formulation to be used, or a callable which computes
             the tangent vector field for a custom vector FMM formulation. The default
-            is `Formulation.JONES_DIRECT_FOURIER`.
+            is ``Formulation.JONES_DIRECT_FOURIER``.
 
     Returns:
-        The `LayerSolveResult`.
+        The ``LayerSolveResult``.
     """
     if permittivity.shape[-2:] == (1, 1):
         _eigensolve_fn = _eigensolve_uniform_isotropic_media
@@ -139,15 +140,15 @@ def eigensolve_anisotropic_media(
 
     This function performs either a uniform-layer or patterned-layer eigensolve,
     depending on the shape of the trailing dimensions of a given layer permittivity.
-    When the final two dimensions have shape `(1, 1)`, the layer is treated as
+    When the final two dimensions have shape ``(1, 1)``, the layer is treated as
     uniform. Otherwise, it is patterned.
 
     Args:
         wavelength: The free space wavelength of the excitation.
-        in_plane_wavevector: `(kx0, ky0)`.
+        in_plane_wavevector: ``(kx0, ky0)``.
         primitive_lattice_vectors: The primitive vectors for the real-space lattice.
         permittivity_xx: The xx-component of the permittivity tensor, with
-            shape `(..., nx, ny)`.
+            shape ``(..., nx, ny)``.
         permittivity_xy: The xy-component of the permittivity tensor.
         permittivity_yx: The yx-component of the permittivity tensor.
         permittivity_yy: The yy-component of the permittivity tensor.
@@ -157,7 +158,7 @@ def eigensolve_anisotropic_media(
             the tangent vector field for a custom vector FMM formulation.
 
     Returns:
-        The `LayerSolveResult`.
+        The ``LayerSolveResult``.
     """
     return eigensolve_general_anisotropic_media(
         wavelength=wavelength,
@@ -204,15 +205,15 @@ def eigensolve_general_anisotropic_media(
 
     This function performs either a uniform-layer or patterned-layer eigensolve,
     depending on the shape of the trailing dimensions of a given layer permittivity.
-    When the final two dimensions have shape `(1, 1)`, the layer is treated as
+    When the final two dimensions have shape ``(1, 1)``, the layer is treated as
     uniform. Otherwise, it is patterned.
 
     Args:
         wavelength: The free space wavelength of the excitation.
-        in_plane_wavevector: `(kx0, ky0)`.
+        in_plane_wavevector: ``(kx0, ky0)``.
         primitive_lattice_vectors: The primitive vectors for the real-space lattice.
         permittivity_xx: The xx-component of the permittivity tensor, with
-            shape `(..., nx, ny)`.
+            shape ``(..., nx, ny)``.
         permittivity_xy: The xy-component of the permittivity tensor.
         permittivity_yx: The yx-component of the permittivity tensor.
         permittivity_yy: The yy-component of the permittivity tensor.
@@ -226,12 +227,12 @@ def eigensolve_general_anisotropic_media(
         formulation: Specifies the formulation to be used, or a callable which computes
             the tangent vector field for a custom vector FMM formulation.
         vector_field_source: Optional array used to calculate the vector field for
-            vector formulations of the FMM. If not specified, `(permittivity_xx +
-            permittivity_yy) / 2` is used. Ignored for the `FFT` formulation. Should
+            vector formulations of the FMM. If not specified, ``(permittivity_xx +
+            permittivity_yy) / 2`` is used. Ignored for the ``FFT`` formulation. Should
             have shape matching the permittivities and permeabilities.
 
     Returns:
-        The `LayerSolveResult`.
+        The ``LayerSolveResult``.
     """
     if permittivity_xx.shape[-2:] == (1, 1):
         _eigensolve_fn = _eigensolve_uniform_general_anisotropic_media
@@ -288,9 +289,9 @@ class LayerSolveResult:
         transverse_permeability_matrix: The transverse permeability matrix, needed to
             calculate the omega-script-k matrix from equation 26 of [2012 Liu]. This
             is needed to generate the layer scattering matrix.
-        tangent_vector_field: The tangent vector field `(tx, ty)` used to compute the
+        tangent_vector_field: The tangent vector field ``(tx, ty)`` used to compute the
             transverse permittivity matrix, if a vector FMM formulation is used. If
-            the `FFT` formulation is used, the vector field is `None`.
+            the ``FFT`` formulation is used, the vector field is ``None``.
     """
 
     wavelength: jnp.ndarray
@@ -325,14 +326,14 @@ class LayerSolveResult:
         )
 
     def __post_init__(self) -> None:
-        """Validates shapes of the `LayerSolveResult` attributes."""
+        """Validates shapes of the ``LayerSolveResult`` attributes."""
         # Avoid validation when attributes are e.g. tracers.
         if not isinstance(self.eigenvalues, (jnp.ndarray, onp.ndarray)):
             return
 
         def _incompatible(arr: jnp.ndarray, reference_shape: Tuple[int, ...]) -> bool:
             ndim_mismatch = arr.ndim != len(reference_shape)
-            batch_compatible = utils.batch_compatible_shapes(arr.shape, reference_shape)
+            batch_compatible = _misc.batch_compatible_shapes(arr.shape, reference_shape)
             return ndim_mismatch or not batch_compatible
 
         if _incompatible(self.wavelength, self.batch_shape):
@@ -437,13 +438,13 @@ def _eigensolve_uniform_isotropic_media(
 
     Args:
         wavelength: The free space wavelength of the excitation.
-        in_plane_wavevector: `(kx0, ky0)`.
+        in_plane_wavevector: ``(kx0, ky0)``.
         primitive_lattice_vectors: The primitive vectors for the real-space lattice.
-        permittivity: The scalar permittivity for the layer, with shape `(..., 1, 1)`.
+        permittivity: The scalar permittivity for the layer, with shape ``(..., 1, 1)``.
         expansion: The field expansion to be used.
 
     Returns:
-        The `LayerSolveResult`.
+        The ``LayerSolveResult``.
     """
     (
         wavelength,
@@ -480,7 +481,7 @@ def _eigensolve_uniform_isotropic_media(
         shape=batch_shape + (num_eigenvalues, num_eigenvalues),
     )
 
-    angular_frequency = utils.angular_frequency_for_wavelength(wavelength)
+    angular_frequency = _misc.angular_frequency_for_wavelength(wavelength)
     kx = transverse_wavevectors[..., 0]
     ky = transverse_wavevectors[..., 1]
     eigenvalues = jnp.sqrt(
@@ -497,14 +498,14 @@ def _eigensolve_uniform_isotropic_media(
     inverse_z_permittivity_diag = jnp.broadcast_to(
         1 / permittivity[..., jnp.newaxis], diag_shape
     )
-    inverse_z_permittivity_matrix = utils.diag(inverse_z_permittivity_diag)
+    inverse_z_permittivity_matrix = _misc.diag(inverse_z_permittivity_diag)
 
     z_permittivity_diag = jnp.broadcast_to(permittivity[..., jnp.newaxis], diag_shape)
-    z_permittivity_matrix = utils.diag(z_permittivity_diag)
-    z_permeability_matrix = utils.diag(jnp.ones(diag_shape, dtype=dtype))
+    z_permittivity_matrix = _misc.diag(z_permittivity_diag)
+    z_permeability_matrix = _misc.diag(jnp.ones(diag_shape, dtype=dtype))
 
     transverse_diag_shape = permittivity.shape + (2 * expansion.num_terms,)
-    transverse_permeability_matrix = utils.diag(
+    transverse_permeability_matrix = _misc.diag(
         jnp.ones(transverse_diag_shape, dtype=dtype)
     )
 
@@ -539,7 +540,7 @@ def _eigensolve_patterned_isotropic_media(
 
     Args:
         wavelength: The free space wavelength of the excitation.
-        in_plane_wavevector: `(kx0, ky0)`.
+        in_plane_wavevector: ``(kx0, ky0)``.
         primitive_lattice_vectors: The primitive vectors for the real-space lattice.
         permittivity: The permittivity array.
         expansion: The field expansion to be used.
@@ -547,7 +548,7 @@ def _eigensolve_patterned_isotropic_media(
             the tangent vector field for a custom vector FMM formulation.
 
     Returns:
-        The `LayerSolveResult`.
+        The ``LayerSolveResult``.
     """
     (
         wavelength,
@@ -575,12 +576,12 @@ def _eigensolve_patterned_isotropic_media(
         dtype=z_permittivity_matrix.dtype,
     )
     zeros = jnp.zeros_like(ones)
-    z_permeability_matrix = utils.diag(ones)
-    inverse_z_permeability_matrix = utils.diag(ones)
+    z_permeability_matrix = _misc.diag(ones)
+    inverse_z_permeability_matrix = _misc.diag(ones)
     transverse_permeability_matrix = jnp.block(
         [
-            [utils.diag(ones), utils.diag(zeros)],
-            [utils.diag(zeros), utils.diag(ones)],
+            [_misc.diag(ones), _misc.diag(zeros)],
+            [_misc.diag(zeros), _misc.diag(ones)],
         ]
     )
 
@@ -614,16 +615,16 @@ def _eigensolve_uniform_general_anisotropic_media(
 
     Args:
         wavelength: The free space wavelength of the excitation.
-        in_plane_wavevector: `(kx0, ky0)`.
+        in_plane_wavevector: ``(kx0, ky0)``.
         primitive_lattice_vectors: The primitive vectors for the real-space lattice.
-        permittivities: The elements of the permittivity tensor: `(eps_xx, eps_xy,
-            eps_yx, eps_yy, eps_zz)`, each having shape `(..., nx, ny)`.
-        permeabilities: The elements of the permeability tensor: `(mu_xx, mu_xy,
-            mu_yx, mu_yy, mu_zz)`, each having shape `(..., nx, ny)`.
+        permittivities: The elements of the permittivity tensor: ``(eps_xx, eps_xy,
+            eps_yx, eps_yy, eps_zz)``, each having shape ``(..., nx, ny)``.
+        permeabilities: The elements of the permeability tensor: ``(mu_xx, mu_xy,
+            mu_yx, mu_yy, mu_zz)``, each having shape ``(..., nx, ny)``.
         expansion: The field expansion to be used.
 
     Returns:
-        The `LayerSolveResult`.
+        The ``LayerSolveResult``.
     """
     if not all([p.shape[-2:] == (1, 1) for p in permittivities + permeabilities]):
         raise ValueError(
@@ -665,15 +666,15 @@ def _eigensolve_uniform_general_anisotropic_media(
     permittivity_yx = jnp.broadcast_to(jnp.squeeze(permittivity_yx, axis=-1), shape)
     permittivity_yy = jnp.broadcast_to(jnp.squeeze(permittivity_yy, axis=-1), shape)
     permittivity_zz = jnp.broadcast_to(jnp.squeeze(permittivity_zz, axis=-1), shape)
-    z_permittivity_matrix = utils.diag(permittivity_zz)
-    inverse_z_permittivity_matrix = utils.diag(1 / permittivity_zz)
+    z_permittivity_matrix = _misc.diag(permittivity_zz)
+    inverse_z_permittivity_matrix = _misc.diag(1 / permittivity_zz)
     # Note that the matrix element ordering and signs differ from [2012 Liu]
     # equation 37, but are consistent with the definition in equation 15. Equation 37
     # is likely in error.
     transverse_permittivity_matrix = jnp.block(
         [
-            [utils.diag(permittivity_yy), utils.diag(-permittivity_yx)],
-            [utils.diag(-permittivity_xy), utils.diag(permittivity_xx)],
+            [_misc.diag(permittivity_yy), _misc.diag(-permittivity_yx)],
+            [_misc.diag(-permittivity_xy), _misc.diag(permittivity_xx)],
         ]
     )
 
@@ -682,14 +683,14 @@ def _eigensolve_uniform_general_anisotropic_media(
     permeability_yx = jnp.broadcast_to(jnp.squeeze(permeability_yx, axis=-1), shape)
     permeability_yy = jnp.broadcast_to(jnp.squeeze(permeability_yy, axis=-1), shape)
     permeability_zz = jnp.broadcast_to(jnp.squeeze(permeability_zz, axis=-1), shape)
-    z_permeability_matrix = utils.diag(permeability_zz)
-    inverse_z_permeability_matrix = utils.diag(1 / permeability_zz)
+    z_permeability_matrix = _misc.diag(permeability_zz)
+    inverse_z_permeability_matrix = _misc.diag(1 / permeability_zz)
     # Note that the matrix element ordering for the transverse permittivity and
     # permeability matrices differs.
     transverse_permeability_matrix = jnp.block(
         [
-            [utils.diag(permeability_xx), utils.diag(permeability_xy)],
-            [utils.diag(permeability_yx), utils.diag(permeability_yy)],
+            [_misc.diag(permeability_xx), _misc.diag(permeability_xy)],
+            [_misc.diag(permeability_yx), _misc.diag(permeability_yy)],
         ]
     )
 
@@ -725,12 +726,12 @@ def _eigensolve_patterned_general_anisotropic_media(
 
     Args:
         wavelength: The free space wavelength of the excitation.
-        in_plane_wavevector: `(kx0, ky0)`.
+        in_plane_wavevector: ``(kx0, ky0)``.
         primitive_lattice_vectors: The primitive vectors for the real-space lattice.
-        permittivities: The elements of the permittivity tensor: `(eps_xx, eps_xy,
-            eps_yx, eps_yy, eps_zz)`, each having shape `(..., nx, ny)`.
-        permeabilities: The elements of the permeability tensor: `(mu_xx, mu_xy,
-            mu_yx, mu_yy, mu_zz)`, each having shape `(..., nx, ny)`.
+        permittivities: The elements of the permittivity tensor: ``(eps_xx, eps_xy,
+            eps_yx, eps_yy, eps_zz)``, each having shape ``(..., nx, ny)``.
+        permeabilities: The elements of the permeability tensor: ``(mu_xx, mu_xy,
+            mu_yx, mu_yy, mu_zz)``, each having shape ``(..., nx, ny)``.
         expansion: The field expansion to be used.
         formulation: Specifies the formulation to be used, or a callable which computes
             the tangent vector field for a custom vector FMM formulation.
@@ -738,7 +739,7 @@ def _eigensolve_patterned_general_anisotropic_media(
             matching the permittivities and permeabilities.
 
     Returns:
-        The `LayerSolveResult`.
+        The ``LayerSolveResult``.
     """
     (
         wavelength,
@@ -833,7 +834,7 @@ def _numerical_eigensolve(
 
     Args:
         wavelength: The free space wavelength of the excitation.
-        in_plane_wavevector: `(kx0, ky0)`.
+        in_plane_wavevector: ``(kx0, ky0)``.
         primitive_lattice_vectors: The primitive vectors for the real-space lattice.
         inverse_z_permittivity_matrix: The fourier-transformed inverse of zz-component
             of permittivity.
@@ -846,12 +847,12 @@ def _numerical_eigensolve(
         transverse_permeability_matrix: The fourier-transformed transverse permeability
             matrix.
         expansion: The field expansion to be used.
-        tangent_vector_field: The tangent vector field `(tx, ty)` used to compute the
+        tangent_vector_field: The tangent vector field ``(tx, ty)`` used to compute the
             transverse permittivity matrix, if a vector FMM formulation is used. If
-            the `FFT` formulation is used, the vector field is `None`.
+            the ``FFT`` formulation is used, the vector field is ``None``.
 
     Returns:
-        The `LayerSolveResult`.
+        The ``LayerSolveResult``.
     """
     # Transverse wavevectors are the `k + G` from equation 5 of [2012 Liu].
     transverse_wavevectors = basis.transverse_wavevectors(
@@ -877,7 +878,7 @@ def _numerical_eigensolve(
         transverse_permittivity_matrix @ omega_script_k_matrix
         - k_matrix @ transverse_permeability_matrix
     )
-    eigenvalues_squared, eigenvectors = utils.eig(matrix)
+    eigenvalues_squared, eigenvectors = _eig.eig(matrix)
     eigenvalues = jnp.sqrt(eigenvalues_squared)
     eigenvalues = _select_eigenvalues_sign(eigenvalues)
     return LayerSolveResult(
@@ -917,7 +918,7 @@ def _fourier_matrices_patterned_isotropic_media(
 
     Args:
         primitive_lattice_vectors: The primitive vectors for the real-space lattice.
-        permittivity: The permittivity array, with shape `(..., nx, ny)`.
+        permittivity: The permittivity array, with shape ``(..., nx, ny)``.
         expansion: The field expansion to be used.
         formulation: Specifies the formulation to be used, or a callable which computes
             the tangent vector field for a custom vector FMM formulation.
@@ -928,9 +929,9 @@ def _fourier_matrices_patterned_isotropic_media(
         z_permittivity_matrix: The Fourier convolution matrix for the z-component
             of the permittivity.
         transverse_permittivity_matrix: The transverse permittivity matrix.
-        tangent_vector_field: The tangent vector field `(tx, ty)` used to compute the
+        tangent_vector_field: The tangent vector field ``(tx, ty)`` used to compute the
             transverse permittivity matrix, if a vector FMM formulation is used. If
-            the `FFT` formulation is used, the vector field is `None`.
+            the ``FFT`` formulation is used, the vector field is ``None``.
     """
     if formulation is Formulation.FFT:
         _transverse_permittivity_fn = functools.partial(
@@ -940,7 +941,7 @@ def _fourier_matrices_patterned_isotropic_media(
         tangent_vector_field = None
     else:
         if isinstance(formulation, Formulation):
-            vector_fn = vector.VECTOR_FIELD_SCHEMES[formulation.value]
+            vector_fn = _vector.VECTOR_FIELD_SCHEMES[formulation.value]
         else:
             vector_fn = formulation
         tx, ty = vector_fn(permittivity, expansion, primitive_lattice_vectors)
@@ -996,10 +997,10 @@ def _fourier_matrices_patterned_anisotropic_media(
 
     Args:
         primitive_lattice_vectors: The primitive vectors for the real-space lattice.
-        permittivities: The elements of the permittivity tensor: `(eps_xx, eps_xy,
-            eps_yx, eps_yy, eps_zz)`, each having shape `(..., nx, ny)`.
-        permeabilities: The elements of the permeability tensor: `(mu_xx, mu_xy,
-            mu_yx, mu_yy, mu_zz)`, each having shape `(..., nx, ny)`.
+        permittivities: The elements of the permittivity tensor: ``(eps_xx, eps_xy,
+            eps_yx, eps_yy, eps_zz)``, each having shape ``(..., nx, ny)``.
+        permeabilities: The elements of the permeability tensor: ``(mu_xx, mu_xy,
+            mu_yx, mu_yy, mu_zz)``, each having shape ``(..., nx, ny)``.
         expansion: The field expansion to be used.
         formulation: Specifies the formulation to be used.
         vector_field_source: Array used to calculate the vector field, with shape
@@ -1012,15 +1013,15 @@ def _fourier_matrices_patterned_anisotropic_media(
             of the permittivity.
         transverse_permittivity_matrix: The transverse permittivity matrix from
             equation 15 of [2012 Liu], computed in the manner prescribed by
-            `fmm_formulation`.
+            ``fmm_formulation``.
         inverse_z_permeability_matrix: The Fourier convolution matrix for the inverse
             of the z-component of the permeability.
         z_permeability_matrix: The Fourier convolution matrix for the z-component
             of the permeability.
         transverse_permeability_matrix: The transverse permittivity matrix.
-        tangent_vector_field: The tangent vector field `(tx, ty)` used to compute the
+        tangent_vector_field: The tangent vector field ``(tx, ty)`` used to compute the
             transverse permittivity matrix, if a vector FMM formulation is used. If
-            the `FFT` formulation is used, the vector field is `None`.
+            the ``FFT`` formulation is used, the vector field is ``None``.
     """
     if formulation is Formulation.FFT:
         _transverse_permittivity_fn = functools.partial(
@@ -1034,7 +1035,7 @@ def _fourier_matrices_patterned_anisotropic_media(
         tangent_vector_field = None
     else:
         if isinstance(formulation, Formulation):
-            vector_fn = vector.VECTOR_FIELD_SCHEMES[formulation.value]
+            vector_fn = _vector.VECTOR_FIELD_SCHEMES[formulation.value]
         else:
             vector_fn = formulation
         tx, ty = vector_fn(vector_field_source, expansion, primitive_lattice_vectors)
@@ -1119,7 +1120,7 @@ def _validate_and_broadcast(
         raise ValueError("Got permittivities with differing shapes.")
 
     permittivity = permittivities[0]
-    if not utils.batch_compatible_shapes(
+    if not _misc.batch_compatible_shapes(
         wavelength.shape,
         in_plane_wavevector.shape[:-1],
         primitive_lattice_vectors.u.shape[:-1],
@@ -1143,15 +1144,15 @@ def _validate_and_broadcast(
             permittivity.ndim - 2,
         ]
     )
-    wavelength = utils.atleast_nd(wavelength, n=num_batch_dims)
-    in_plane_wavevector = utils.atleast_nd(in_plane_wavevector, n=num_batch_dims + 1)
+    wavelength = _misc.atleast_nd(wavelength, n=num_batch_dims)
+    in_plane_wavevector = _misc.atleast_nd(in_plane_wavevector, n=num_batch_dims + 1)
     primitive_lattice_vectors = basis.LatticeVectors(
-        u=utils.atleast_nd(primitive_lattice_vectors.u, n=num_batch_dims + 1),
-        v=utils.atleast_nd(primitive_lattice_vectors.v, n=num_batch_dims + 1),
+        u=_misc.atleast_nd(primitive_lattice_vectors.u, n=num_batch_dims + 1),
+        v=_misc.atleast_nd(primitive_lattice_vectors.v, n=num_batch_dims + 1),
     )
 
     permittivities = tuple(
-        [utils.atleast_nd(p, n=num_batch_dims + 2) for p in permittivities]
+        [_misc.atleast_nd(p, n=num_batch_dims + 2) for p in permittivities]
     )
     return (
         wavelength,

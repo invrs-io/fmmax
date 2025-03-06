@@ -6,7 +6,7 @@ Copyright (c) Meta Platforms, Inc. and affiliates.
 import jax.numpy as jnp
 import matplotlib.pyplot as plt  # type: ignore[import]
 
-from fmmax import basis, vector
+from fmmax import _vector, basis
 
 
 def plot_vector_fields(
@@ -30,8 +30,8 @@ def plot_vector_fields(
 
     fig = plt.figure(figsize=(7, 4.5))
 
-    for i, scheme_name in enumerate(vector.VECTOR_FIELD_SCHEMES):
-        tx, ty = vector.VECTOR_FIELD_SCHEMES[scheme_name](
+    for i, scheme_name in enumerate(_vector.VECTOR_FIELD_SCHEMES):
+        tx, ty = _vector.VECTOR_FIELD_SCHEMES[scheme_name](
             arr, expansion, primitive_lattice_vectors
         )
 

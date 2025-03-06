@@ -11,7 +11,7 @@ import jax
 import jax.numpy as jnp
 from jax import tree_util
 
-from fmmax import fmm, utils
+from fmmax import _misc, fmm
 
 
 @dataclasses.dataclass
@@ -22,11 +22,12 @@ class ScatteringMatrix:
     stack is the "end" layer.
 
     The scattering matrix relates the forward-going and backward-going waves
-    on the two sides of a layer stack, which are labeled `a` and `b` respectively.
+    on the two sides of a layer stack, which are labeled ``a`` and ``b`` respectively.
 
     Note that forward going fields are defined at the *start* of a layer while
     backward-going fields are defined at the *end* of a layer, as depicted below.
     This is discussed near equation 4.1 in [1999 Whittaker].
+    ::
 
                 |             |           |         |           |
                 |   layer 0   |  layer 1  |   ...   |  layer N  |
@@ -37,11 +38,13 @@ class ScatteringMatrix:
 
     Following the convention of [1999 Whittaker], the terms a_N and b_0 are
     obtained from,
+    ::
+
 
                     a_N = s11 @ a_0 + s12 @ b_N
                     b_0 = s21 @ a_0 + s22 @ b_N
 
-    Besides the actual scattering matrix element, the `ScatteringMatrix` stores
+    Besides the actual scattering matrix element, the ``ScatteringMatrix`` stores
     information about the start and end layers, which are needed to extend the
     scattering matrix to include more layers.
 
@@ -81,10 +84,10 @@ def stack_s_matrix(
     Args:
         layer_solve_results: The eigensolve results for layers in the stack.
         layer_thicknesses: The thicknesses for layers in the stack.
-        force_x64_solve: If `True`, matrix solves will be done with 64 bit precision.
+        force_x64_solve: If ``True``, matrix solves will be done with 64 bit precision.
 
     Returns:
-        The `ScatteringMatrix`.
+        The ``ScatteringMatrix``.
     """
     return _stack_s_matrices(
         layer_solve_results, layer_thicknesses, force_x64_solve=force_x64_solve
@@ -98,19 +101,19 @@ def stack_s_matrices_interior(
 ) -> Tuple[Tuple[ScatteringMatrix, ScatteringMatrix], ...]:
     """Computes scattering matrices before and after each layer in the stack.
 
-    Specifically, for each layer `i` two `ScatteringMatrix` are returned. The
-    first relates fields in the substack `0, ..., i`, while the second relates
-    the fields in the substack `i, ..., N`, where `N` is the maximum layer
+    Specifically, for each layer ``i`` two ``ScatteringMatrix`` are returned. The
+    first relates fields in the substack ``0, ..., i``, while the second relates
+    the fields in the substack ``i, ..., N``, where ``N`` is the maximum layer
     index. These two scattering matrices are denoted as the corresponding
     to the "before" substack and the "after" substack.
 
     Args:
         layer_solve_results: The eigensolve results for layers in the stack.
         layer_thicknesses: The thicknesses for layers in the stack.
-        force_x64_solve: If `True`, matrix solves will be done with 64 bit precision.
+        force_x64_solve: If ``True``, matrix solves will be done with 64 bit precision.
 
     Returns:
-        The tuple of `(scattering_matrix_before, scattering_matrix_after)`.
+        The tuple of ``(scattering_matrix_before, scattering_matrix_after)``.
     """
     before = _stack_s_matrices(
         layer_solve_results,
@@ -158,10 +161,10 @@ def _stack_s_matrices(
     Args:
         layer_solve_results: The eigensolve results for layers in the stack.
         layer_thicknesses: The thicknesses for layers in the stack.
-        force_x64_solve: If `True`, matrix solves will be done with 64 bit precision.
+        force_x64_solve: If ``True``, matrix solves will be done with 64 bit precision.
 
     Returns:
-        The tuple of `ScatteringMatrix`.
+        The tuple of ``ScatteringMatrix``.
     """
     if len(layer_solve_results) != len(layer_thicknesses):
         raise ValueError(
@@ -171,7 +174,7 @@ def _stack_s_matrices(
 
     # The initial scattering matrix is just the identity matrix, with the
     # necessary batch dimensions.
-    eye = utils.diag(jnp.ones_like(layer_solve_results[0].eigenvalues))
+    eye = _misc.diag(jnp.ones_like(layer_solve_results[0].eigenvalues))
     layer_s_matrix_0 = ScatteringMatrix(
         s11=eye,
         s12=jnp.zeros_like(eye),
@@ -217,7 +220,7 @@ def stack_s_matrix_scan(
 ) -> ScatteringMatrix:
     """Computes the scattering matrix for a stack of layers by a scan operation.
 
-    Unlike `stack_s_matrix`, this function uses a scan operation rather than a python
+    Unlike ``stack_s_matrix``, this function uses a scan operation rather than a python
     for loop, which can lead to significantly smaller programs and shorter compile
     times. However, it requires that the layer solve results and thicknesses for be
     represented in the leading batch dimension of the arguments.
@@ -228,7 +231,7 @@ def stack_s_matrix_scan(
     Args:
         layer_solve_results: The layer solve results for all layers in the stack.
         layer_thicknesses: The layer thicknesses for all layers in the stack.
-        force_x64_solve: If `True`, matrix solves will be done with 64 bit precision.
+        force_x64_solve: If ``True``, matrix solves will be done with 64 bit precision.
 
     Returns:
         The scattering matrix for the stack.
@@ -241,7 +244,7 @@ def stack_s_matrix_scan(
             f"{layer_solve_results.batch_shape[0]} and {layer_thicknesses.shape[0]}."
         )
 
-    eye = utils.diag(
+    eye = _misc.diag(
         jnp.ones(
             layer_solve_results.eigenvalues.shape[1:],
             dtype=layer_solve_results.eigenvalues.dtype,
@@ -293,7 +296,7 @@ def redheffer_star_product(
     solve = functools.partial(_solve, force_x64_solve=force_x64_solve)
 
     # See https://en.wikipedia.org/wiki/Redheffer_star_product
-    eye = utils.diag(jnp.ones_like(a11[..., 0]))
+    eye = _misc.diag(jnp.ones_like(a11[..., 0]))
     s11 = b11 @ solve(eye - a12 @ b21, a11)
     s12 = b12 + b11 @ solve(eye - a12 @ b21, a12 @ b22)
     s21 = a21 + a22 @ solve(eye - b21 @ a12, b21 @ a11)
@@ -322,10 +325,10 @@ def append_layer(
         s_matrix: The existing scattering matrix.
         next_layer_solve_result: The eigensolve result for the layer to append.
         next_layer_thickness: The thickness for the layer to append.
-        force_x64_solve: If `True`, matrix solves will be done with 64 bit precision.
+        force_x64_solve: If ``True``, matrix solves will be done with 64 bit precision.
 
     Returns:
-        The new `ScatteringMatrix`.
+        The new ``ScatteringMatrix``.
     """
     s11_next, s12_next, s21_next, s22_next = _extend_s_matrix(
         s_matrix_blocks=(s_matrix.s11, s_matrix.s12, s_matrix.s21, s_matrix.s22),
@@ -359,10 +362,10 @@ def prepend_layer(
         s_matrix: The existing scattering matrix.
         next_layer_solve_result: The eigensolve result for the layer to append.
         next_layer_thickness: The thickness for the layer to append.
-        force_x64_solve: If `True`, matrix solves will be done with 64 bit precision.
+        force_x64_solve: If ``True``, matrix solves will be done with 64 bit precision.
 
     Returns:
-        The new `ScatteringMatrix`.
+        The new ``ScatteringMatrix``.
     """
     # To prepend a layer, we compute the scattering matrix that results from
     # appending the layer to the reversed stack. The scattering matrix for
@@ -401,15 +404,15 @@ def _extend_s_matrix(
     The approach here follows section 5 of [1999 Whittaker].
 
     Args:
-        s_matrix_blocks: The elements `(s11, s12, s21, s22)`.
+        s_matrix_blocks: The elements ``(s11, s12, s21, s22)``.
         layer_solve_result: The eigensolve result of the ending layer.
         layer_thickness: The thickness of the ending layer.
         next_layer_solve_result: The eigensolve result for the layer to append.
         next_layer_thickness: The thickness for the layer to append.
-        force_x64_solve: If `True`, matrix solves will be done with 64 bit precision.
+        force_x64_solve: If ``True``, matrix solves will be done with 64 bit precision.
 
     Returns:
-        The new `ScatteringMatrix`.
+        The new ``ScatteringMatrix``.
     """
     # Alias for brevity: eigenvalues, eigenvectors, and omega-k matrix.
     q = layer_solve_result.eigenvalues
@@ -497,7 +500,7 @@ def _pair_s_matrix(
 
     # The computation is identical to that in `_extend_s_matrix` with `s11` and `s22`
     # being the identity, and `s12` and `s21` being zero.
-    fd_diag = jnp.expand_dims(utils.diag(fd), tuple(range(i11.ndim - fd.ndim - 1)))
+    fd_diag = jnp.expand_dims(_misc.diag(fd), tuple(range(i11.ndim - fd.ndim - 1)))
     s11 = solve(i11, fd_diag)
     s12 = solve(i11, -i12 * fd_next[..., jnp.newaxis, :])
     s21 = i21 @ s11
@@ -519,14 +522,14 @@ def set_end_layer_thickness(
     s_matrix: ScatteringMatrix,
     thickness: jnp.ndarray,
 ) -> ScatteringMatrix:
-    """Returns a new `ScatteringMatrix` with a modified end layer thickness.
+    """Returns a new ``ScatteringMatrix`` with a modified end layer thickness.
 
     Args:
-        s_matrix: The initial `ScatteringMatrix`.
+        s_matrix: The initial ``ScatteringMatrix``.
         thickness: The desired thickness of the layer.
 
     Returns:
-        The new `ScatteringMatrix`.
+        The new ``ScatteringMatrix``.
     """
     q = s_matrix.end_layer_solve_result.eigenvalues
     fd = jnp.exp(1j * q * (thickness - s_matrix.end_layer_thickness))
@@ -546,14 +549,14 @@ def set_start_layer_thickness(
     s_matrix: ScatteringMatrix,
     thickness: jnp.ndarray,
 ) -> ScatteringMatrix:
-    """Returns a new `ScatteringMatrix` with a modified start layer thickness.
+    """Returns a new ``ScatteringMatrix`` with a modified start layer thickness.
 
     Args:
-        s_matrix: The initial `ScatteringMatrix`.
+        s_matrix: The initial ``ScatteringMatrix``.
         thickness: The desired thickness of the layer.
 
     Returns:
-        The new `ScatteringMatrix`.
+        The new ``ScatteringMatrix``.
     """
     q = s_matrix.start_layer_solve_result.eigenvalues
     fd = jnp.exp(1j * q * (thickness - s_matrix.start_layer_thickness))
@@ -594,7 +597,7 @@ tree_util.register_pytree_node(
 
 
 def _solve(a: jnp.ndarray, b: jnp.ndarray, *, force_x64_solve: bool) -> jnp.ndarray:
-    """Solves `A @ x = b`, optionally using 64-bit precision."""
+    """Solves ``A @ x = b``, optionally using 64-bit precision."""
     output_dtype = jnp.promote_types(a.dtype, b.dtype)
     if force_x64_solve and jax.config.read("jax_enable_x64"):
         a = a.astype(jnp.promote_types(a.dtype, jnp.float64))

@@ -8,7 +8,7 @@ from typing import Tuple
 
 import jax.numpy as jnp
 
-from fmmax import _fft, basis, utils
+from fmmax import _fft, _misc, basis
 
 
 def omega_script_k_matrix_patterned(
@@ -22,7 +22,7 @@ def omega_script_k_matrix_patterned(
     script_k_matrix = script_k_matrix_patterned(
         z_permittivity_matrix, transverse_wavevectors
     )
-    angular_frequency = utils.angular_frequency_for_wavelength(wavelength)
+    angular_frequency = _misc.angular_frequency_for_wavelength(wavelength)
     angular_frequency_squared = angular_frequency[..., jnp.newaxis, jnp.newaxis] ** 2
     return angular_frequency_squared * transverse_permeability_matrix - script_k_matrix
 
@@ -42,12 +42,12 @@ def script_k_matrix_uniform(
     return jnp.block(
         [
             [
-                utils.diag(ky / permittivity[..., jnp.newaxis] * ky),
-                utils.diag(-ky / permittivity[..., jnp.newaxis] * kx),
+                _misc.diag(ky / permittivity[..., jnp.newaxis] * ky),
+                _misc.diag(-ky / permittivity[..., jnp.newaxis] * kx),
             ],
             [
-                utils.diag(-kx / permittivity[..., jnp.newaxis] * ky),
-                utils.diag(kx / permittivity[..., jnp.newaxis] * kx),
+                _misc.diag(-kx / permittivity[..., jnp.newaxis] * ky),
+                _misc.diag(kx / permittivity[..., jnp.newaxis] * kx),
             ],
         ]
     )
@@ -61,8 +61,8 @@ def script_k_matrix_patterned(
     dtype = jnp.promote_types(z_permittivity_matrix, transverse_wavevectors)
     kx = transverse_wavevectors[..., 0].astype(dtype)
     ky = transverse_wavevectors[..., 1].astype(dtype)
-    z_inv_kx = jnp.linalg.solve(z_permittivity_matrix.astype(dtype), utils.diag(kx))
-    z_inv_ky = jnp.linalg.solve(z_permittivity_matrix.astype(dtype), utils.diag(ky))
+    z_inv_kx = jnp.linalg.solve(z_permittivity_matrix.astype(dtype), _misc.diag(kx))
+    z_inv_ky = jnp.linalg.solve(z_permittivity_matrix.astype(dtype), _misc.diag(ky))
     return jnp.block(
         [
             [ky[..., :, jnp.newaxis] * z_inv_ky, -ky[..., :, jnp.newaxis] * z_inv_kx],
@@ -79,8 +79,8 @@ def k_matrix_patterned(
     dtype = jnp.promote_types(z_permeability_matrix, transverse_wavevectors)
     kx = transverse_wavevectors[..., 0].astype(dtype)
     ky = transverse_wavevectors[..., 1].astype(dtype)
-    z_inv_kx = jnp.linalg.solve(z_permeability_matrix.astype(dtype), utils.diag(kx))
-    z_inv_ky = jnp.linalg.solve(z_permeability_matrix.astype(dtype), utils.diag(ky))
+    z_inv_kx = jnp.linalg.solve(z_permeability_matrix.astype(dtype), _misc.diag(kx))
+    z_inv_ky = jnp.linalg.solve(z_permeability_matrix.astype(dtype), _misc.diag(ky))
     return jnp.block(
         [
             [kx[..., :, jnp.newaxis] * z_inv_kx, kx[..., :, jnp.newaxis] * z_inv_ky],
