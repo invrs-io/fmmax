@@ -22,13 +22,13 @@ def translate_layer_solve_result(
     compute savings for structures such as slanted gratings.
 
     Args:
-        solve_result: The `LayerSolveResult` for the permittivity distribution prior
+        solve_result: The ``LayerSolveResult`` for the permittivity distribution prior
             to translation.
-        dx: The translation of the permittivity distribution along the `x` direction.
-        dy: The translation of the permittivity distribution along the `y` direction.
+        dx: The translation of the permittivity distribution along the ``x`` direction.
+        dy: The translation of the permittivity distribution along the ``y`` direction.
 
     Returns:
-        The `LayerSolveResult` for the layer with translated permittivity.
+        The ``LayerSolveResult`` for the layer with translated permittivity.
     """
     assert dx.shape == dy.shape == ()
 

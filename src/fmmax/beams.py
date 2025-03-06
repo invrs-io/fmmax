@@ -31,15 +31,15 @@ def shifted_rotated_fields(
 ) -> Fields:
     """Computes the fields on a rotated coordinate system.
 
-    Given `fields_fn(xf, yf, zf) -> (exf, eyf, ezf), (hxf, hyf, hzf)` which
+    Given ``fields_fn(xf, yf, zf) -> (exf, eyf, ezf), (hxf, hyf, hzf)`` which
     returns the fields in the field coordinate system, returns the fields
-    at coordinates `(x, y, z)`, which are rotated from `(xf, yf, zf)`, by
-    the specified `polar_angle`, `azimuthal_angle`, and `polarization_angle`.
+    at coordinates ``(x, y, z)``, which are rotated from ``(xf, yf, zf)``, by
+    the specified ``polar_angle``, ``azimuthal_angle``, and ``polarization_angle``.
 
-    A beam propagating in the `zf` direction, polarized in the `xf` direction
-    will be propagating in the direction specified by `polar_angle` and
-    `azimuthal_angle`, with polarization rotated about the propagation
-    direction by `polarization_angle`.
+    For example, a beam propagating in the ``zf`` direction, polarized in the
+    ``xf`` direction will be propagating in the direction specified by
+    ``polar_angle`` and ``azimuthal_angle``, with polarization rotated about the
+    propagation direction by ``polarization_angle``.
 
     Args:
         field_fn: Function which returns the fields in the field coordinate
@@ -49,7 +49,7 @@ def shifted_rotated_fields(
         y: y-coordinates of the desired output fields.
         z: z-coordinates of the desired output fields.
         beam_origin_x: The x-origin of the beam coordinate system in the
-            `(x, y, z)` unit system.
+            ``(x, y, z)`` unit system.
         beam_origin_y: The y-origin of the beam coordinate system.
         beam_origin_z: The z-origin of the beam coordinate system.
         polar_angle: The rotation angle about the y-axis.
@@ -57,7 +57,7 @@ def shifted_rotated_fields(
         polarization_angle: The rotation angle about the propagation axis.
 
     Returns:
-        The fields `((ex, ey, ez), (hx, hy, hz))` at the specified coordinates.
+        The fields ``((ex, ey, ez), (hx, hy, hz))`` at the specified coordinates.
     """
     mat = _rotation_matrix(polar_angle, azimuthal_angle, polarization_angle)
     mat = jnp.expand_dims(mat, range(x.ndim))

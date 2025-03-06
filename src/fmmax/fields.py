@@ -49,7 +49,7 @@ def colocate_amplitudes(
     layer_solve_result: fmm.LayerSolveResult,
     layer_thickness: jnp.ndarray,
 ) -> Tuple[jnp.ndarray, jnp.ndarray]:
-    """Compute the forward- and backward-propagating wave amplitudes at `z_offset`.
+    """Compute the forward- and backward-propagating wave amplitudes at ``z_offset``.
 
     The calculation is for a batch of amplitudes, with the batch dimension being
     final dimension.
@@ -65,7 +65,7 @@ def colocate_amplitudes(
         layer_thickness: The thickness of the layer.
 
     Returns:
-        The forward- and backward-propagating wave amplitudes at `z`.
+        The forward- and backward-propagating wave amplitudes at ``z_offset``.
     """
     _validate_amplitudes_shape(
         (forward_amplitude_start, backward_amplitude_end),
@@ -117,7 +117,7 @@ def amplitude_poynting_flux(
     should not be interpreted as the total forward and backward flux, but only
     the total flux associated with the forward and backward eigenmodes.
 
-    If the total forward and backward flux is desired, `directional_poynting_flux`
+    If the total forward and backward flux is desired, ``directional_poynting_flux``
     should be used instead. This function should only be used in the specific
     case where the flux associated with the forward and backward eigenmodes is
     needed.
@@ -126,7 +126,7 @@ def amplitude_poynting_flux(
         forward_amplitude: The amplitude of the forward eigenmodes, with a
             trailing batch dimension.
         backward_amplitude: The amplitude of the backward eigenmodes, at the
-            same location in space as the `forward_amplitude`.
+            same location in space as the ``forward_amplitude``.
         layer_solve_result: The results of the layer eigensolve.
 
     Returns:
@@ -175,7 +175,7 @@ def directional_poynting_flux(
     vector yields zero forward flux and nonzero backward flux.
 
     If the flux associated with the forward and backward eigenmodes is desired,
-    `amplitude_poynting_flux` should be used instead. This function serves the
+    ``amplitude_poynting_flux`` should be used instead. This function serves the
     more typical case where the total forward flux and total backward flux is
     desired.
 
@@ -183,7 +183,7 @@ def directional_poynting_flux(
         forward_amplitude: The amplitude of the forward eigenmodes, with a
             trailing batch dimension.
         backward_amplitude: The amplitude of the backward eigenmodes, at the
-            same location in space as the `forward_amplitude`.
+            same location in space as the ``forward_amplitude``.
         layer_solve_result: The results of the layer eigensolve.
 
     Returns:
@@ -248,7 +248,7 @@ def eigenmode_poynting_flux(
     """Returns the total Poynting flux for each eigenmode.
 
     The result is equivalent to summing over the orders of the flux calculated
-    by `amplitude_poynting_flux`, if the calculation is done for each eigenmode
+    by ``amplitude_poynting_flux``, if the calculation is done for each eigenmode
     with a one-hot forward amplitude vector.
 
     Args:
@@ -297,18 +297,18 @@ def fields_from_wave_amplitudes(
 
     The calculation is for a batch of amplitudes, with the batch axis being the
     final axis. There can also be leading batch axes. Accordingly, amplitudes
-    should have shape `(..., 2 * num_terms, num_amplitudes)`. The trailing batch
+    should have shape ``(..., 2 * num_terms, num_amplitudes)``. The trailing batch
     dimension is preferred because it allows matrix-matrix multiplication instead
     of batched matrix-vector multiplication.
 
     Args:
         forward_amplitude: The amplitude of the forward-propagating waves.
         backward_amplitude: The amplitude of the backward-propagating waves,
-            at the same location in space as the `forward_amplitude`.
+            at the same location in space as the ``forward_amplitude``.
         layer_solve_result: The results of the layer eigensolve.
 
     Returns:
-        The electric and magnetic fields, `((ex, ey, ez), (hx, hy, hz))`.
+        The electric and magnetic fields, ``((ex, ey, ez), (hx, hy, hz))``.
     """
     _validate_amplitudes_shape(
         (forward_amplitude, backward_amplitude),
@@ -415,7 +415,7 @@ def fields_on_grid(
     """Transforms the fields from fourier representation to the grid.
 
     The fields within an array of unit cells is returned, with the number of
-    cells in each direction given by `num_unit_cells`.
+    cells in each direction given by ``num_unit_cells``.
 
     The calculation is for a batch of fields, with the batch axis being the
     final axis. There can also be leading batch axes. Accordingly, fields
@@ -424,15 +424,15 @@ def fields_on_grid(
     of batched matrix-vector multiplication.
 
     Args:
-        electric_field: `(ex, ey, ez)` electric field Fourier amplitudes.
-        magnetic_field: `(hx, hy, hz)` magnetic field Fourier amplitudes.
+        electric_field: ``(ex, ey, ez)`` electric field Fourier amplitudes.
+        magnetic_field: ``(hx, hy, hz)`` magnetic field Fourier amplitudes.
         layer_solve_result: The results of the layer eigensolve.
         shape: The shape of the grid.
         num_unit_cells: The number of unit cells along each direction.
 
     Returns:
-        The electric field `(ex, ey, ez)`, magnetic field `(hx, hy, hz)`,
-        and the grid coordinates `(x, y)`.
+        The electric field ``(ex, ey, ez)``, magnetic field ``(hx, hy, hz)``,
+        and the grid coordinates ``(x, y)``.
     """
     return _fields_on_grid(
         electric_field=electric_field,
@@ -512,22 +512,22 @@ def fields_on_coordinates(
 
     The calculation is for a batch of fields, with the batch axis being the
     final axis. There can also be leading batch axes. Accordingly, fields
-    should have shape `(..., 2 * num_terms, num_amplitudes)`. The trailing batch
+    should have shape ``(..., 2 * num_terms, num_amplitudes)``. The trailing batch
     dimension is preferred because it allows matrix-matrix multiplication instead
     of batched matrix-vector multiplication.
 
     Args:
-        electric_field: `(ex, ey, ez)` electric field Fourier amplitudes.
-        magnetic_field: `(hx, hy, hz)` magnetic field Fourier amplitudes.
+        electric_field: ``(ex, ey, ez)`` electric field Fourier amplitudes.
+        magnetic_field: ``(hx, hy, hz)`` magnetic field Fourier amplitudes.
         layer_solve_result: The results of the layer eigensolve.
         x: The x-coordinates where the fields are sought.
         y: The y-coordinates where the fields are sought, with shape matching
-            that of `x`.
+            that of ``x``.
 
     Returns:
-        The electric field `(ex, ey, ez)`, magnetic field `(hx, hy, hz)`,
-        and the grid coordinates `(x, y)`. The field arrays each have shape
-        `batch_shape + coordinates_shape + (num_amplitudes)`.
+        The electric field ``(ex, ey, ez)``, magnetic field ``(hx, hy, hz)``,
+        and the grid coordinates ``(x, y)``. The field arrays each have shape
+        ``batch_shape + coordinates_shape + (num_amplitudes,)``.
     """
     _validate_amplitudes_shape(
         electric_field + magnetic_field,
@@ -587,13 +587,13 @@ def stack_amplitudes_interior(
 
     The calculation is for a batch of amplitudes, with the batch axis being the
     final axis. There can also be leading batch axes. Accordingly, amplitudes
-    should have shape `(..., 2 * num_terms, num_amplitudes)`. The trailing batch
+    should have shape ``(..., 2 * num_terms, num_amplitudes)``. The trailing batch
     dimension is preferred because it allows matrix-matrix multiplication instead
     of batched matrix-vector multiplication.
 
     Args:
         s_matrices_interior: The scattering matrices for the substacks before
-            and after each layer, as computed by `stack_s_matrices_interior`.
+            and after each layer, as computed by ``stack_s_matrices_interior``.
         forward_amplitude_0_start: The forward-propagating wave amplitude at the
             start of the first layer of the stack.
         backward_amplitude_N_end: The backward-propagating wave amplitude at the
@@ -631,7 +631,7 @@ def stack_amplitudes_interior_with_source(
     Args:
         s_matrices_interior_before_source: The interior scattering matrices for
             the layer substrack before the source, as computed by
-            `stack_s_matrices_interior`.
+            ``stack_s_matrices_interior``.
         s_matrices_interior_after_source: The interior scattering matrices for
             the layer substack after the source.
         backward_amplitude_before_end: The backward-going wave amplitude at the
@@ -666,7 +666,7 @@ def amplitudes_interior(
 
     The calculation is for a batch of amplitudes, with the batch axis being the
     final axis. There can also be leading batch axes. Accordingly, amplitudes
-    should have shape `(..., 2 * num_terms, num_amplitudes)`. The trailing batch
+    should have shape ``(..., 2 * num_terms, num_amplitudes)``. The trailing batch
     dimension is preferred because it allows matrix-matrix multiplication instead
     of batched matrix-vector multiplication.
 
@@ -731,7 +731,7 @@ def stack_fields_3d_auto_grid(
         num_unit_cells: The number of unit cells along each direction.
 
     Returns:
-        The electric and magnetic fields and grid coordinates, `(ef, hf, (x, y, z))`.
+        The electric and magnetic fields and grid coordinates, ``(ef, hf, (x, y, z))``.
     """
     primitive_lattice_vectors = layer_solve_results[0].primitive_lattice_vectors
     grid_shape = (
@@ -771,7 +771,7 @@ def stack_fields_3d(
         num_unit_cells: The number of unit cells along each direction.
 
     Returns:
-        The electric and magnetic fields and grid coordinates, `(ef, hf, (x, y, z))`.
+        The electric and magnetic fields and grid coordinates, ``(ef, hf, (x, y, z))``.
     """
     return _stack_fields_3d(
         amplitudes_interior=amplitudes_interior,
@@ -796,7 +796,7 @@ def stack_fields_3d_on_coordinates(
 ) -> Tuple[jnp.ndarray, jnp.ndarray, Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]]:
     """Computes the three-dimensional fields in a stack at specified coordinates.
 
-    This function may be significantly faster than `stack_fields_3d` in cases where
+    This function may be significantly faster than ``stack_fields_3d`` in cases where
     fields in the full simulation domain are not required.
 
     Args:
@@ -807,10 +807,10 @@ def stack_fields_3d_on_coordinates(
         layer_znum: The number of gridpoints in the z-direction for each layer.
         x: The x-coordinates where the fields are sought.
         y: The y-coordinates where the fields are sought, with shape matching
-            that of `x`.
+            that of ``x``.
 
     Returns:
-        The electric and magnetic fields and grid coordinates, `(ef, hf, (x, y, z))`.
+        The electric and magnetic fields and grid coordinates, ``(ef, hf, (x, y, z))``.
     """
     return _stack_fields_3d(
         amplitudes_interior=amplitudes_interior,
@@ -844,7 +844,7 @@ def layer_fields_3d(
         num_unit_cells: The number of unit cells along each direction.
 
     Returns:
-        The electric and magnetic fields and grid coordinates, `(ef, hf, (x, y, z))`.
+        The electric and magnetic fields and grid coordinates, ``(ef, hf, (x, y, z))``.
     """
     return _layer_fields_3d(
         forward_amplitude_start=forward_amplitude_start,
@@ -871,7 +871,7 @@ def layer_fields_3d_on_coordinates(
 ) -> Tuple[jnp.ndarray, jnp.ndarray, Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]]:
     """Computes the three-dimensional fields in a layer at specified coordinates
 
-    This function may be significantly faster than `layer_fields_3d` in cases where
+    This function may be significantly faster than ``layer_fields_3d`` in cases where
     fields in the full simulation domain are not required.
 
     Args:
@@ -884,10 +884,10 @@ def layer_fields_3d_on_coordinates(
         layer_znum: The number of gridpoints in the z-direction for the layer.
         x: The x-coordinates where the fields are sought.
         y: The y-coordinates where the fields are sought, with shape matching
-            that of `x`.
+            that of ``x``.
 
     Returns:
-        The electric and magnetic fields and grid coordinates, `(ef, hf, (x, y, z))`.
+        The electric and magnetic fields and grid coordinates, ``(ef, hf, (x, y, z))``.
     """
     return _layer_fields_3d(
         forward_amplitude_start=forward_amplitude_start,
@@ -918,7 +918,7 @@ def _stack_fields_3d(
             Fourier amplitudes and layer solve result.
 
     Returns:
-        The electric and magnetic fields and grid coordinates, `(ef, hf, (x, y, z))`.
+        The electric and magnetic fields and grid coordinates, ``(ef, hf, (x, y, z))``.
     """
     _validate_matching_lengths(
         amplitudes_interior, layer_solve_results, layer_thicknesses, layer_znum
@@ -978,7 +978,7 @@ def _layer_fields_3d(
             Fourier amplitudes and layer solve result.
 
     Returns:
-        The electric and magnetic fields and grid coordinates, `(ef, hf, (x, y, z))`.
+        The electric and magnetic fields and grid coordinates, ``(ef, hf, (x, y, z))``.
     """
 
     assert forward_amplitude_start.shape == backward_amplitude_end.shape
@@ -1045,7 +1045,7 @@ def _layer_fields_3d(
 
 
 def _validate_matching_lengths(*sequences: Sequence) -> None:
-    """Validates that all of `args` have matching length."""
+    """Validates that all of ``args`` have matching length."""
     lengths = [len(s) for s in sequences]
     if not all([length == lengths[0] for length in lengths]):
         raise ValueError(f"Encountered incompatible lengths, got lengths of {lengths}")
@@ -1059,14 +1059,14 @@ def time_average_z_poynting_flux(
 
     The calculation of Poynting flux is an element-wise operation. When the Poynting
     flux is calculated over a single unit cell, the resulting array may be *averaged*
-    to yield a flux equal to that in all orders computed by `amplitude_poynting_flux`.
+    to yield a flux equal to that in all orders computed by ``amplitude_poynting_flux``.
 
     Args:
-        electric_fields: The tuple of electric fields `(ex, ey, ez)`.
-        magnetic_fields: The tuple of magnetic fields `(hx, hy, hz)`.
+        electric_fields: The tuple of electric fields ``(ex, ey, ez)``.
+        magnetic_fields: The tuple of magnetic fields ``(hx, hy, hz)``.
 
     Returns:
-        The time-average z-directed Poynting flux, with the same shape as `ex`.
+        The time-average z-directed Poynting flux, with the same shape as ``ex``.
     """
     ex, ey, _ = electric_fields
     hx, hy, _ = magnetic_fields

@@ -30,14 +30,14 @@ def farfield_profile(
     for each point in the Brillouin zone sampling scheme.
 
     Args:
-        flux: The flux array, with shape `(..., num_bz_kx, num_bz_ky, ...
-            2 * num_terms, num_sources)`.
+        flux: The flux array, with shape ``(..., num_bz_kx, num_bz_ky, ...,
+            2 * num_terms, num_sources)``.
         wavelength: The wavelength, batch-compatible with `flux`.
         in_plane_wavevector: The in-plane wavevector for the zeroth Fourier
             order, batch-compatible with `flux`.
         primitive_lattice_vectors: The primitive lattice vectors of the unit cell.
         expansion: The expansion used for the fields.
-        brillouin_grid_axes: Specifies the two axes of `flux` corresponding to
+        brillouin_grid_axes: Specifies the two axes of ``flux`` corresponding to
             the Brillouin zone grid.
 
     Returns:
@@ -61,7 +61,7 @@ def farfield_profile(
     transverse_wavevectors = _unflatten_transverse_wavevectors(
         transverse_wavevectors, expansion, brillouin_grid_axes
     )
-    flux = unflatten_flux(flux, expansion, brillouin_grid_axes)
+    flux = _unflatten_flux(flux, expansion, brillouin_grid_axes)
 
     # Remove the brillouin zone axes from `wavelength`, making it compatible
     # with the unflattened flux and transverse wavevectors.
@@ -90,11 +90,11 @@ def _angles_from_unflattened_transverse_wavevectors(
     """Computes the propagation angles in free space for given wavevectors.
 
     Evanescent modes whose transverse wavevector magnitude exceeds that of
-    the free space wavevector are given a polar angle of `pi / 2`.
+    the free space wavevector are given a polar angle of ``pi / 2``.
 
     Args:
         transverse_wavevectors: The unflattened transverse wavectors, with
-            shape `(..., nkx, nky, 2)`.
+            shape ``(..., nkx, nky, 2)``.
         wavelength: The free-space wavelength.
 
     Returns:
@@ -120,7 +120,7 @@ def _solid_angle_from_unflattened_transverse_wavevectors(
 ) -> jnp.ndarray:
     """Computes the solid angle associated with each transverse wavevector.
 
-    The transverse wavevectors should be unflattened, i.e. the `-3` and `-2`
+    The transverse wavevectors should be unflattened, i.e. the ``-3`` and ``-2``
     axes should correspond to different points in k-space.
 
     Args:
@@ -190,21 +190,21 @@ def integrated_flux(
     angle_bounds_fn: Callable[[jnp.ndarray, jnp.ndarray], jnp.ndarray],
     upsample_factor: int,
 ) -> jnp.ndarray:
-    """Computes the flux within the bounds defined by `angle_bounds_fn`.
+    """Computes the flux within the bounds defined by ``angle_bounds_fn``.
 
     Args:
-        flux: The flux array, with shape `(..., num_bz_kx, num_bz_ky, ...
-            2 * num_terms, num_sources)`.
-        wavelength: The wavelength, batch-compatible with `flux`.
+        flux: The flux array, with shape ``(..., num_bz_kx, num_bz_ky, ...
+            2 * num_terms, num_sources)``.
+        wavelength: The wavelength, batch-compatible with ``flux``.
         in_plane_wavevector: The in-plane wavevector for the zeroth Fourier
-            order, batch-compatible with `flux`.
+            order, batch-compatible with ``flux``.
         primitive_lattice_vectors: The primitive lattice vectors of the unit cell.
         expansion: The expansion used for the fields.
-        brillouin_grid_axes: Specifies the two axes of `flux` corresponding to
+        brillouin_grid_axes: Specifies the two axes of ``flux`` corresponding to
             the Brillouin zone grid.
-        angle_bounds_fn: A function with signature `fn(polar_angle, azimuthal_angle)`
-            returning a mask that is `True` for angles that should be included in
-            the integral.
+        angle_bounds_fn: A function with signature ``fn(polar_angle,
+            azimuthal_angle) -> mask`` returning a mask that is ``True`` for angles
+            that should be included in the integral.
         upsample_factor: Integer factor specifying upsampling performed in the
             integral, which is used to approximate trapezoidal rule integration.
 
@@ -243,7 +243,7 @@ def _integrated_flux_weights(
     angle_bounds_fn: Callable[[jnp.ndarray, jnp.ndarray], jnp.ndarray],
     upsample_factor: int,
 ) -> jnp.ndarray:
-    """Returns the integration weights for the bounds defined by `angle_bounds_fn`."""
+    """Returns the integration weights for the bounds defined by ``angle_bounds_fn``."""
     brillouin_grid_axes = _misc.absolute_axes(  # type: ignore[assignment]
         brillouin_grid_axes, flux.ndim
     )
@@ -279,7 +279,7 @@ def _integrated_flux_upsampled(
     angle_bounds_fn: Callable[[jnp.ndarray, jnp.ndarray], jnp.ndarray],
     upsample_factor: int,
 ) -> jnp.ndarray:
-    """Computes the flux within the bounds defined by `angle_bounds_fn`."""
+    """Computes the flux within the bounds defined by ``angle_bounds_fn``."""
     assert upsample_factor >= 1
     brillouin_grid_axes = _misc.absolute_axes(  # type: ignore[assignment]
         brillouin_grid_axes, flux.ndim
@@ -295,7 +295,7 @@ def _integrated_flux_upsampled(
         expansion=expansion,
     )
 
-    flux = unflatten_flux(flux, expansion, brillouin_grid_axes)
+    flux = _unflatten_flux(flux, expansion, brillouin_grid_axes)
     transverse_wavevectors = _unflatten_transverse_wavevectors(
         transverse_wavevectors, expansion, brillouin_grid_axes
     )
@@ -356,24 +356,24 @@ def _unflatten(flat: jnp.ndarray, expansion: basis.Expansion) -> jnp.ndarray:
 
     The returned array combines the values associated with all terms in the
     Fourier expansion at all points in the Brillouin zone grid in a single
-    array with trailing axes havving shape `(num_kx, num_ky)`. Elements in the
-    output which have no corresponding elements in `flat` are given a value
-    of `nan`.
+    array with trailing axes havving shape ``(num_kx, num_ky)``. Elements in the
+    output which have no corresponding elements in ``flat`` are given a value
+    of ``nan``.
 
-    The flat array should have shape `(..., num_bz_kx, num_bz_ky, num_terms)`,
-    where `num_terms` is the number of terms in the Fourier expansion, and the
-    `-3` and `-2` axes are for the Brillouin zone grid, as used e.g. with
+    The flat array should have shape ``(..., num_bz_kx, num_bz_ky, num_terms)``,
+    where ``num_terms`` is the number of terms in the Fourier expansion, and the
+    ``-3`` and ``-2`` axes are for the Brillouin zone grid, as used e.g. with
     Brillouin zone integration to model localized sources.
 
     This function assumes that the Brillouin zone is sampled on a regular grid,
-    as produced by `basis.brillouin_zone_in_plane_wavevector`.
+    as produced by ``basis.brillouin_zone_in_plane_wavevector``.
 
     Args:
-        flat: The flat array, with shape  `(..., num_bz_kx, num_bz_ky, num_terms)`.
+        flat: The flat array, with shape  ``(..., num_bz_kx, num_bz_ky, num_terms)``.
         expansion: The expansion used for the array.
 
     Returns:
-        The unflattened array, with shape `(batch_shape, num_kx, num_ky)`.
+        The unflattened array, with shape ``(batch_shape, num_kx, num_ky)``.
     """
     assert flat.ndim >= 3
     assert flat.shape[-1] == expansion.num_terms
@@ -409,7 +409,7 @@ def _unflatten(flat: jnp.ndarray, expansion: basis.Expansion) -> jnp.ndarray:
     return jnp.full(shape, jnp.nan).at[..., stacked_i, stacked_j].set(stacked_flat)
 
 
-def unflatten_flux(
+def _unflatten_flux(
     flux: jnp.ndarray,
     expansion: basis.Expansion,
     brillouin_grid_axes: Tuple[int, int],
@@ -417,13 +417,13 @@ def unflatten_flux(
     """Unflattens a flux for a given expansion and Brillouin integration scheme.
 
     Args:
-        flux: The flux array, with shape `(..., num_bz_kx, num_bz_ky, ...
-            2 * num_terms, num_sources)`.
+        flux: The flux array, with shape ``(..., num_bz_kx, num_bz_ky, ...
+            2 * num_terms, num_sources)``.
         expansion: The expansion used for the flux.
         brillouin_grid_axes: The axes associated with the Brillouin zone grid.
 
     Returns:
-        The unflattened flux, with shape `(..., num_kx, num_ky, 2, num_sources)`.
+        The unflattened flux, with shape ``(..., num_kx, num_ky, 2, num_sources)``.
     """
     assert flux.ndim >= 4
     assert flux.shape[-2] == 2 * expansion.num_terms
