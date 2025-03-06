@@ -1052,8 +1052,8 @@ def _validate_matching_lengths(*sequences: Sequence) -> None:
 
 
 def time_average_z_poynting_flux(
-    electric_fields: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
-    magnetic_fields: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
+    electric_field: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
+    magnetic_field: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
 ) -> jnp.ndarray:
     """Computes the time-average z-directed Poynting flux, given the physical fields.
 
@@ -1062,12 +1062,12 @@ def time_average_z_poynting_flux(
     to yield a flux equal to that in all orders computed by ``amplitude_poynting_flux``.
 
     Args:
-        electric_fields: The tuple of electric fields ``(ex, ey, ez)``.
-        magnetic_fields: The tuple of magnetic fields ``(hx, hy, hz)``.
+        electric_field: The tuple of electric fields ``(ex, ey, ez)``.
+        magnetic_field: The tuple of magnetic fields ``(hx, hy, hz)``.
 
     Returns:
         The time-average z-directed Poynting flux, with the same shape as ``ex``.
     """
-    ex, ey, _ = electric_fields
-    hx, hy, _ = magnetic_fields
+    ex, ey, _ = electric_field
+    hx, hy, _ = magnetic_field
     return 0.5 * jnp.real(ex * jnp.conj(hy) - ey * jnp.conj(hx))
