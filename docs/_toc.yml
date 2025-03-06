@@ -12,6 +12,7 @@ parts:
    - file: notebooks/dipoles
    - file: notebooks/metal_dipole
    - file: notebooks/crystal_bz
+   - file: notebooks/isolated_dipole_farfield
  - caption: API
    chapters:
    - file: api/basis
