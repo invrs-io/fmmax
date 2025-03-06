@@ -10,7 +10,7 @@ import jax
 import jax.numpy as jnp
 import numpy as onp
 
-from fmmax import basis, fmm, utils
+from fmmax import basis, fmm, _misc
 
 # Enable 64-bit precision for higher accuracy.
 jax.config.update("jax_enable_x64", True)
@@ -65,7 +65,7 @@ class GrcwaEigensolveComparisonTest(unittest.TestCase):
             expansion=EXPANSION,
         )
 
-        angular_frequency = utils.angular_frequency_for_wavelength(WAVELENGTH)
+        angular_frequency = _misc.angular_frequency_for_wavelength(WAVELENGTH)
         transverse_wavevectors = basis.transverse_wavevectors(
             IN_PLANE_WAVEVECTOR, PRIMITIVE_LATTICE_VECTORS, EXPANSION
         )
@@ -106,7 +106,7 @@ class GrcwaEigensolveComparisonTest(unittest.TestCase):
             solve_result.eigenvalues, solve_result.eigenvectors
         )
 
-        angular_frequency = utils.angular_frequency_for_wavelength(WAVELENGTH)
+        angular_frequency = _misc.angular_frequency_for_wavelength(WAVELENGTH)
         transverse_wavevectors = basis.transverse_wavevectors(
             IN_PLANE_WAVEVECTOR, PRIMITIVE_LATTICE_VECTORS, EXPANSION
         )
