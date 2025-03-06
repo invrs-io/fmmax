@@ -12,7 +12,7 @@ import jax.numpy as jnp
 import numpy as onp
 from jax import tree_util
 
-from fmmax import utils
+from fmmax import _misc
 
 NDArray = onp.ndarray[Any, Any]
 
@@ -202,7 +202,7 @@ def plane_wave_in_plane_wavevector(
     Returns:
         The fundamental transverse wavevector, i.e. `(kx0, ky0)`.
     """
-    angular_frequency = utils.angular_frequency_for_wavelength(wavelength)
+    angular_frequency = _misc.angular_frequency_for_wavelength(wavelength)
     kx0 = (
         angular_frequency
         * jnp.sin(polar_angle)

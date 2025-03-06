@@ -11,7 +11,7 @@ import jax.numpy as jnp
 import numpy as onp
 from parameterized import parameterized
 
-from fmmax import basis, farfield, fields, fmm, scattering, sources, utils
+from fmmax import _misc, basis, farfield, fields, fmm, scattering, sources
 
 jax.config.update("jax_enable_x64", True)
 
@@ -116,7 +116,7 @@ class FarfieldProfileTest(unittest.TestCase):
         # Checks that the farfield can be computed for a variety of batch
         # shapes and brillouin zone axes. Also checks that the integral of
         # flux in k space and in the angular domain agree.
-        absolute_axes = utils.absolute_axes(brillouin_grid_axes, len(batch_shape) + 2)
+        absolute_axes = _misc.absolute_axes(brillouin_grid_axes, len(batch_shape) + 2)
 
         # Compute shapes of dummy variables.
         wavelength_shape = tuple(

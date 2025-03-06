@@ -8,7 +8,7 @@ from typing import Callable, Sequence, Tuple
 
 import jax.numpy as jnp
 
-from fmmax import _fft, basis, fmm, scattering, utils
+from fmmax import _fft, _misc, basis, fmm, scattering
 
 Field = Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]  # `ex, ey, ez` or `hx, hy, hz`
 
@@ -92,7 +92,7 @@ def _validate_amplitudes_shape(
     if (
         amplitudes[0].ndim < 2
         or amplitudes[0].shape[-2] != num_terms
-        or not utils.batch_compatible_shapes(*[a.shape for a in amplitudes])
+        or not _misc.batch_compatible_shapes(*[a.shape for a in amplitudes])
     ):
         raise ValueError(
             f"All amplitudes must have matching shape `(..., {num_terms}, "
@@ -275,13 +275,13 @@ def _poynting_flux_a_matrix(layer_solve_result: fmm.LayerSolveResult) -> jnp.nda
     q = layer_solve_result.eigenvalues
     phi = layer_solve_result.eigenvectors
     omega_script_k = layer_solve_result.omega_script_k_matrix
-    angular_frequency = utils.angular_frequency_for_wavelength(
+    angular_frequency = _misc.angular_frequency_for_wavelength(
         layer_solve_result.wavelength
     )[..., jnp.newaxis]
     return (
         omega_script_k
         @ phi
-        @ utils.diag(jnp.ones((), dtype=q.dtype) / (angular_frequency * q))
+        @ _misc.diag(jnp.ones((), dtype=q.dtype) / (angular_frequency * q))
     )
 
 
@@ -334,7 +334,7 @@ def fields_from_wave_amplitudes(
     )
     kx = transverse_wavevectors[..., 0, jnp.newaxis]
     ky = transverse_wavevectors[..., 1, jnp.newaxis]
-    angular_frequency = utils.angular_frequency_for_wavelength(
+    angular_frequency = _misc.angular_frequency_for_wavelength(
         layer_solve_result.wavelength
     )
     angular_frequency = angular_frequency[..., jnp.newaxis, jnp.newaxis]
@@ -366,7 +366,7 @@ def field_conversion_matrix(layer_solve_result: fmm.LayerSolveResult) -> jnp.nda
     q = layer_solve_result.eigenvalues
     phi = layer_solve_result.eigenvectors
     omega_script_k = layer_solve_result.omega_script_k_matrix
-    angular_frequency = utils.angular_frequency_for_wavelength(
+    angular_frequency = _misc.angular_frequency_for_wavelength(
         layer_solve_result.wavelength
     )[..., jnp.newaxis]
 
@@ -376,7 +376,7 @@ def field_conversion_matrix(layer_solve_result: fmm.LayerSolveResult) -> jnp.nda
     mat = (
         omega_script_k
         @ phi
-        @ utils.diag(jnp.ones((), dtype=q.dtype) / (angular_frequency * q))
+        @ _misc.diag(jnp.ones((), dtype=q.dtype) / (angular_frequency * q))
     )
     return jnp.block([[mat, -mat], [phi, phi]])
 

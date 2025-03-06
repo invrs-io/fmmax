@@ -13,7 +13,7 @@ import jax
 import jax.numpy as jnp
 import numpy as onp
 
-from fmmax import basis, utils
+from fmmax import _misc, basis
 
 
 def farfield_profile(
@@ -45,13 +45,13 @@ def farfield_profile(
         and the farfield power.
     """
     assert flux.shape[-2] == 2 * expansion.num_terms
-    brillouin_grid_axes = utils.absolute_axes(  # type: ignore[assignment]
+    brillouin_grid_axes = _misc.absolute_axes(  # type: ignore[assignment]
         brillouin_grid_axes, flux.ndim
     )
 
     ndim_batch = flux.ndim - 2
-    wavelength = utils.atleast_nd(wavelength, ndim_batch)
-    in_plane_wavevector = utils.atleast_nd(in_plane_wavevector, ndim_batch + 1)
+    wavelength = _misc.atleast_nd(wavelength, ndim_batch)
+    in_plane_wavevector = _misc.atleast_nd(in_plane_wavevector, ndim_batch + 1)
 
     transverse_wavevectors = basis.transverse_wavevectors(
         in_plane_wavevector,
@@ -212,7 +212,7 @@ def integrated_flux(
         The integrated flux, with shape equal to the batch dimensions of flux,
         excluding those for the brillouin zone grid.
     """
-    brillouin_grid_axes = utils.absolute_axes(  # type: ignore[assignment]
+    brillouin_grid_axes = _misc.absolute_axes(  # type: ignore[assignment]
         brillouin_grid_axes, flux.ndim
     )
 
@@ -244,7 +244,7 @@ def _integrated_flux_weights(
     upsample_factor: int,
 ) -> jnp.ndarray:
     """Returns the integration weights for the bounds defined by `angle_bounds_fn`."""
-    brillouin_grid_axes = utils.absolute_axes(  # type: ignore[assignment]
+    brillouin_grid_axes = _misc.absolute_axes(  # type: ignore[assignment]
         brillouin_grid_axes, flux.ndim
     )
 
@@ -281,13 +281,13 @@ def _integrated_flux_upsampled(
 ) -> jnp.ndarray:
     """Computes the flux within the bounds defined by `angle_bounds_fn`."""
     assert upsample_factor >= 1
-    brillouin_grid_axes = utils.absolute_axes(  # type: ignore[assignment]
+    brillouin_grid_axes = _misc.absolute_axes(  # type: ignore[assignment]
         brillouin_grid_axes, flux.ndim
     )
 
     ndim_batch = flux.ndim - 2
-    wavelength = utils.atleast_nd(wavelength, ndim_batch)
-    in_plane_wavevector = utils.atleast_nd(in_plane_wavevector, ndim_batch + 1)
+    wavelength = _misc.atleast_nd(wavelength, ndim_batch)
+    in_plane_wavevector = _misc.atleast_nd(in_plane_wavevector, ndim_batch + 1)
 
     transverse_wavevectors = basis.transverse_wavevectors(
         in_plane_wavevector=in_plane_wavevector,
@@ -427,7 +427,7 @@ def unflatten_flux(
     """
     assert flux.ndim >= 4
     assert flux.shape[-2] == 2 * expansion.num_terms
-    brillouin_grid_axes = utils.absolute_axes(  # type: ignore[assignment]
+    brillouin_grid_axes = _misc.absolute_axes(  # type: ignore[assignment]
         brillouin_grid_axes, flux.ndim
     )
 
@@ -468,7 +468,7 @@ def _unflatten_transverse_wavevectors(
     """
     assert transverse_wavevectors.ndim >= 4
     assert transverse_wavevectors.shape[-2:] == (expansion.num_terms, 2)
-    brillouin_grid_axes = utils.absolute_axes(  # type: ignore[assignment]
+    brillouin_grid_axes = _misc.absolute_axes(  # type: ignore[assignment]
         brillouin_grid_axes, transverse_wavevectors.ndim
     )
 

@@ -12,7 +12,7 @@ import jax.numpy as jnp
 import numpy as onp
 from jax import tree_util
 
-from fmmax import _fft, _fmm_matrices, basis, utils, vector
+from fmmax import _eig, _fft, _fmm_matrices, _misc, _vector, basis
 
 # xx, xy, yx, yy, and zz components of permittivity or permeability.
 TensorComponents = Tuple[
@@ -66,14 +66,14 @@ class Formulation(enum.Enum):
     """
 
     FFT = "fft"
-    JONES_DIRECT = vector.JONES_DIRECT
-    JONES = vector.JONES
-    NORMAL = vector.NORMAL
-    POL = vector.POL
-    JONES_DIRECT_FOURIER = vector.JONES_DIRECT_FOURIER
-    JONES_FOURIER = vector.JONES_FOURIER
-    NORMAL_FOURIER = vector.NORMAL_FOURIER
-    POL_FOURIER = vector.POL_FOURIER
+    JONES_DIRECT = _vector.JONES_DIRECT
+    JONES = _vector.JONES
+    NORMAL = _vector.NORMAL
+    POL = _vector.POL
+    JONES_DIRECT_FOURIER = _vector.JONES_DIRECT_FOURIER
+    JONES_FOURIER = _vector.JONES_FOURIER
+    NORMAL_FOURIER = _vector.NORMAL_FOURIER
+    POL_FOURIER = _vector.POL_FOURIER
 
 
 _DEFAULT_FORMULATION = Formulation.JONES_DIRECT_FOURIER
@@ -332,7 +332,7 @@ class LayerSolveResult:
 
         def _incompatible(arr: jnp.ndarray, reference_shape: Tuple[int, ...]) -> bool:
             ndim_mismatch = arr.ndim != len(reference_shape)
-            batch_compatible = utils.batch_compatible_shapes(arr.shape, reference_shape)
+            batch_compatible = _misc.batch_compatible_shapes(arr.shape, reference_shape)
             return ndim_mismatch or not batch_compatible
 
         if _incompatible(self.wavelength, self.batch_shape):
@@ -480,7 +480,7 @@ def _eigensolve_uniform_isotropic_media(
         shape=batch_shape + (num_eigenvalues, num_eigenvalues),
     )
 
-    angular_frequency = utils.angular_frequency_for_wavelength(wavelength)
+    angular_frequency = _misc.angular_frequency_for_wavelength(wavelength)
     kx = transverse_wavevectors[..., 0]
     ky = transverse_wavevectors[..., 1]
     eigenvalues = jnp.sqrt(
@@ -497,14 +497,14 @@ def _eigensolve_uniform_isotropic_media(
     inverse_z_permittivity_diag = jnp.broadcast_to(
         1 / permittivity[..., jnp.newaxis], diag_shape
     )
-    inverse_z_permittivity_matrix = utils.diag(inverse_z_permittivity_diag)
+    inverse_z_permittivity_matrix = _misc.diag(inverse_z_permittivity_diag)
 
     z_permittivity_diag = jnp.broadcast_to(permittivity[..., jnp.newaxis], diag_shape)
-    z_permittivity_matrix = utils.diag(z_permittivity_diag)
-    z_permeability_matrix = utils.diag(jnp.ones(diag_shape, dtype=dtype))
+    z_permittivity_matrix = _misc.diag(z_permittivity_diag)
+    z_permeability_matrix = _misc.diag(jnp.ones(diag_shape, dtype=dtype))
 
     transverse_diag_shape = permittivity.shape + (2 * expansion.num_terms,)
-    transverse_permeability_matrix = utils.diag(
+    transverse_permeability_matrix = _misc.diag(
         jnp.ones(transverse_diag_shape, dtype=dtype)
     )
 
@@ -575,12 +575,12 @@ def _eigensolve_patterned_isotropic_media(
         dtype=z_permittivity_matrix.dtype,
     )
     zeros = jnp.zeros_like(ones)
-    z_permeability_matrix = utils.diag(ones)
-    inverse_z_permeability_matrix = utils.diag(ones)
+    z_permeability_matrix = _misc.diag(ones)
+    inverse_z_permeability_matrix = _misc.diag(ones)
     transverse_permeability_matrix = jnp.block(
         [
-            [utils.diag(ones), utils.diag(zeros)],
-            [utils.diag(zeros), utils.diag(ones)],
+            [_misc.diag(ones), _misc.diag(zeros)],
+            [_misc.diag(zeros), _misc.diag(ones)],
         ]
     )
 
@@ -665,15 +665,15 @@ def _eigensolve_uniform_general_anisotropic_media(
     permittivity_yx = jnp.broadcast_to(jnp.squeeze(permittivity_yx, axis=-1), shape)
     permittivity_yy = jnp.broadcast_to(jnp.squeeze(permittivity_yy, axis=-1), shape)
     permittivity_zz = jnp.broadcast_to(jnp.squeeze(permittivity_zz, axis=-1), shape)
-    z_permittivity_matrix = utils.diag(permittivity_zz)
-    inverse_z_permittivity_matrix = utils.diag(1 / permittivity_zz)
+    z_permittivity_matrix = _misc.diag(permittivity_zz)
+    inverse_z_permittivity_matrix = _misc.diag(1 / permittivity_zz)
     # Note that the matrix element ordering and signs differ from [2012 Liu]
     # equation 37, but are consistent with the definition in equation 15. Equation 37
     # is likely in error.
     transverse_permittivity_matrix = jnp.block(
         [
-            [utils.diag(permittivity_yy), utils.diag(-permittivity_yx)],
-            [utils.diag(-permittivity_xy), utils.diag(permittivity_xx)],
+            [_misc.diag(permittivity_yy), _misc.diag(-permittivity_yx)],
+            [_misc.diag(-permittivity_xy), _misc.diag(permittivity_xx)],
         ]
     )
 
@@ -682,14 +682,14 @@ def _eigensolve_uniform_general_anisotropic_media(
     permeability_yx = jnp.broadcast_to(jnp.squeeze(permeability_yx, axis=-1), shape)
     permeability_yy = jnp.broadcast_to(jnp.squeeze(permeability_yy, axis=-1), shape)
     permeability_zz = jnp.broadcast_to(jnp.squeeze(permeability_zz, axis=-1), shape)
-    z_permeability_matrix = utils.diag(permeability_zz)
-    inverse_z_permeability_matrix = utils.diag(1 / permeability_zz)
+    z_permeability_matrix = _misc.diag(permeability_zz)
+    inverse_z_permeability_matrix = _misc.diag(1 / permeability_zz)
     # Note that the matrix element ordering for the transverse permittivity and
     # permeability matrices differs.
     transverse_permeability_matrix = jnp.block(
         [
-            [utils.diag(permeability_xx), utils.diag(permeability_xy)],
-            [utils.diag(permeability_yx), utils.diag(permeability_yy)],
+            [_misc.diag(permeability_xx), _misc.diag(permeability_xy)],
+            [_misc.diag(permeability_yx), _misc.diag(permeability_yy)],
         ]
     )
 
@@ -877,7 +877,7 @@ def _numerical_eigensolve(
         transverse_permittivity_matrix @ omega_script_k_matrix
         - k_matrix @ transverse_permeability_matrix
     )
-    eigenvalues_squared, eigenvectors = utils.eig(matrix)
+    eigenvalues_squared, eigenvectors = _eig.eig(matrix)
     eigenvalues = jnp.sqrt(eigenvalues_squared)
     eigenvalues = _select_eigenvalues_sign(eigenvalues)
     return LayerSolveResult(
@@ -940,7 +940,7 @@ def _fourier_matrices_patterned_isotropic_media(
         tangent_vector_field = None
     else:
         if isinstance(formulation, Formulation):
-            vector_fn = vector.VECTOR_FIELD_SCHEMES[formulation.value]
+            vector_fn = _vector.VECTOR_FIELD_SCHEMES[formulation.value]
         else:
             vector_fn = formulation
         tx, ty = vector_fn(permittivity, expansion, primitive_lattice_vectors)
@@ -1034,7 +1034,7 @@ def _fourier_matrices_patterned_anisotropic_media(
         tangent_vector_field = None
     else:
         if isinstance(formulation, Formulation):
-            vector_fn = vector.VECTOR_FIELD_SCHEMES[formulation.value]
+            vector_fn = _vector.VECTOR_FIELD_SCHEMES[formulation.value]
         else:
             vector_fn = formulation
         tx, ty = vector_fn(vector_field_source, expansion, primitive_lattice_vectors)
@@ -1119,7 +1119,7 @@ def _validate_and_broadcast(
         raise ValueError("Got permittivities with differing shapes.")
 
     permittivity = permittivities[0]
-    if not utils.batch_compatible_shapes(
+    if not _misc.batch_compatible_shapes(
         wavelength.shape,
         in_plane_wavevector.shape[:-1],
         primitive_lattice_vectors.u.shape[:-1],
@@ -1143,15 +1143,15 @@ def _validate_and_broadcast(
             permittivity.ndim - 2,
         ]
     )
-    wavelength = utils.atleast_nd(wavelength, n=num_batch_dims)
-    in_plane_wavevector = utils.atleast_nd(in_plane_wavevector, n=num_batch_dims + 1)
+    wavelength = _misc.atleast_nd(wavelength, n=num_batch_dims)
+    in_plane_wavevector = _misc.atleast_nd(in_plane_wavevector, n=num_batch_dims + 1)
     primitive_lattice_vectors = basis.LatticeVectors(
-        u=utils.atleast_nd(primitive_lattice_vectors.u, n=num_batch_dims + 1),
-        v=utils.atleast_nd(primitive_lattice_vectors.v, n=num_batch_dims + 1),
+        u=_misc.atleast_nd(primitive_lattice_vectors.u, n=num_batch_dims + 1),
+        v=_misc.atleast_nd(primitive_lattice_vectors.v, n=num_batch_dims + 1),
     )
 
     permittivities = tuple(
-        [utils.atleast_nd(p, n=num_batch_dims + 2) for p in permittivities]
+        [_misc.atleast_nd(p, n=num_batch_dims + 2) for p in permittivities]
     )
     return (
         wavelength,
