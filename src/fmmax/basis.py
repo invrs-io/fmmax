@@ -16,8 +16,8 @@ from fmmax import _misc
 
 # Officially defines the x- and y- directions. By convention, the x-axis preceeds
 # the y-axis in our array indexing scheme.
-X: jnp.ndarray = jnp.array([1.0, 0.0])
-Y: jnp.ndarray = jnp.array([0.0, 1.0])
+X: jnp.ndarray = jnp.array([1.0, 0.0], dtype=jnp.float32)
+Y: jnp.ndarray = jnp.array([0.0, 1.0], dtype=jnp.float32)
 
 
 @dataclasses.dataclass
