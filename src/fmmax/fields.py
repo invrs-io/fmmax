@@ -8,7 +8,7 @@ from typing import Callable, Sequence, Tuple
 
 import jax.numpy as jnp
 
-from fmmax import _fft, _misc, basis, fmm, scattering
+from fmmax import _fft, _misc, basis, fmm, scattering, utils
 
 Field = Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]  # `ex, ey, ez` or `hx, hy, hz`
 
@@ -275,7 +275,7 @@ def _poynting_flux_a_matrix(layer_solve_result: fmm.LayerSolveResult) -> jnp.nda
     q = layer_solve_result.eigenvalues
     phi = layer_solve_result.eigenvectors
     omega_script_k = layer_solve_result.omega_script_k_matrix
-    angular_frequency = _misc.angular_frequency_for_wavelength(
+    angular_frequency = utils.angular_frequency_for_wavelength(
         layer_solve_result.wavelength
     )[..., jnp.newaxis]
     return (
@@ -334,7 +334,7 @@ def fields_from_wave_amplitudes(
     )
     kx = transverse_wavevectors[..., 0, jnp.newaxis]
     ky = transverse_wavevectors[..., 1, jnp.newaxis]
-    angular_frequency = _misc.angular_frequency_for_wavelength(
+    angular_frequency = utils.angular_frequency_for_wavelength(
         layer_solve_result.wavelength
     )
     angular_frequency = angular_frequency[..., jnp.newaxis, jnp.newaxis]
@@ -366,7 +366,7 @@ def field_conversion_matrix(layer_solve_result: fmm.LayerSolveResult) -> jnp.nda
     q = layer_solve_result.eigenvalues
     phi = layer_solve_result.eigenvectors
     omega_script_k = layer_solve_result.omega_script_k_matrix
-    angular_frequency = _misc.angular_frequency_for_wavelength(
+    angular_frequency = utils.angular_frequency_for_wavelength(
         layer_solve_result.wavelength
     )[..., jnp.newaxis]
 

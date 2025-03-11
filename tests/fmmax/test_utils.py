@@ -26,3 +26,10 @@ class InterpolateTest(unittest.TestCase):
     def test_interpolated_matches_expected(self, p_solid, p_void, density, expected):
         result = utils.interpolate_permittivity(p_solid, p_void, density)
         onp.testing.assert_allclose(result, expected)
+
+
+class AngularFrequencyTest(unittest.TestCase):
+    def test_value_matches_expected(self):
+        self.assertEqual(
+            utils.angular_frequency_for_wavelength(2.71), 2 * jnp.pi / 2.71
+        )

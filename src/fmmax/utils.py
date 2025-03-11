@@ -3,6 +3,8 @@
 Copyright (c) Meta Platforms, Inc. and affiliates.
 """
 
+from typing import Tuple
+
 import jax.numpy as jnp
 
 
@@ -32,3 +34,23 @@ def interpolate_permittivity(
     n = density * n_solid + (1 - density) * n_void
     k = density * k_solid + (1 - density) * k_void
     return (n + 1j * k) ** 2
+
+
+def angular_frequency_for_wavelength(wavelength: jnp.ndarray) -> jnp.ndarray:
+    """Returns the angular frequency for the specified wavelength."""
+    return 2 * jnp.pi / wavelength  # Since by our convention c == 1.
+
+
+def absolute_axes(axes: Tuple[int, ...], ndim: int) -> Tuple[int, ...]:
+    """Returns the absolute axes for given relative axes and array dimensionality."""
+    if not all(a in list(range(-ndim, ndim)) for a in axes):
+        raise ValueError(
+            f"All elements of `axes` must be in the range ({ndim}, {ndim - 1}) "
+            f"but got {axes}."
+        )
+    absolute_axes = tuple([d % ndim for d in axes])
+    if len(absolute_axes) != len(set(absolute_axes)):
+        raise ValueError(
+            f"Found duplicates in `axes`; computed absolute axes are {absolute_axes}."
+        )
+    return absolute_axes

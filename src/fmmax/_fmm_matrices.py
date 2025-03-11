@@ -8,7 +8,7 @@ from typing import Tuple
 
 import jax.numpy as jnp
 
-from fmmax import _fft, _misc, basis
+from fmmax import _fft, _misc, basis, utils
 
 
 def omega_script_k_matrix_patterned(
@@ -22,7 +22,7 @@ def omega_script_k_matrix_patterned(
     script_k_matrix = script_k_matrix_patterned(
         z_permittivity_matrix, transverse_wavevectors
     )
-    angular_frequency = _misc.angular_frequency_for_wavelength(wavelength)
+    angular_frequency = utils.angular_frequency_for_wavelength(wavelength)
     angular_frequency_squared = angular_frequency[..., jnp.newaxis, jnp.newaxis] ** 2
     return angular_frequency_squared * transverse_permeability_matrix - script_k_matrix
 

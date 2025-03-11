@@ -12,7 +12,7 @@ import jax.numpy as jnp
 import numpy as onp
 from jax import tree_util
 
-from fmmax import _eig, _fft, _fmm_matrices, _misc, _vector, basis
+from fmmax import _eig, _fft, _fmm_matrices, _misc, _vector, basis, utils
 
 # xx, xy, yx, yy, and zz components of permittivity or permeability.
 TensorComponents = Tuple[
@@ -481,7 +481,7 @@ def _eigensolve_uniform_isotropic_media(
         shape=batch_shape + (num_eigenvalues, num_eigenvalues),
     )
 
-    angular_frequency = _misc.angular_frequency_for_wavelength(wavelength)
+    angular_frequency = utils.angular_frequency_for_wavelength(wavelength)
     kx = transverse_wavevectors[..., 0]
     ky = transverse_wavevectors[..., 1]
     eigenvalues = jnp.sqrt(

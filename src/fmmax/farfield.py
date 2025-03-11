@@ -13,7 +13,7 @@ import jax
 import jax.numpy as jnp
 import numpy as onp
 
-from fmmax import _misc, basis
+from fmmax import _misc, basis, utils
 
 
 def farfield_profile(
@@ -45,7 +45,7 @@ def farfield_profile(
         and the farfield power.
     """
     assert flux.shape[-2] == 2 * expansion.num_terms
-    brillouin_grid_axes = _misc.absolute_axes(  # type: ignore[assignment]
+    brillouin_grid_axes = utils.absolute_axes(  # type: ignore[assignment]
         brillouin_grid_axes, flux.ndim
     )
 
@@ -212,7 +212,7 @@ def integrated_flux(
         The integrated flux, with shape equal to the batch dimensions of flux,
         excluding those for the brillouin zone grid.
     """
-    brillouin_grid_axes = _misc.absolute_axes(  # type: ignore[assignment]
+    brillouin_grid_axes = utils.absolute_axes(  # type: ignore[assignment]
         brillouin_grid_axes, flux.ndim
     )
 
@@ -244,7 +244,7 @@ def _integrated_flux_weights(
     upsample_factor: int,
 ) -> jnp.ndarray:
     """Returns the integration weights for the bounds defined by ``angle_bounds_fn``."""
-    brillouin_grid_axes = _misc.absolute_axes(  # type: ignore[assignment]
+    brillouin_grid_axes = utils.absolute_axes(  # type: ignore[assignment]
         brillouin_grid_axes, flux.ndim
     )
 
@@ -281,7 +281,7 @@ def _integrated_flux_upsampled(
 ) -> jnp.ndarray:
     """Computes the flux within the bounds defined by ``angle_bounds_fn``."""
     assert upsample_factor >= 1
-    brillouin_grid_axes = _misc.absolute_axes(  # type: ignore[assignment]
+    brillouin_grid_axes = utils.absolute_axes(  # type: ignore[assignment]
         brillouin_grid_axes, flux.ndim
     )
 
@@ -427,7 +427,7 @@ def _unflatten_flux(
     """
     assert flux.ndim >= 4
     assert flux.shape[-2] == 2 * expansion.num_terms
-    brillouin_grid_axes = _misc.absolute_axes(  # type: ignore[assignment]
+    brillouin_grid_axes = utils.absolute_axes(  # type: ignore[assignment]
         brillouin_grid_axes, flux.ndim
     )
 
@@ -468,7 +468,7 @@ def _unflatten_transverse_wavevectors(
     """
     assert transverse_wavevectors.ndim >= 4
     assert transverse_wavevectors.shape[-2:] == (expansion.num_terms, 2)
-    brillouin_grid_axes = _misc.absolute_axes(  # type: ignore[assignment]
+    brillouin_grid_axes = utils.absolute_axes(  # type: ignore[assignment]
         brillouin_grid_axes, transverse_wavevectors.ndim
     )
 
