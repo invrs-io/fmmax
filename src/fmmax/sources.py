@@ -7,7 +7,7 @@ from typing import Optional, Tuple
 
 import jax.numpy as jnp
 
-from fmmax import _fft, _misc, basis, fields, fmm, scattering
+from fmmax import _fft, _misc, basis, fields, fmm, scattering, utils
 
 
 def amplitudes_for_fields(
@@ -62,7 +62,7 @@ def amplitudes_for_fields(
     if brillouin_grid_axes is None:
         brillouin_grid_shape = (1, 1)
     else:
-        absolute_brillouin_grid_axes = _misc.absolute_axes(brillouin_grid_axes, ex.ndim)
+        absolute_brillouin_grid_axes = utils.absolute_axes(brillouin_grid_axes, ex.ndim)
         brillouin_grid_shape = (
             layer_solve_result.batch_shape[absolute_brillouin_grid_axes[0]],
             layer_solve_result.batch_shape[absolute_brillouin_grid_axes[1]],

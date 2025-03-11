@@ -7,7 +7,7 @@ from typing import Tuple
 
 import jax.numpy as jnp
 
-from fmmax import _misc, basis
+from fmmax import basis, utils
 
 
 def fourier_convolution_matrix(
@@ -70,7 +70,7 @@ def fft(
     Returns:
         The transformed `x`.
     """
-    axes: Tuple[int, int] = _misc.absolute_axes(axes, x.ndim)  # type: ignore[no-redef]
+    axes: Tuple[int, int] = utils.absolute_axes(axes, x.ndim)  # type: ignore[no-redef]
     basis.validate_shape_for_expansion(tuple([x.shape[ax] for ax in axes]), expansion)
 
     x_fft = jnp.fft.fft2(x, axes=axes, norm="forward")
@@ -103,7 +103,7 @@ def ifft(
     Returns:
         The inverse transformed `x`.
     """
-    (axis,) = _misc.absolute_axes((axis,), y.ndim)
+    (axis,) = utils.absolute_axes((axis,), y.ndim)
     assert y.shape[axis] == expansion.basis_coefficients.shape[-2]
     x_shape = y.shape[:axis] + shape + y.shape[axis + 1 :]
     assert len(x_shape) == y.ndim + 1

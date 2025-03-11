@@ -13,13 +13,6 @@ import numpy as onp
 from fmmax import _misc
 
 
-class AngularFrequencyTest(unittest.TestCase):
-    def test_value_matches_expected(self):
-        self.assertEqual(
-            _misc.angular_frequency_for_wavelength(2.71), 2 * jnp.pi / 2.71
-        )
-
-
 class DiagTest(unittest.TestCase):
     def test_diag_matches_expected(self):
         shapes = ((5,), (2, 5), (9, 1, 8))
