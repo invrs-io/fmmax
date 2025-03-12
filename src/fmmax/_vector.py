@@ -336,8 +336,8 @@ def _is_1d_field(field: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
     """Determine whether the field varies in one direction only."""
     ref_field = _field_at_max_magnitude(field)
     assert ref_field.shape == (2,)
-    ref_angle = _angle(ref_field[0] + 1j * ref_field[1])
-    angle = _angle(field[..., 0] + 1j * field[..., 1])
+    ref_angle = _angle(jnp.abs(ref_field[0]) + 1j * jnp.abs(ref_field[1]))
+    angle = _angle(jnp.abs(field[..., 0]) + 1j * jnp.abs(field[..., 1]))
     magnitude = jnp.squeeze(_field_magnitude(field), axis=-1)
     is_1d = jnp.all(
         jnp.isclose(magnitude, 0.0)

@@ -710,3 +710,59 @@ class SchemesTest(unittest.TestCase):
         )
 
         self.assertFalse(jnp.any(jnp.isnan(field)))
+
+
+class Detect1DTest(unittest.TestCase):
+    @parameterized.expand(
+        [
+            (2 + 0j, 0.0),
+            (2 + 0j, 45.0),
+            (2 + 0j, 90.0),
+            (1 + 2j, 0.0),
+            (1 + 2j, 45.0),
+            (1 + 2j, 90.0),
+        ]
+    )
+    def test_detect_1d(self, permittivity, angle_deg):
+        # Generate an array with a 1D permittivity profile.
+        x = jnp.arange(100)[:, jnp.newaxis] / 100
+        y = jnp.arange(100) / 100
+        theta = jnp.deg2rad(angle_deg)
+        distance = onp.amin(
+            [
+                onp.abs(x * onp.cos(theta) - y * onp.sin(theta)),
+                onp.abs((x - 1) * onp.cos(theta) - y * onp.sin(theta)),
+                onp.abs((x + 1) * onp.cos(theta) - y * onp.sin(theta)),
+                onp.abs(x * onp.cos(theta) - (y - 1) * onp.sin(theta)),
+                onp.abs(x * onp.cos(theta) - (y + 1) * onp.sin(theta)),
+            ],
+            axis=0,
+        )
+        arr = jnp.where(distance <= 0.2, permittivity, 1.0)
+
+        primitive_lattice_vectors = basis.LatticeVectors(u=basis.X, v=basis.Y)
+        expansion = basis.generate_expansion(primitive_lattice_vectors, 200)
+
+        grad = _vector._compute_gradient(arr, primitive_lattice_vectors)
+        gx = _vector._filter_and_adjust_resolution(grad[..., 0], expansion)
+        gy = _vector._filter_and_adjust_resolution(grad[..., 1], expansion)
+        grad = _vector._normalize(jnp.stack([gx, gy], axis=-1))
+
+        is_1d, _ = _vector._is_1d_field(grad)
+        self.assertTrue(is_1d)
+
+    def test_detect_not_1d(self):
+        arr = onp.ones((100, 100))
+        arr[:, 40:60] = 2.0
+        arr[40:60, 39] = 2.0  # Not quite a 1D pattern
+
+        primitive_lattice_vectors = basis.LatticeVectors(u=basis.X, v=basis.Y)
+        expansion = basis.generate_expansion(primitive_lattice_vectors, 200)
+
+        grad = _vector._compute_gradient(arr, primitive_lattice_vectors)
+        gx = _vector._filter_and_adjust_resolution(grad[..., 0], expansion)
+        gy = _vector._filter_and_adjust_resolution(grad[..., 1], expansion)
+        grad = _vector._normalize(jnp.stack([gx, gy], axis=-1))
+
+        is_1d, _ = _vector._is_1d_field(grad)
+        self.assertFalse(is_1d)
