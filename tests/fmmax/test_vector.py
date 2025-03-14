@@ -12,7 +12,7 @@ import numpy as onp
 from parameterized import parameterized
 from scipy import ndimage
 
-from fmmax import _vector, basis
+from fmmax import basis, vector
 
 # Enable 64-bit precision for higher accuracy.
 jax.config.update("jax_enable_x64", True)
@@ -53,7 +53,7 @@ class TangentVectorTest(unittest.TestCase):
             truncation=basis.Truncation.CIRCULAR,
         )
         arr = _generate_array(shape, arr_scale, binarize_arr)
-        return _vector.compute_tangent_field(
+        return vector.compute_tangent_field(
             arr,
             expansion,
             primitive_lattice_vectors,
@@ -204,7 +204,7 @@ class TangentVectorTest(unittest.TestCase):
             truncation=basis.Truncation.PARALLELOGRAMIC,
         )
         arr = _generate_array((80, 80), arr_scale=1, binarize_arr=binarize_arr)
-        tx, ty = _vector.compute_tangent_field(
+        tx, ty = vector.compute_tangent_field(
             arr,
             expansion,
             primitive_lattice_vectors,
@@ -223,7 +223,7 @@ class TangentVectorTest(unittest.TestCase):
             approximate_num_terms=4 * expansion.num_terms,
             truncation=basis.Truncation.PARALLELOGRAMIC,
         )
-        supercell_tx, supercell_ty = _vector.compute_tangent_field(
+        supercell_tx, supercell_ty = vector.compute_tangent_field(
             jnp.tile(arr, (2, 2)),
             supercell_expansion,
             supercell_primitive_lattice_vectors,
@@ -252,7 +252,7 @@ class TangentVectorTest(unittest.TestCase):
         )
         assert arr.shape == (6, 80, 80)
 
-        tx_batch, ty_batch = _vector.compute_tangent_field(
+        tx_batch, ty_batch = vector.compute_tangent_field(
             arr,
             expansion,
             primitive_lattice_vectors,
@@ -262,7 +262,7 @@ class TangentVectorTest(unittest.TestCase):
         )
 
         for i in range(arr.shape[0]):
-            tx, ty = _vector.compute_tangent_field(
+            tx, ty = vector.compute_tangent_field(
                 arr[i, :, :],
                 expansion,
                 primitive_lattice_vectors,
@@ -283,7 +283,7 @@ class TangentVectorTest(unittest.TestCase):
         )
 
         def loss_fn(arr):
-            tx, ty = _vector.compute_tangent_field(
+            tx, ty = vector.compute_tangent_field(
                 arr=arr,
                 expansion=expansion,
                 primitive_lattice_vectors=primitive_lattice_vectors,
@@ -313,7 +313,7 @@ class TangentVectorTest(unittest.TestCase):
         )
 
         def loss_fn(arr):
-            tx, ty = _vector.compute_tangent_field(
+            tx, ty = vector.compute_tangent_field(
                 arr=arr,
                 expansion=expansion,
                 primitive_lattice_vectors=primitive_lattice_vectors,
@@ -371,17 +371,17 @@ class NormalizeTest(unittest.TestCase):
     @parameterized.expand(
         [
             (
-                _vector._normalize_elementwise,
+                vector._normalize_elementwise,
                 [[1 / jnp.sqrt(2), 1.0, 0.0, 1.0, 0.0]],
                 [[1 / jnp.sqrt(2), 0.0, 1.0, 0.0, 0.0]],
             ),
             (
-                _vector._normalize,
+                vector._normalize,
                 [[1 / jnp.sqrt(2), 0.2 / jnp.sqrt(2), 0.0, 0.01 / jnp.sqrt(2), 0.0]],
                 [[1 / jnp.sqrt(2), 0.0, 0.2 / jnp.sqrt(2), 0.0, 0.0]],
             ),
             (
-                _vector._normalize_jones,
+                vector._normalize_jones,
                 [[0.5 + 0.5j, 0.734, 0.680, 0.707, 0.707]],
                 [[0.5 + 0.5j, 0.680j, 0.734j, 0.707j, 0.707j]],
             ),
@@ -397,9 +397,9 @@ class NormalizeTest(unittest.TestCase):
 
     @parameterized.expand(
         [
-            (_vector._normalize_elementwise,),
-            (_vector._normalize,),
-            (_vector._normalize_jones,),
+            (vector._normalize_elementwise,),
+            (vector._normalize,),
+            (vector._normalize_jones,),
         ]
     )
     def test_zeros_no_nan(self, normalize_fn):
@@ -412,9 +412,9 @@ class NormalizeTest(unittest.TestCase):
 
     @parameterized.expand(
         [
-            (_vector._normalize_elementwise,),
-            (_vector._normalize,),
-            (_vector._normalize_jones,),
+            (vector._normalize_elementwise,),
+            (vector._normalize,),
+            (vector._normalize_jones,),
         ]
     )
     def test_gradient_no_nan(self, normalize_fn):
@@ -429,9 +429,9 @@ class NormalizeTest(unittest.TestCase):
 
     @parameterized.expand(
         [
-            [_vector._normalize_elementwise],
-            [_vector._normalize],
-            [_vector._normalize_jones],
+            [vector._normalize_elementwise],
+            [vector._normalize],
+            [vector._normalize_jones],
         ]
     )
     def test_batch_calculation_matches_single(self, normalize_fn):
@@ -454,11 +454,11 @@ class MagnitudeTest(unittest.TestCase):
         ]
     )
     def test_magnitude(self, tx, ty, expected):
-        result = _vector._field_magnitude(jnp.stack([tx, ty], axis=-1))
+        result = vector._field_magnitude(jnp.stack([tx, ty], axis=-1))
         onp.testing.assert_allclose(result, expected)
 
     def test_magnitude_gradient_no_nan(self):
-        grad = jax.grad(lambda x: jnp.squeeze(_vector._field_magnitude(x)))(
+        grad = jax.grad(lambda x: jnp.squeeze(vector._field_magnitude(x)))(
             jnp.zeros((2,))
         )
         self.assertFalse(onp.any(onp.isnan(grad)))
@@ -474,11 +474,11 @@ class AngleTest(unittest.TestCase):
         ]
     )
     def test_angle(self, tx, ty, expected):
-        result = _vector._angle(tx + 1j * ty)
+        result = vector._angle(tx + 1j * ty)
         onp.testing.assert_allclose(result, expected)
 
     def test_angle_gradient_no_nan(self):
-        grad = jax.grad(_vector._angle)(0.0)
+        grad = jax.grad(vector._angle)(0.0)
         self.assertFalse(onp.any(onp.isnan(grad)))
 
 
@@ -497,7 +497,7 @@ class TangentFieldMatchesExpectedTest(unittest.TestCase):
         # small x-gradient. This avoids the codepath which manually gives fields
         # when the array only varies in one direction.
         arr = jnp.concatenate([arr, arr * 0.99, arr * 0.98], axis=0)
-        tx, ty = _vector.compute_field_pol(
+        tx, ty = vector.compute_field_pol(
             arr,
             basis.Expansion(
                 basis_coefficients=jnp.asarray(
@@ -548,7 +548,7 @@ class TangentFieldMatchesExpectedTest(unittest.TestCase):
         arr = jnp.array(
             [[0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0]], dtype=jnp.float32
         )
-        tx, ty = _vector.compute_field_pol(
+        tx, ty = vector.compute_field_pol(
             arr,
             basis.Expansion(
                 basis_coefficients=jnp.asarray(
@@ -568,7 +568,7 @@ class TangentFieldMatchesExpectedTest(unittest.TestCase):
         arr = jnp.array(
             [[0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0]], dtype=jnp.float32
         ).T
-        tx, ty = _vector.compute_field_pol(
+        tx, ty = vector.compute_field_pol(
             arr,
             basis.Expansion(
                 basis_coefficients=jnp.asarray(
@@ -593,7 +593,7 @@ class TangentFieldMatchesExpectedTest(unittest.TestCase):
         arr = jnp.array(
             [[0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0]], dtype=jnp.float32
         )
-        tx, ty = _vector.compute_field_jones_direct(
+        tx, ty = vector.compute_field_jones_direct(
             arr,
             basis.Expansion(
                 basis_coefficients=jnp.asarray(
@@ -610,7 +610,7 @@ class TangentFieldMatchesExpectedTest(unittest.TestCase):
 
 
 class SchemesTest(unittest.TestCase):
-    @parameterized.expand([(scheme,) for scheme in _vector.VECTOR_FIELD_SCHEMES])
+    @parameterized.expand([(scheme,) for scheme in vector.VECTOR_FIELD_SCHEMES])
     def test_batch_matches_single_exact(self, scheme):
         key = jax.random.PRNGKey(0)
         arr = jax.random.uniform(key, shape=(5, 10, 10))
@@ -620,13 +620,13 @@ class SchemesTest(unittest.TestCase):
             approximate_num_terms=10,
             truncation=basis.Truncation.CIRCULAR,
         )
-        tx, ty = _vector.VECTOR_FIELD_SCHEMES[scheme](
+        tx, ty = vector.VECTOR_FIELD_SCHEMES[scheme](
             arr=arr,
             expansion=expansion,
             primitive_lattice_vectors=primitive_lattice_vectors,
         )
         for i in range(5):
-            expected_tx_i, expected_ty_i = _vector.VECTOR_FIELD_SCHEMES[scheme](
+            expected_tx_i, expected_ty_i = vector.VECTOR_FIELD_SCHEMES[scheme](
                 arr=arr[i, :, :],
                 expansion=expansion,
                 primitive_lattice_vectors=primitive_lattice_vectors,
@@ -634,7 +634,7 @@ class SchemesTest(unittest.TestCase):
             onp.testing.assert_allclose(tx[i, :, :], expected_tx_i)
             onp.testing.assert_allclose(ty[i, :, :], expected_ty_i)
 
-    @parameterized.expand([(scheme,) for scheme in _vector.VECTOR_FIELD_SCHEMES])
+    @parameterized.expand([(scheme,) for scheme in vector.VECTOR_FIELD_SCHEMES])
     def test_uniform_array_no_nan(self, scheme):
         # The tangent field calculation requires special logic to handle uniform arrays,
         #  otherwise `nan` will show up in the result.
@@ -645,7 +645,7 @@ class SchemesTest(unittest.TestCase):
             approximate_num_terms=10,
             truncation=basis.Truncation.CIRCULAR,
         )
-        tx, ty = _vector.VECTOR_FIELD_SCHEMES[scheme](
+        tx, ty = vector.VECTOR_FIELD_SCHEMES[scheme](
             arr=arr,
             expansion=expansion,
             primitive_lattice_vectors=primitive_lattice_vectors,
@@ -653,7 +653,7 @@ class SchemesTest(unittest.TestCase):
         self.assertFalse(onp.any(onp.isnan(tx)))
         self.assertFalse(onp.any(onp.isnan(ty)))
 
-    @parameterized.expand([(scheme,) for scheme in _vector.VECTOR_FIELD_SCHEMES])
+    @parameterized.expand([(scheme,) for scheme in vector.VECTOR_FIELD_SCHEMES])
     def test_gradient_no_nan(self, scheme):
         primitive_lattice_vectors = basis.LatticeVectors(u=basis.X, v=basis.Y)
         expansion = basis.generate_expansion(
@@ -663,7 +663,7 @@ class SchemesTest(unittest.TestCase):
         )
 
         def _loss_fn(arr):
-            tx, ty = _vector.VECTOR_FIELD_SCHEMES[scheme](
+            tx, ty = vector.VECTOR_FIELD_SCHEMES[scheme](
                 arr=arr,
                 expansion=expansion,
                 primitive_lattice_vectors=basis.LatticeVectors(u=basis.X, v=basis.Y),
@@ -699,7 +699,7 @@ class SchemesTest(unittest.TestCase):
         arr = jax.random.uniform(jax.random.PRNGKey(0), (30, 1)) > 0.5
         arr = jnp.kron(arr, jnp.ones((20, 1))).astype(float)
 
-        field = _vector._compute_tangent_field_no_batch(
+        field = vector._compute_tangent_field_no_batch(
             arr=arr,
             expansion=expansion,
             primitive_lattice_vectors=primitive_lattice_vectors,
@@ -743,12 +743,12 @@ class Detect1DTest(unittest.TestCase):
         primitive_lattice_vectors = basis.LatticeVectors(u=basis.X, v=basis.Y)
         expansion = basis.generate_expansion(primitive_lattice_vectors, 200)
 
-        grad = _vector._compute_gradient(arr, primitive_lattice_vectors)
-        gx = _vector._filter_and_adjust_resolution(grad[..., 0], expansion)
-        gy = _vector._filter_and_adjust_resolution(grad[..., 1], expansion)
-        grad = _vector._normalize(jnp.stack([gx, gy], axis=-1))
+        grad = vector._compute_gradient(arr, primitive_lattice_vectors)
+        gx = vector._filter_and_adjust_resolution(grad[..., 0], expansion)
+        gy = vector._filter_and_adjust_resolution(grad[..., 1], expansion)
+        grad = vector._normalize(jnp.stack([gx, gy], axis=-1))
 
-        is_1d, _ = _vector._is_1d_field(grad)
+        is_1d, _ = vector._is_1d_field(grad)
         self.assertTrue(is_1d)
 
     def test_detect_not_1d(self):
@@ -759,10 +759,10 @@ class Detect1DTest(unittest.TestCase):
         primitive_lattice_vectors = basis.LatticeVectors(u=basis.X, v=basis.Y)
         expansion = basis.generate_expansion(primitive_lattice_vectors, 200)
 
-        grad = _vector._compute_gradient(arr, primitive_lattice_vectors)
-        gx = _vector._filter_and_adjust_resolution(grad[..., 0], expansion)
-        gy = _vector._filter_and_adjust_resolution(grad[..., 1], expansion)
-        grad = _vector._normalize(jnp.stack([gx, gy], axis=-1))
+        grad = vector._compute_gradient(arr, primitive_lattice_vectors)
+        gx = vector._filter_and_adjust_resolution(grad[..., 0], expansion)
+        gy = vector._filter_and_adjust_resolution(grad[..., 1], expansion)
+        grad = vector._normalize(jnp.stack([gx, gy], axis=-1))
 
-        is_1d, _ = _vector._is_1d_field(grad)
+        is_1d, _ = vector._is_1d_field(grad)
         self.assertFalse(is_1d)

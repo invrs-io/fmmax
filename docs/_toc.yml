@@ -9,6 +9,7 @@ parts:
    - file: notebooks/formulations
  - caption: Examples
    chapters:
+   - file: notebooks/basics
    - file: notebooks/dipoles
    - file: notebooks/metal_dipole
    - file: notebooks/crystal_bz
@@ -16,12 +17,8 @@ parts:
  - caption: API
    chapters:
    - file: api/basis
-   - file: api/beams
-   - file: api/farfield
-   - file: api/fields
-   - file: api/fmm
-   - file: api/pml
+   - file: api/eigensolve
    - file: api/scattering
    - file: api/sources
-   - file: api/translate
-   - file: api/utils
+   - file: api/outputs
+   - file: api/pml

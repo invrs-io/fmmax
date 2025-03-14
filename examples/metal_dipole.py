@@ -9,7 +9,7 @@ from typing import Tuple
 import jax.numpy as jnp
 import matplotlib.pyplot as plt  # type: ignore[import]
 
-from fmmax import basis, fields, fmm, pml, scattering, sources
+import fmmax
 
 
 def simulate_metal_dipole(
@@ -23,7 +23,7 @@ def simulate_metal_dipole(
     grid_spacing_fields: float = 0.01,
     wavelength: float = 0.63,
     approximate_num_terms: int = 1200,
-    pml_params: pml.PMLParams = pml.PMLParams(num_x=50, num_y=50),
+    pml_params: fmmax.PMLParams = fmmax.PMLParams(num_x=50, num_y=50),
 ) -> Tuple[
     Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],  # (ex, ey, ez)
     Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],  # (hx, hy, hz)
@@ -61,35 +61,35 @@ def simulate_metal_dipole(
     Returns:
         The electric fields, magnetic fields, and coordinates where these are evaluated.
     """
-    primitive_lattice_vectors = basis.LatticeVectors(
-        u=pitch * basis.X, v=pitch * basis.Y
+    primitive_lattice_vectors = fmmax.LatticeVectors(
+        u=pitch * fmmax.X, v=pitch * fmmax.Y
     )
-    expansion = basis.generate_expansion(
+    expansion = fmmax.generate_expansion(
         primitive_lattice_vectors=primitive_lattice_vectors,
         approximate_num_terms=approximate_num_terms,
-        truncation=basis.Truncation.CIRCULAR,
+        truncation=fmmax.Truncation.CIRCULAR,
     )
     in_plane_wavevector = jnp.zeros((2,))
 
     # Generate the anisotropic permittivity and permeability that arise from applying
     # a uniaxial PML to the x- and y-boundary. Note that the PML assumes a unit cell
     # with primitive lattice vectors aligned with the x- and y-direction.
-    permittivities_ambient_pml, permeabilities_ambient_pml = pml.apply_uniaxial_pml(
+    permittivities_ambient_pml, permeabilities_ambient_pml = fmmax.apply_uniaxial_pml(
         permittivity=jnp.full(grid_shape, permittivity_ambient),
         pml_params=pml_params,
     )
-    permittivities_metal_pml, permeabilities_metal_pml = pml.apply_uniaxial_pml(
+    permittivities_metal_pml, permeabilities_metal_pml = fmmax.apply_uniaxial_pml(
         permittivity=jnp.full(grid_shape, permittivity_metal),
         pml_params=pml_params,
     )
 
     eigensolve = functools.partial(
-        fmm.eigensolve_general_anisotropic_media,
+        fmmax.eigensolve_general_anisotropic_media,
         wavelength=jnp.asarray(wavelength),
         in_plane_wavevector=in_plane_wavevector,
         primitive_lattice_vectors=primitive_lattice_vectors,
         expansion=expansion,
-        formulation=fmm.Formulation.FFT,
+        formulation=fmmax.Formulation.FFT,
         vector_field_source=None,  # Automatically choose the vector field source.
     )
     solve_result_ambient = eigensolve(
@@ -118,11 +118,11 @@ def simulate_metal_dipole(
     )
 
     # Compute interior scattering matrices to enable field calculations.
-    s_matrices_interior_before_source = scattering.stack_s_matrices_interior(
+    s_matrices_interior_before_source = fmmax.stack_s_matrices_interior(
         layer_solve_results=[solve_result_ambient],
         layer_thicknesses=[jnp.asarray(thickness_ambient)],
     )
-    s_matrices_interior_after_source = scattering.stack_s_matrices_interior(
+    s_matrices_interior_after_source = fmmax.stack_s_matrices_interior(
         layer_solve_results=[solve_result_ambient, solve_result_metal],
         layer_thicknesses=[
             jnp.asarray(thickness_dipole_metal_gap),
@@ -135,7 +135,7 @@ def simulate_metal_dipole(
     s_matrix_after_source = s_matrices_interior_after_source[-1][0]
 
     # Generate the Fourier representation of a point dipole.
-    dipole = sources.dirac_delta_source(
+    dipole = fmmax.dirac_delta_source(
         location=jnp.asarray([[pitch / 2, pitch / 2]]),
         in_plane_wavevector=in_plane_wavevector,
         primitive_lattice_vectors=primitive_lattice_vectors,
@@ -151,7 +151,7 @@ def simulate_metal_dipole(
         fwd_amplitude_after_start,
         _,
         _,
-    ) = sources.amplitudes_for_source(
+    ) = fmmax.amplitudes_for_source(
         jx=jnp.zeros_like(dipole),
         jy=dipole,
         jz=jnp.zeros_like(dipole),
@@ -160,7 +160,7 @@ def simulate_metal_dipole(
     )
 
     # Solve for the eigenmode amplitudes in every layer of the stack.
-    amplitudes_interior = fields.stack_amplitudes_interior_with_source(
+    amplitudes_interior = fmmax.stack_amplitudes_interior_with_source(
         s_matrices_interior_before_source=s_matrices_interior_before_source,
         s_matrices_interior_after_source=s_matrices_interior_after_source,
         backward_amplitude_before_end=bwd_amplitude_before_end,
@@ -169,7 +169,7 @@ def simulate_metal_dipole(
     # Coordinates where fields are to be evaluated.
     x = jnp.linspace(0, pitch, grid_shape[0])
     y = jnp.ones_like(x) * pitch / 2
-    (ex, ey, ez), (hx, hy, hz), (x, y, z) = fields.stack_fields_3d_on_coordinates(
+    (ex, ey, ez), (hx, hy, hz), (x, y, z) = fmmax.stack_fields_3d_on_coordinates(
         amplitudes_interior=amplitudes_interior,
         layer_solve_results=[
             solve_result_ambient,

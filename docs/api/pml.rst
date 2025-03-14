@@ -1,5 +1,5 @@
-pml
+Absorbing boundary layers
 ===================================
 
-.. automodule:: fmmax.pml
-    :members:
+.. autoclass:: fmmax.PMLParams
+.. autoclass:: fmmax.apply_uniaxial_pml

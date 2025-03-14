@@ -13,7 +13,7 @@ import jax
 import jax.numpy as jnp
 import numpy as onp
 
-from fmmax import _misc, basis, utils
+from fmmax import basis, misc, utils
 
 
 def farfield_profile(
@@ -50,8 +50,8 @@ def farfield_profile(
     )
 
     ndim_batch = flux.ndim - 2
-    wavelength = _misc.atleast_nd(wavelength, ndim_batch)
-    in_plane_wavevector = _misc.atleast_nd(in_plane_wavevector, ndim_batch + 1)
+    wavelength = misc.atleast_nd(wavelength, ndim_batch)
+    in_plane_wavevector = misc.atleast_nd(in_plane_wavevector, ndim_batch + 1)
 
     transverse_wavevectors = basis.transverse_wavevectors(
         in_plane_wavevector,
@@ -180,7 +180,7 @@ def _solid_angle_from_unflattened_transverse_wavevectors(
 # -----------------------------------------------------------------------------
 
 
-def integrated_flux(
+def farfield_integrated_flux(
     flux: jnp.ndarray,
     wavelength: jnp.ndarray,
     in_plane_wavevector: jnp.ndarray,
@@ -286,8 +286,8 @@ def _integrated_flux_upsampled(
     )
 
     ndim_batch = flux.ndim - 2
-    wavelength = _misc.atleast_nd(wavelength, ndim_batch)
-    in_plane_wavevector = _misc.atleast_nd(in_plane_wavevector, ndim_batch + 1)
+    wavelength = misc.atleast_nd(wavelength, ndim_batch)
+    in_plane_wavevector = misc.atleast_nd(in_plane_wavevector, ndim_batch + 1)
 
     transverse_wavevectors = basis.transverse_wavevectors(
         in_plane_wavevector=in_plane_wavevector,

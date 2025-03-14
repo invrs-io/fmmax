@@ -11,7 +11,7 @@ import jax.numpy as jnp
 import numpy as onp
 from parameterized import parameterized
 
-from fmmax import _eig, _misc
+from fmmax import eig, misc
 
 # Enable 64-bit precision for higher accuracy.
 jax.config.update("jax_enable_x64", True)
@@ -58,8 +58,8 @@ def _sort_eigs(eigvals, eigvecs):
 class EigTest(unittest.TestCase):
     def test_no_nan_gradient_with_degenerate_eigenvalues(self):
         matrix = jnp.asarray([[2.0, 0.0, 2.0], [0.0, -2.0, 0.0], [2.0, 0.0, -1.0]])
-        eigval_grad = jax.grad(lambda m: jnp.sum(jnp.abs(_eig.eig(m)[0])))(matrix)
-        eigvec_grad = jax.grad(lambda m: jnp.sum(jnp.abs(_eig.eig(m)[1])))(matrix)
+        eigval_grad = jax.grad(lambda m: jnp.sum(jnp.abs(eig.eig(m)[0])))(matrix)
+        eigvec_grad = jax.grad(lambda m: jnp.sum(jnp.abs(eig.eig(m)[1])))(matrix)
         self.assertFalse(onp.any(onp.isnan(eigval_grad)))
         self.assertFalse(onp.any(onp.isnan(eigvec_grad)))
 
@@ -69,7 +69,7 @@ class EigTest(unittest.TestCase):
         expected_eigval, expected_eigvec = jnp.linalg.eig(
             jax.device_put(matrix, device=jax.devices("cpu")[0])
         )
-        eigval, eigvec = _eig.eig(matrix)
+        eigval, eigvec = eig.eig(matrix)
         onp.testing.assert_allclose(eigval, expected_eigval, rtol=1e-12)
         onp.testing.assert_allclose(eigvec, expected_eigvec, rtol=1e-12)
 
@@ -78,7 +78,7 @@ class EigTest(unittest.TestCase):
         expected_jac = jax.jacrev(jnp.linalg.eigvals, holomorphic=True)(
             jax.device_put(matrix, device=jax.devices("cpu")[0])
         )
-        jac = jax.jacrev(lambda x: _eig.eig(x)[0], holomorphic=True)(matrix)
+        jac = jax.jacrev(lambda x: eig.eig(x)[0], holomorphic=True)(matrix)
         onp.testing.assert_allclose(jac, expected_jac, rtol=RTOL)
 
     def test_eigvalue_jacobian_matches_expected_complex_matrix(self):
@@ -87,7 +87,7 @@ class EigTest(unittest.TestCase):
         expected_jac = jax.jacrev(jnp.linalg.eigvals, holomorphic=True)(
             jax.device_put(matrix, device=jax.devices("cpu")[0])
         )
-        jac = jax.jacrev(lambda x: _eig.eig(x)[0], holomorphic=True)(matrix)
+        jac = jax.jacrev(lambda x: eig.eig(x)[0], holomorphic=True)(matrix)
         onp.testing.assert_allclose(jac, expected_jac, rtol=RTOL)
 
     @parameterized.expand(
@@ -108,11 +108,11 @@ class EigTest(unittest.TestCase):
             return _sort_eigs(*jnp.linalg.eigh(m, symmetrize_input=False))
 
         def _eig_fn(m):
-            return _sort_eigs(*_eig.eig(m))
+            return _sort_eigs(*eig.eig(m))
 
         matrix = jax.random.normal(jax.random.PRNGKey(0), (32,))
         matrix = matrix.reshape((2, 4, 4)).astype(complex)
-        matrix = matrix + _misc.matrix_adjoint(matrix)
+        matrix = matrix + misc.matrix_adjoint(matrix)
         matrix *= matrix_scale
         matrix += jnp.eye(matrix.shape[-1]) * eigval_shift
         onp.testing.assert_array_equal(matrix, jnp.transpose(matrix, (0, 2, 1)))
@@ -156,15 +156,15 @@ class EigTest(unittest.TestCase):
             return _sort_eigs(*jnp.linalg.eigh(m, symmetrize_input=False))
 
         def _eig_fn(m):
-            return _sort_eigs(*_eig.eig(m))
+            return _sort_eigs(*eig.eig(m))
 
         matrix = jax.random.normal(jax.random.PRNGKey(0), (32,))
         matrix = matrix + 1j * jax.random.normal(jax.random.PRNGKey(1), (32,))
         matrix = matrix.reshape((2, 4, 4)).astype(complex)
-        matrix = matrix + _misc.matrix_adjoint(matrix)
+        matrix = matrix + misc.matrix_adjoint(matrix)
         matrix *= matrix_scale
         matrix += jnp.eye(matrix.shape[-1]) * eigval_shift
-        onp.testing.assert_array_equal(matrix, _misc.matrix_adjoint(matrix))
+        onp.testing.assert_array_equal(matrix, misc.matrix_adjoint(matrix))
 
         with self.subTest("eigenvalues"):
             onp.testing.assert_allclose(_eig_fn(matrix)[0], _eigh_fn(matrix)[0])
@@ -194,8 +194,8 @@ class EigTest(unittest.TestCase):
         # eigendecomposition.
         def fn(x):
             x = x + 1j * x
-            x = x + _misc.matrix_adjoint(x)
-            _, eigvec = _eig.eig(x)
+            x = x + misc.matrix_adjoint(x)
+            _, eigvec = eig.eig(x)
             return jnp.abs(eigvec)
 
         matrix = jax.random.normal(jax.random.PRNGKey(0), (32,))
@@ -212,7 +212,7 @@ class EigTest(unittest.TestCase):
         # eigendecomposition.
         def fn(x):
             x = x + 1j * x
-            _, eigvec = _sort_eigs(*_eig.eig(x))
+            _, eigvec = _sort_eigs(*eig.eig(x))
             return jnp.abs(eigvec)
 
         matrix = jax.random.normal(jax.random.PRNGKey(0), (32,))
@@ -226,8 +226,8 @@ class EigTest(unittest.TestCase):
         matrix = jax.random.normal(jax.random.PRNGKey(0), (2, 4, 4))
         matrix += 1j * jax.random.normal(jax.random.PRNGKey(1), (2, 4, 4))
 
-        batch_eigval, batch_eigvec = _eig.eig(matrix)
-        vmap_eigval, vmap_eigvec = jax.vmap(_eig.eig)(matrix)
+        batch_eigval, batch_eigvec = eig.eig(matrix)
+        vmap_eigval, vmap_eigvec = jax.vmap(eig.eig)(matrix)
 
         onp.testing.assert_array_equal(vmap_eigval, batch_eigval)
         onp.testing.assert_array_equal(vmap_eigvec, vmap_eigvec)

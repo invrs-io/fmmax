@@ -8,7 +8,7 @@ from typing import Callable, Sequence, Tuple
 
 import jax.numpy as jnp
 
-from fmmax import _fft, _misc, basis, fmm, scattering, utils
+from fmmax import basis, fft, fmm, misc, scattering, utils
 
 Field = Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]  # `ex, ey, ez` or `hx, hy, hz`
 
@@ -92,7 +92,7 @@ def _validate_amplitudes_shape(
     if (
         amplitudes[0].ndim < 2
         or amplitudes[0].shape[-2] != num_terms
-        or not _misc.batch_compatible_shapes(*[a.shape for a in amplitudes])
+        or not misc.batch_compatible_shapes(*[a.shape for a in amplitudes])
     ):
         raise ValueError(
             f"All amplitudes must have matching shape `(..., {num_terms}, "
@@ -281,7 +281,7 @@ def _poynting_flux_a_matrix(layer_solve_result: fmm.LayerSolveResult) -> jnp.nda
     return (
         omega_script_k
         @ phi
-        @ _misc.diag(jnp.ones((), dtype=q.dtype) / (angular_frequency * q))
+        @ misc.diag(jnp.ones((), dtype=q.dtype) / (angular_frequency * q))
     )
 
 
@@ -376,7 +376,7 @@ def field_conversion_matrix(layer_solve_result: fmm.LayerSolveResult) -> jnp.nda
     mat = (
         omega_script_k
         @ phi
-        @ _misc.diag(jnp.ones((), dtype=q.dtype) / (angular_frequency * q))
+        @ misc.diag(jnp.ones((), dtype=q.dtype) / (angular_frequency * q))
     )
     return jnp.block([[mat, -mat], [phi, phi]])
 
@@ -478,7 +478,7 @@ def _fields_on_grid(
     )
 
     def _field_on_grid(fourier_field):
-        field = _fft.ifft(fourier_field, expansion, shape, axis=-2)
+        field = fft.ifft(fourier_field, expansion, shape, axis=-2)
         return jnp.tile(field, num_unit_cells + (1,))
 
     ex, ey, ez = electric_field
@@ -605,7 +605,7 @@ def stack_amplitudes_interior(
     """
     return tuple(
         [
-            amplitudes_interior(
+            layer_amplitudes_interior(
                 s_matrix_before=s_matrix_before,
                 s_matrix_after=s_matrix_after,
                 forward_amplitude_0_start=forward_amplitude_0_start,
@@ -656,7 +656,7 @@ def stack_amplitudes_interior_with_source(
     return amplitudes_before + amplitudes_after
 
 
-def amplitudes_interior(
+def layer_amplitudes_interior(
     s_matrix_before: scattering.ScatteringMatrix,
     s_matrix_after: scattering.ScatteringMatrix,
     forward_amplitude_0_start: jnp.ndarray,

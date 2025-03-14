@@ -9,7 +9,7 @@ import jax
 import jax.example_libraries.optimizers as jopt
 import jax.numpy as jnp
 
-from fmmax import basis, fields, fmm, scattering, utils
+import fmmax
 
 Aux = Dict[str, Any]
 Initializer = Callable[[jax.Array, Tuple[int, int]], jnp.ndarray]
@@ -63,8 +63,8 @@ class PolarizationSorterComponent:
         wavelength: jnp.ndarray = _DEFAULT_WAVELENGTH,
         pitch: float = 2.0,
         approximate_num_terms: int = 200,
-        truncation: basis.Truncation = basis.Truncation.CIRCULAR,
-        formulation: fmm.Formulation = fmm.Formulation.FFT,
+        truncation: fmmax.Truncation = fmmax.Truncation.CIRCULAR,
+        formulation: fmmax.Formulation = fmmax.Formulation.FFT,
         density_grid_shape: Tuple[int, int] = (128, 128),
         field_grid_shape: Tuple[int, int] = (128, 128),
         field_z_offset: float = 0.0,
@@ -112,16 +112,16 @@ class PolarizationSorterComponent:
         self._substrate_permittivity: jnp.ndarray = jnp.asarray(substrate_permittivity)
         self._substrate_thickness: jnp.ndarray = jnp.asarray(substrate_thickness)
         self._wavelength: jnp.ndarray = jnp.asarray(wavelength)
-        self._primitive_lattice_vectors = basis.LatticeVectors(
-            u=pitch * basis.X,
-            v=pitch * basis.Y,
+        self._primitive_lattice_vectors = fmmax.LatticeVectors(
+            u=pitch * fmmax.X,
+            v=pitch * fmmax.Y,
         )
-        self._expansion: basis.Expansion = basis.generate_expansion(
+        self._expansion: fmmax.Expansion = fmmax.generate_expansion(
             primitive_lattice_vectors=self._primitive_lattice_vectors,
             approximate_num_terms=approximate_num_terms,
             truncation=truncation,
         )
-        self._formulation: fmm.Formulation = formulation
+        self._formulation: fmmax.Formulation = formulation
         self._density_grid_shape: Tuple[int, int] = density_grid_shape
         self._field_grid_shape: Tuple[int, int] = field_grid_shape
         self._field_z_offset: jnp.ndarray = jnp.asarray(field_z_offset)
@@ -147,8 +147,8 @@ class PolarizationSorterComponent:
         self,
         params: Params,
         wavelength: Optional[jnp.ndarray] = None,
-        expansion: Optional[basis.Expansion] = None,
-        formulation: Optional[fmm.Formulation] = None,
+        expansion: Optional[fmmax.Expansion] = None,
+        formulation: Optional[fmmax.Formulation] = None,
         field_grid_shape: Optional[Tuple[int, int]] = None,
         field_z_offset: Optional[jnp.ndarray] = None,
     ) -> Tuple[jnp.ndarray, Aux]:
@@ -209,8 +209,8 @@ def _simulate_polarization_sorter(
     spacer_permittivity: jnp.ndarray,
     substrate_permittivity: jnp.ndarray,
     wavelength: jnp.ndarray,
-    expansion: basis.Expansion,
-    formulation: fmm.Formulation,
+    expansion: fmmax.Expansion,
+    formulation: fmmax.Formulation,
     field_grid_shape: Tuple[int, int],
     field_z_offset: jnp.ndarray,
 ) -> Tuple[jnp.ndarray, Aux]:
@@ -242,7 +242,7 @@ def _simulate_polarization_sorter(
     permittivities = [
         ambient_permittivity[jnp.newaxis, jnp.newaxis],
         cap_permittivity[jnp.newaxis, jnp.newaxis],
-        utils.interpolate_permittivity(
+        fmmax.interpolate_permittivity(
             permittivity_solid=sorter_permittivity_solid,
             permittivity_void=sorter_permittivity_void,
             density=params["layers"]["sorter"]["density"],
@@ -261,7 +261,7 @@ def _simulate_polarization_sorter(
 
     # Perform the eigensolve for each layer in the stack.
     layer_solve_results = [
-        fmm.eigensolve_isotropic_media(
+        fmmax.eigensolve_isotropic_media(
             wavelength=wavelength,
             in_plane_wavevector=jnp.zeros((2,)),
             primitive_lattice_vectors=params["primitive_lattice_vectors"],
@@ -272,7 +272,7 @@ def _simulate_polarization_sorter(
         for p in permittivities
     ]
 
-    s_matrix = scattering.stack_s_matrix(layer_solve_results, thicknesses)
+    s_matrix = fmmax.stack_s_matrix(layer_solve_results, thicknesses)
 
     # We consider incident plane waves with four different linear polarizations:
     # TE, TM, (TE + TM) / sqrt(2), and (TE - TM) / sqrt(2). These defined by the
@@ -291,14 +291,14 @@ def _simulate_polarization_sorter(
 
     # Compute wave amplitudes colocated at the start of the ambient.
     bwd_amplitude_0_end = s_matrix.s21 @ fwd_amplitude_0_start
-    fwd_amplitude_0_start, bwd_amplitude_0_start = fields.colocate_amplitudes(
+    fwd_amplitude_0_start, bwd_amplitude_0_start = fmmax.colocate_amplitudes(
         fwd_amplitude_0_start,
         bwd_amplitude_0_end,
         z_offset=jnp.zeros(()),  # At the start of the ambient.
         layer_solve_result=layer_solve_results[0],
         layer_thickness=params["layers"]["ambient"]["thickness"],
     )
-    sz_fwd_0, sz_bwd_0 = fields.amplitude_poynting_flux(
+    sz_fwd_0, sz_bwd_0 = fmmax.amplitude_poynting_flux(
         fwd_amplitude_0_start, bwd_amplitude_0_start, layer_solve_results[0]
     )
     sz_fwd_ambient_sum = jnp.sum(jnp.abs(sz_fwd_0), axis=-2)
@@ -307,7 +307,7 @@ def _simulate_polarization_sorter(
 
     # Compute the forward-going and backward-going wave amplitudes in the substrate.
     fwd_amplitude_N_start = s_matrix.s11 @ fwd_amplitude_0_start
-    fwd_amplitude_N_offset, bwd_amplitude_N_offset = fields.colocate_amplitudes(
+    fwd_amplitude_N_offset, bwd_amplitude_N_offset = fmmax.colocate_amplitudes(
         fwd_amplitude_N_start,
         bwd_amplitude_N_end,
         z_offset=field_z_offset,
@@ -316,14 +316,14 @@ def _simulate_polarization_sorter(
     )
 
     # Compute the Fourier field coefficients from the wave amplitudes in the substrate.
-    ef, hf = fields.fields_from_wave_amplitudes(
+    ef, hf = fmmax.fields_from_wave_amplitudes(
         fwd_amplitude_N_offset,
         bwd_amplitude_N_offset,
         layer_solve_result=layer_solve_results[-1],
     )
 
     # Compute the physical fields on the real-space grid in the substrate.
-    (ex, ey, ez), (hx, hy, hz), (x, y) = fields.fields_on_grid(
+    (ex, ey, ez), (hx, hy, hz), (x, y) = fmmax.fields_on_grid(
         electric_field=ef,
         magnetic_field=hf,
         layer_solve_result=layer_solve_results[-1],
@@ -333,7 +333,7 @@ def _simulate_polarization_sorter(
     assert ex.shape == wavelength.shape + field_grid_shape + (4,)
 
     # Compute the Poynting flux on the real-space grid in the substrate.
-    sz = fields.time_average_z_poynting_flux((ex, ey, ez), (hx, hy, hz))
+    sz = fmmax.time_average_z_poynting_flux((ex, ey, ez), (hx, hy, hz))
 
     # Create masks for the four quadrants.
     mask = jnp.zeros(field_grid_shape + (1, 4))
@@ -425,10 +425,10 @@ def optimize(steps: int = 1000, approximate_num_terms: int = 400) -> List[jnp.nd
         n = int(factor * approximate_num_terms)
         response, _ = psc.response(
             params,
-            expansion=basis.generate_expansion(
+            expansion=fmmax.generate_expansion(
                 primitive_lattice_vectors=params["primitive_lattice_vectors"],
                 approximate_num_terms=n,
-                truncation=basis.Truncation.CIRCULAR,
+                truncation=fmmax.Truncation.CIRCULAR,
             ),
         )
         print(f"Response with approximate_num_terms={n}:")

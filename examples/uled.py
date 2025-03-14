@@ -9,7 +9,7 @@ from typing import Sequence, Tuple
 
 import jax.numpy as jnp
 
-from fmmax import basis, fields, fmm, scattering, sources
+import fmmax
 
 
 def simulate_uled(
@@ -30,8 +30,8 @@ def simulate_uled(
     dipole_y_offset: Sequence[float] = (0.0, 0.1, 0.2, 0.3, 0.4),
     dipole_fwhm: float = 20.0,
     approximate_num_terms: int = 1200,
-    truncation: basis.Truncation = basis.Truncation.CIRCULAR,
-    formulation: fmm.Formulation = fmm.Formulation.POL,
+    truncation: fmmax.Truncation = fmmax.Truncation.CIRCULAR,
+    formulation: fmmax.Formulation = fmmax.Formulation.POL,
     brillouin_grid_shape: Tuple[int, int] = (1, 1),
 ) -> Tuple[
     jnp.ndarray,
@@ -129,20 +129,20 @@ def simulate_uled(
         resolution=resolution,
     )
 
-    expansion = basis.generate_expansion(
+    expansion = fmmax.generate_expansion(
         primitive_lattice_vectors=primitive_lattice_vectors,
         approximate_num_terms=approximate_num_terms,
         truncation=truncation,
     )
 
-    in_plane_wavevector = basis.brillouin_zone_in_plane_wavevector(
+    in_plane_wavevector = fmmax.brillouin_zone_in_plane_wavevector(
         brillouin_grid_shape, primitive_lattice_vectors
     )
     assert in_plane_wavevector.shape[-1] == 2
     assert in_plane_wavevector.ndim == 3
 
     eigensolve = functools.partial(
-        fmm.eigensolve_isotropic_media,
+        fmmax.eigensolve_isotropic_media,
         wavelength=jnp.asarray(wavelength),
         in_plane_wavevector=in_plane_wavevector,
         primitive_lattice_vectors=primitive_lattice_vectors,
@@ -162,10 +162,10 @@ def simulate_uled(
     )
 
     # Compute interior scattering matrices.
-    s_matrices_interior_before_source = scattering.stack_s_matrices_interior(
+    s_matrices_interior_before_source = fmmax.stack_s_matrices_interior(
         layer_solve_results_before_source, thicknesses_before_source
     )
-    s_matrices_interior_after_source = scattering.stack_s_matrices_interior(
+    s_matrices_interior_after_source = fmmax.stack_s_matrices_interior(
         layer_solve_results_after_source, thicknesses_after_source
     )
     s_matrix_before_source = s_matrices_interior_before_source[-1][0]
@@ -177,7 +177,7 @@ def simulate_uled(
         (pitch / 2 - resolution, pitch / 2 + offset * epi_diameter - resolution)
         for offset in dipole_y_offset
     ]
-    dipoles = sources.gaussian_source(
+    dipoles = fmmax.gaussian_source(
         fwhm=jnp.asarray(dipole_fwhm),
         location=jnp.asarray(dipole_locations),
         in_plane_wavevector=in_plane_wavevector,
@@ -197,7 +197,7 @@ def simulate_uled(
         fwd_amplitude_after_start,
         bwd_amplitude_after_end,
         fwd_amplitude_substrate_start,
-    ) = sources.amplitudes_for_source(
+    ) = fmmax.amplitudes_for_source(
         jx=jx,
         jy=jy,
         jz=jz,
@@ -207,27 +207,27 @@ def simulate_uled(
 
     # Compute the Poynting flux just before the source, after the source,
     # and in the ambient, to allow calculation of the extraction efficiency.
-    fwd_amplitude_before_end = fields.propagate_amplitude(
+    fwd_amplitude_before_end = fmmax.propagate_amplitude(
         amplitude=fwd_amplitude_before_start,
         distance=s_matrix_before_source.end_layer_thickness,
         layer_solve_result=s_matrix_before_source.end_layer_solve_result,
     )
-    fwd_flux_before_end, bwd_flux_before_end = fields.directional_poynting_flux(
+    fwd_flux_before_end, bwd_flux_before_end = fmmax.directional_poynting_flux(
         forward_amplitude=fwd_amplitude_before_end,
         backward_amplitude=bwd_amplitude_before_end,
         layer_solve_result=s_matrix_before_source.end_layer_solve_result,
     )
-    bwd_amplitude_after_start = fields.propagate_amplitude(
+    bwd_amplitude_after_start = fmmax.propagate_amplitude(
         amplitude=bwd_amplitude_after_end,
         distance=s_matrix_after_source.start_layer_thickness,
         layer_solve_result=s_matrix_after_source.start_layer_solve_result,
     )
-    fwd_flux_after_start, bwd_flux_after_start = fields.directional_poynting_flux(
+    fwd_flux_after_start, bwd_flux_after_start = fmmax.directional_poynting_flux(
         forward_amplitude=fwd_amplitude_after_start,
         backward_amplitude=bwd_amplitude_after_start,
         layer_solve_result=s_matrix_after_source.start_layer_solve_result,
     )
-    _, bwd_flux_ambient_end = fields.directional_poynting_flux(
+    _, bwd_flux_ambient_end = fmmax.directional_poynting_flux(
         forward_amplitude=jnp.zeros_like(bwd_amplitude_ambient_end),
         backward_amplitude=bwd_amplitude_ambient_end,
         layer_solve_result=s_matrix_before_source.start_layer_solve_result,
@@ -257,13 +257,13 @@ def simulate_uled(
     extraction_efficiency = total_extracted_power / total_emitted_power
 
     # Compute the fields inside the structure.
-    amplitudes_interior = fields.stack_amplitudes_interior_with_source(
+    amplitudes_interior = fmmax.stack_amplitudes_interior_with_source(
         s_matrices_interior_before_source=s_matrices_interior_before_source,
         s_matrices_interior_after_source=s_matrices_interior_after_source,
         backward_amplitude_before_end=bwd_amplitude_before_end,
         forward_amplitude_after_start=fwd_amplitude_after_start,
     )
-    efields, hfields, (x, y, z) = fields.stack_fields_3d_auto_grid(
+    efields, hfields, (x, y, z) = fmmax.stack_fields_3d_auto_grid(
         amplitudes_interior=amplitudes_interior,
         layer_solve_results=(
             layer_solve_results_before_source + layer_solve_results_after_source
@@ -294,12 +294,12 @@ def uled_structure(
     Tuple[jnp.ndarray, ...],
     Tuple[jnp.ndarray, ...],
     Tuple[jnp.ndarray, ...],
-    basis.LatticeVectors,
+    fmmax.LatticeVectors,
 ]:
     """Returns quantities that describe the uLED structure."""
 
-    primitive_lattice_vectors = basis.LatticeVectors(
-        u=basis.X * pitch, v=basis.Y * pitch
+    primitive_lattice_vectors = fmmax.LatticeVectors(
+        u=fmmax.X * pitch, v=fmmax.Y * pitch
     )
 
     # Generate the permittivity for the cross section below the epi

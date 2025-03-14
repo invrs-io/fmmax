@@ -259,7 +259,7 @@ class IntegratedFluxTest(unittest.TestCase):
         # Calculate the integrated flux by the default method, which first
         # computes weights and then does the integration by taking the weighted
         # sum of flux.
-        integrated_flux = farfield.integrated_flux(
+        integrated_flux = farfield.farfield_integrated_flux(
             flux=flux,
             wavelength=wavelength,
             in_plane_wavevector=in_plane_wavevector,
@@ -306,7 +306,7 @@ class IntegratedFluxTest(unittest.TestCase):
             return jnp.full(polar_angle.shape, True)
 
         integrated_flux_fn = functools.partial(
-            farfield.integrated_flux,
+            farfield.farfield_integrated_flux,
             flux=flux,
             wavelength=wavelength,
             in_plane_wavevector=in_plane_wavevector,
@@ -387,7 +387,7 @@ class IntegratedFluxTest(unittest.TestCase):
             brillouin_grid_axes=(0, 1),
         )
 
-        integrated_flux = farfield.integrated_flux(
+        integrated_flux = farfield.farfield_integrated_flux(
             flux=-backward_flux,
             wavelength=wavelength,
             in_plane_wavevector=in_plane_wavevector,

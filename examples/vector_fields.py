@@ -6,7 +6,8 @@ Copyright (c) Meta Platforms, Inc. and affiliates.
 import jax.numpy as jnp
 import matplotlib.pyplot as plt  # type: ignore[import]
 
-from fmmax import _vector, basis
+import fmmax
+from fmmax import vector
 
 
 def plot_vector_fields(
@@ -15,23 +16,23 @@ def plot_vector_fields(
     """Generate a figure that compares different vector field schemes."""
 
     # Generate the pattern; a circular feature in a square unit cell.
-    primitive_lattice_vectors = basis.LatticeVectors(u=basis.X, v=basis.Y)
+    primitive_lattice_vectors = fmmax.LatticeVectors(u=fmmax.X, v=fmmax.Y)
     x, y = jnp.meshgrid(
         jnp.linspace(-0.5, 0.5, dim),
         jnp.linspace(-0.5, 0.5, dim),
         indexing="ij",
     )
     arr = (x**2 + y**2 < 0.4**2).astype(float)
-    expansion = basis.generate_expansion(
+    expansion = fmmax.generate_expansion(
         primitive_lattice_vectors=primitive_lattice_vectors,
         approximate_num_terms=200,
-        truncation=basis.Truncation.CIRCULAR,
+        truncation=fmmax.Truncation.CIRCULAR,
     )
 
     fig = plt.figure(figsize=(7, 4.5))
 
-    for i, scheme_name in enumerate(_vector.VECTOR_FIELD_SCHEMES):
-        tx, ty = _vector.VECTOR_FIELD_SCHEMES[scheme_name](
+    for i, scheme_name in enumerate(vector.VECTOR_FIELD_SCHEMES):
+        tx, ty = vector.VECTOR_FIELD_SCHEMES[scheme_name](
             arr, expansion, primitive_lattice_vectors
         )
 

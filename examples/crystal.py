@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt  # type: ignore[import]
 import numpy as onp
 from skimage import measure  # type: ignore[import]
 
-from fmmax import basis, beams, fields, fmm, scattering, sources
+import fmmax
 
 PERMITTIVITY_AMBIENT: complex = (1.0 + 0.0j) ** 2
 PERMITTIVITY_SLAB: complex = (1.5 + 0.0j) ** 2
@@ -84,30 +84,30 @@ def simulate_crystal_with_internal_source(
     thickness_slab_ = jnp.asarray(thickness_slab)
     del thickness_ambient, thickness_slab
 
-    primitive_lattice_vectors = basis.LatticeVectors(
-        u=pitch * basis.X, v=pitch * basis.Y
+    primitive_lattice_vectors = fmmax.LatticeVectors(
+        u=pitch * fmmax.X, v=pitch * fmmax.Y
     )
-    expansion = basis.generate_expansion(
+    expansion = fmmax.generate_expansion(
         primitive_lattice_vectors=primitive_lattice_vectors,
         approximate_num_terms=approximate_num_terms,
-        truncation=basis.Truncation.CIRCULAR,
+        truncation=fmmax.Truncation.CIRCULAR,
     )
 
     # Brillouin zone integration creates a batch of in-plane wavevectors which are
     # distributed throughout the first Brillouin zone.
-    in_plane_wavevector = basis.brillouin_zone_in_plane_wavevector(
+    in_plane_wavevector = fmmax.brillouin_zone_in_plane_wavevector(
         brillouin_grid_shape, primitive_lattice_vectors
     )
     assert in_plane_wavevector.shape[-1] == 2
     assert in_plane_wavevector.ndim == 3
 
     eigensolve = functools.partial(
-        fmm.eigensolve_isotropic_media,
+        fmmax.eigensolve_isotropic_media,
         wavelength=jnp.asarray(wavelength),
         in_plane_wavevector=in_plane_wavevector,
         primitive_lattice_vectors=primitive_lattice_vectors,
         expansion=expansion,
-        formulation=fmm.Formulation.FFT,
+        formulation=fmmax.Formulation.FFT,
     )
 
     mask = unit_cell_pattern(pitch, diameter, resolution)
@@ -121,11 +121,11 @@ def simulate_crystal_with_internal_source(
     # the stack into two, and compute scattering matrices for the stacks above and
     # below the plane containing the dipole. Since we want to visualize fields, we
     # also need the interior scattering matrices.
-    s_matrices_interior_before_source = scattering.stack_s_matrices_interior(
+    s_matrices_interior_before_source = fmmax.stack_s_matrices_interior(
         layer_solve_results=[solve_result_ambient, solve_result_crystal],
         layer_thicknesses=[thickness_ambient_, thickness_slab_ / 2],
     )
-    s_matrices_interior_after_source = scattering.stack_s_matrices_interior(
+    s_matrices_interior_after_source = fmmax.stack_s_matrices_interior(
         layer_solve_results=[solve_result_crystal, solve_result_ambient],
         layer_thicknesses=[thickness_slab_ / 2, thickness_ambient_],
     )
@@ -136,7 +136,7 @@ def simulate_crystal_with_internal_source(
     # Generate the Fourier representation of a point dipole.
     dipole_x = pitch * brillouin_grid_shape[0] // 2
     dipole_y = pitch * brillouin_grid_shape[1] // 2
-    dipole = sources.dirac_delta_source(
+    dipole = fmmax.dirac_delta_source(
         location=jnp.asarray([[dipole_x, dipole_y]]),
         in_plane_wavevector=in_plane_wavevector,
         primitive_lattice_vectors=primitive_lattice_vectors,
@@ -151,7 +151,7 @@ def simulate_crystal_with_internal_source(
         fwd_amplitude_after_start,
         _,
         _,
-    ) = sources.amplitudes_for_source(
+    ) = fmmax.amplitudes_for_source(
         jx=dipole,
         jy=jnp.zeros_like(dipole),
         jz=jnp.zeros_like(dipole),
@@ -160,7 +160,7 @@ def simulate_crystal_with_internal_source(
     )
 
     # Compute the fields inside the structure.
-    amplitudes_interior = fields.stack_amplitudes_interior_with_source(
+    amplitudes_interior = fmmax.stack_amplitudes_interior_with_source(
         s_matrices_interior_before_source=s_matrices_interior_before_source,
         s_matrices_interior_after_source=s_matrices_interior_after_source,
         backward_amplitude_before_end=bwd_amplitude_before_end,
@@ -169,7 +169,7 @@ def simulate_crystal_with_internal_source(
     # Coordinates where fields are to be evaluated.
     x = jnp.arange(0, pitch * brillouin_grid_shape[0], resolution_fields)
     y = jnp.ones_like(x) * pitch * brillouin_grid_shape[1] // 2
-    (ex, ey, ez), (hx, hy, hz), (x, y, z) = fields.stack_fields_3d_on_coordinates(
+    (ex, ey, ez), (hx, hy, hz), (x, y, z) = fmmax.stack_fields_3d_on_coordinates(
         amplitudes_interior=amplitudes_interior,
         layer_solve_results=[
             solve_result_ambient,
@@ -278,22 +278,22 @@ def simulate_crystal_with_gaussian_beam(
     thickness_slab_ = jnp.asarray(thickness_slab)
     del thickness_ambient, thickness_slab
 
-    primitive_lattice_vectors = basis.LatticeVectors(
-        u=pitch * basis.X, v=pitch * basis.Y
+    primitive_lattice_vectors = fmmax.LatticeVectors(
+        u=pitch * fmmax.X, v=pitch * fmmax.Y
     )
-    expansion = basis.generate_expansion(
+    expansion = fmmax.generate_expansion(
         primitive_lattice_vectors=primitive_lattice_vectors,
         approximate_num_terms=approximate_num_terms,
-        truncation=basis.Truncation.CIRCULAR,
+        truncation=fmmax.Truncation.CIRCULAR,
     )
 
     # Brillouin zone integration creates a batch of in-plane wavevectors which are
     # distributed throughout the first Brillouin zone. We shift the expansion so
     # that it is centered on the direction of the incident beam.
-    in_plane_wavevector = basis.brillouin_zone_in_plane_wavevector(
+    in_plane_wavevector = fmmax.brillouin_zone_in_plane_wavevector(
         brillouin_grid_shape, primitive_lattice_vectors
     )
-    in_plane_wavevector += basis.plane_wave_in_plane_wavevector(
+    in_plane_wavevector += fmmax.plane_wave_in_plane_wavevector(
         wavelength=jnp.asarray(wavelengths),
         polar_angle=jnp.asarray(polar_angle),
         azimuthal_angle=jnp.asarray(azimuthal_angle),
@@ -307,12 +307,12 @@ def simulate_crystal_with_gaussian_beam(
     assert in_plane_wavevector.ndim == 4
 
     eigensolve = functools.partial(
-        fmm.eigensolve_isotropic_media,
+        fmmax.eigensolve_isotropic_media,
         wavelength=jnp.asarray(wavelengths),
         in_plane_wavevector=in_plane_wavevector,
         primitive_lattice_vectors=primitive_lattice_vectors,
         expansion=expansion,
-        formulation=fmm.Formulation.FFT,
+        formulation=fmmax.Formulation.FFT,
     )
 
     mask = unit_cell_pattern(pitch, diameter, resolution)
@@ -322,7 +322,7 @@ def simulate_crystal_with_gaussian_beam(
         permittivity=jnp.asarray(permittivity_ambient)[jnp.newaxis, jnp.newaxis]
     )
 
-    s_matrices_interior = scattering.stack_s_matrices_interior(
+    s_matrices_interior = fmmax.stack_s_matrices_interior(
         layer_solve_results=[
             solve_result_ambient,
             solve_result_crystal,
@@ -373,12 +373,12 @@ def simulate_crystal_with_gaussian_beam(
         return (ex, ey, ez), (hx, hy, hz)
 
     # Solve for the fields of the beam with the desired rotation and shift.
-    x, y = basis.unit_cell_coordinates(
+    x, y = fmmax.unit_cell_coordinates(
         primitive_lattice_vectors=primitive_lattice_vectors,
         shape=permittivity_crystal.shape[-2:],  # type: ignore[arg-type]
         num_unit_cells=brillouin_grid_shape,
     )
-    (beam_ex, beam_ey, _), (beam_hx, beam_hy, _) = beams.shifted_rotated_fields(
+    (beam_ex, beam_ey, _), (beam_hx, beam_hy, _) = fmmax.shifted_rotated_fields(
         field_fn=_paraxial_gaussian_field_fn,
         x=x,
         y=y,
@@ -393,7 +393,7 @@ def simulate_crystal_with_gaussian_beam(
 
     brillouin_grid_axes = (1, 2)
     # Add an additional axis for the number of sources
-    fwd_amplitude, _ = sources.amplitudes_for_fields(
+    fwd_amplitude, _ = fmmax.amplitudes_for_fields(
         ex=beam_ex[..., jnp.newaxis],
         ey=beam_ey[..., jnp.newaxis],
         hx=beam_hx[..., jnp.newaxis],
@@ -403,7 +403,7 @@ def simulate_crystal_with_gaussian_beam(
     )
 
     # Compute the fields inside the structure.
-    amplitudes_interior = fields.stack_amplitudes_interior(
+    amplitudes_interior = fmmax.stack_amplitudes_interior(
         s_matrices_interior=s_matrices_interior,
         forward_amplitude_0_start=fwd_amplitude,
         backward_amplitude_N_end=jnp.zeros_like(fwd_amplitude),
@@ -411,7 +411,7 @@ def simulate_crystal_with_gaussian_beam(
     # Coordinates where fields are to be evaluated.
     x = jnp.arange(0, pitch * brillouin_grid_shape[0], resolution_fields)
     y = jnp.ones_like(x) * pitch * brillouin_grid_shape[1] / 2
-    (ex, ey, ez), (hx, hy, hz), (x, y, z) = fields.stack_fields_3d_on_coordinates(
+    (ex, ey, ez), (hx, hy, hz), (x, y, z) = fmmax.stack_fields_3d_on_coordinates(
         amplitudes_interior=amplitudes_interior,
         layer_solve_results=[
             solve_result_ambient,

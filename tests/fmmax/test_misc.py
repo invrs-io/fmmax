@@ -10,7 +10,7 @@ import jax
 import jax.numpy as jnp
 import numpy as onp
 
-from fmmax import _misc
+from fmmax import misc
 
 
 class DiagTest(unittest.TestCase):
@@ -19,7 +19,7 @@ class DiagTest(unittest.TestCase):
         for shape in shapes:
             with self.subTest(shape):
                 v = jax.random.uniform(jax.random.PRNGKey(0), shape)
-                d = _misc.diag(v)
+                d = misc.diag(v)
                 expected = jnp.zeros(shape + (shape[-1],))
                 for ind in itertools.product(*[range(dim) for dim in shape[:-1]]):
                     expected = expected.at[ind].set(jnp.diag(v[ind]))
@@ -32,7 +32,7 @@ class MatrixAdjointTest(unittest.TestCase):
         for shape in shapes:
             with self.subTest(shape):
                 m = jax.random.uniform(jax.random.PRNGKey(0), shape)
-                ma = _misc.matrix_adjoint(m)
+                ma = misc.matrix_adjoint(m)
                 expected = jnp.zeros(shape)
                 for ind in itertools.product(*[range(dim) for dim in shape[:-2]]):
                     expected = expected.at[ind].set(jnp.conj(m[ind]).T)
@@ -49,7 +49,7 @@ class BatchCompatibleTest(unittest.TestCase):
         ]
         for shapes, expected in shapes_and_expected:
             with self.subTest(shapes):
-                self.assertEqual(_misc.batch_compatible_shapes(*shapes), expected)
+                self.assertEqual(misc.batch_compatible_shapes(*shapes), expected)
 
 
 class AtLeastNDTest(unittest.TestCase):
@@ -63,4 +63,4 @@ class AtLeastNDTest(unittest.TestCase):
         for shape, n, expected_shape in shapes_n_expected:
             with self.subTest(n):
                 x = onp.zeros(shape)
-                self.assertSequenceEqual(_misc.atleast_nd(x, n).shape, expected_shape)
+                self.assertSequenceEqual(misc.atleast_nd(x, n).shape, expected_shape)

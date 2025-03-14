@@ -9,7 +9,7 @@ from typing import Callable, Dict, List, Tuple
 import jax
 import jax.numpy as jnp
 
-from fmmax import _fft, _misc, basis
+from fmmax import basis, fft, misc
 
 # Absolute tolerance for detecting whether a field is 1D. If the angle of the field at
 # every point differs by less than this value from a reference value, the field is 1D.
@@ -148,7 +148,7 @@ def compute_tangent_field(
     """
     arr = jax.lax.stop_gradient(arr)
     batch_shape = arr.shape[:-2]
-    arr = _misc.atleast_nd(arr, n=3)
+    arr = misc.atleast_nd(arr, n=3)
     arr = arr.reshape((-1,) + arr.shape[-2:])
 
     primitive_lattice_vectors = basis.LatticeVectors(
@@ -224,7 +224,7 @@ def _compute_tangent_field_no_batch(
         initial_field = target_field
     else:
         initial_field = _normalize(jnp.stack([grad[..., 1], -grad[..., 0]], axis=-1))
-    fourier_field = _fft.fft(initial_field, expansion=expansion, axes=(-3, -2))
+    fourier_field = fft.fft(initial_field, expansion=expansion, axes=(-3, -2))
 
     flat_fourier_field = fourier_field.flatten()
     for _ in range(steps):
@@ -240,7 +240,7 @@ def _compute_tangent_field_no_batch(
         flat_fourier_field -= jnp.linalg.solve(hessian, jac.conj())
     fourier_field = flat_fourier_field.reshape((expansion.num_terms, 2))
 
-    field = _fft.ifft(fourier_field, expansion=expansion, shape=grid_shape, axis=-2)
+    field = fft.ifft(fourier_field, expansion=expansion, shape=grid_shape, axis=-2)
 
     # Manually set the tangent field in the 1d case.
     field_1d = jnp.stack([jnp.sin(grad_angle), jnp.cos(grad_angle)])
@@ -321,7 +321,7 @@ def _filter_and_adjust_resolution(
     expansion: basis.Expansion,
 ) -> jnp.ndarray:
     """Filter `x` and adjust its resolution for the given `expansion`."""
-    y = _fft.fft(x, expansion=expansion)
+    y = fft.fft(x, expansion=expansion)
     min_shape = basis.min_array_shape_for_expansion(expansion)
     assert x.ndim == 2
     # Singleton dimensions remain singleton.
@@ -329,7 +329,7 @@ def _filter_and_adjust_resolution(
         min_shape[0] * (2 if x.shape[0] > 1 else 1),
         min_shape[1] * (2 if x.shape[1] > 1 else 1),
     )
-    return _fft.ifft(y, expansion=expansion, shape=doubled_min_shape)
+    return fft.ifft(y, expansion=expansion, shape=doubled_min_shape)
 
 
 def _is_1d_field(field: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
@@ -418,7 +418,7 @@ def _field_loss(
 ) -> jnp.ndarray:
     """Compute loss that favors smooth"""
     shape: Tuple[int, int] = target_field.shape[-3:-1]  # type: ignore[assignment]
-    field = _fft.ifft(
+    field = fft.ifft(
         y=fourier_field,
         expansion=expansion,
         shape=shape,
