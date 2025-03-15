@@ -13,6 +13,7 @@ from fmmax.basis import Y as _Y
 from fmmax.basis import (
     brillouin_zone_in_plane_wavevector,
     generate_expansion,
+    min_array_shape_for_expansion,
     plane_wave_in_plane_wavevector,
     transverse_wavevectors,
     unit_cell_coordinates,

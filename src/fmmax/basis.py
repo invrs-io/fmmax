@@ -91,7 +91,7 @@ class Truncation(enum.Enum):
 
 
 def min_array_shape_for_expansion(expansion: Expansion) -> Tuple[int, int]:
-    """Returns the minimum allowed shape for an array to be expanded."""
+    """Returns the minimum allowed shape compatible with `expansion`."""
     with jax.ensure_compile_time_eval():
         return (
             int(2 * onp.amax(onp.abs(expansion.basis_coefficients[:, 0])) + 1),
