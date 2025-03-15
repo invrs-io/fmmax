@@ -3,12 +3,10 @@
 __version__ = "v0.14.1"
 
 # ruff: noqa: F401
+from fmmax.basis import Expansion, LatticeVectors, Truncation
+from fmmax.basis import X as _X
+from fmmax.basis import Y as _Y
 from fmmax.basis import (
-    Expansion,
-    LatticeVectors,
-    Truncation,
-    X as _X,
-    Y as _Y,
     brillouin_zone_in_plane_wavevector,
     generate_expansion,
     plane_wave_in_plane_wavevector,
@@ -16,7 +14,7 @@ from fmmax.basis import (
     unit_cell_coordinates,
 )
 from fmmax.beams import shifted_rotated_fields
-from fmmax.farfield import farfield_profile, farfield_integrated_flux
+from fmmax.farfield import farfield_integrated_flux, farfield_profile
 from fmmax.fields import (
     amplitude_poynting_flux,
     colocate_amplitudes,
@@ -61,7 +59,6 @@ from fmmax.sources import (
 )
 from fmmax.translate import translate_layer_solve_result
 from fmmax.utils import angular_frequency_for_wavelength, interpolate_permittivity
-
 
 X = _X  # basis.X
 """Unit vector pointing in the x direction."""
