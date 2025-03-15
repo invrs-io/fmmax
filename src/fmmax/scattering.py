@@ -11,7 +11,7 @@ import jax
 import jax.numpy as jnp
 from jax import tree_util
 
-from fmmax import _misc, fmm
+from fmmax import fmm, misc
 
 
 @dataclasses.dataclass
@@ -174,7 +174,7 @@ def _stack_s_matrices(
 
     # The initial scattering matrix is just the identity matrix, with the
     # necessary batch dimensions.
-    eye = _misc.diag(jnp.ones_like(layer_solve_results[0].eigenvalues))
+    eye = misc.diag(jnp.ones_like(layer_solve_results[0].eigenvalues))
     layer_s_matrix_0 = ScatteringMatrix(
         s11=eye,
         s12=jnp.zeros_like(eye),
@@ -244,7 +244,7 @@ def stack_s_matrix_scan(
             f"{layer_solve_results.batch_shape[0]} and {layer_thicknesses.shape[0]}."
         )
 
-    eye = _misc.diag(
+    eye = misc.diag(
         jnp.ones(
             layer_solve_results.eigenvalues.shape[1:],
             dtype=layer_solve_results.eigenvalues.dtype,
@@ -296,7 +296,7 @@ def redheffer_star_product(
     solve = functools.partial(_solve, force_x64_solve=force_x64_solve)
 
     # See https://en.wikipedia.org/wiki/Redheffer_star_product
-    eye = _misc.diag(jnp.ones_like(a11[..., 0]))
+    eye = misc.diag(jnp.ones_like(a11[..., 0]))
     s11 = b11 @ solve(eye - a12 @ b21, a11)
     s12 = b12 + b11 @ solve(eye - a12 @ b21, a12 @ b22)
     s21 = a21 + a22 @ solve(eye - b21 @ a12, b21 @ a11)
@@ -500,7 +500,7 @@ def _pair_s_matrix(
 
     # The computation is identical to that in `_extend_s_matrix` with `s11` and `s22`
     # being the identity, and `s12` and `s21` being zero.
-    fd_diag = jnp.expand_dims(_misc.diag(fd), tuple(range(i11.ndim - fd.ndim - 1)))
+    fd_diag = jnp.expand_dims(misc.diag(fd), tuple(range(i11.ndim - fd.ndim - 1)))
     s11 = solve(i11, fd_diag)
     s12 = solve(i11, -i12 * fd_next[..., jnp.newaxis, :])
     s21 = i21 @ s11

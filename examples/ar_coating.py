@@ -9,7 +9,7 @@ import jax.numpy as jnp
 import numpy as onp
 import scipy.optimize as spo  # type: ignore[import]
 
-from fmmax import basis, fmm, scattering
+import fmmax
 
 
 def compute_reflection(
@@ -55,17 +55,17 @@ def compute_reflection(
             f"{refractive_index_substrate.shape}."
         )
 
-    in_plane_wavevector = basis.plane_wave_in_plane_wavevector(
+    in_plane_wavevector = fmmax.plane_wave_in_plane_wavevector(
         wavelength=wavelength,
         polar_angle=incident_angle,
         azimuthal_angle=jnp.zeros_like(incident_angle),
         permittivity=refractive_index_ambient**2,
     )
-    primitive_lattice_vectors = basis.LatticeVectors(u=basis.X, v=basis.Y)
-    expansion = basis.generate_expansion(
+    primitive_lattice_vectors = fmmax.LatticeVectors(u=fmmax.X, v=fmmax.Y)
+    expansion = fmmax.generate_expansion(
         primitive_lattice_vectors=primitive_lattice_vectors,
         approximate_num_terms=1,
-        truncation=basis.Truncation.CIRCULAR,
+        truncation=fmmax.Truncation.CIRCULAR,
     )
 
     thicknesses_with_ambient = (
@@ -79,17 +79,17 @@ def compute_reflection(
     permittivities = [p[..., jnp.newaxis, jnp.newaxis] for p in permittivities]
 
     layer_solve_results = [
-        fmm.eigensolve_isotropic_media(
+        fmmax.eigensolve_isotropic_media(
             wavelength=wavelength,
             in_plane_wavevector=in_plane_wavevector,
             primitive_lattice_vectors=primitive_lattice_vectors,
             permittivity=p,
             expansion=expansion,
-            formulation=fmm.Formulation.FFT,
+            formulation=fmmax.Formulation.FFT,
         )
         for p in permittivities
     ]
-    s_matrix = scattering.stack_s_matrix(layer_solve_results, thicknesses_with_ambient)
+    s_matrix = fmmax.stack_s_matrix(layer_solve_results, thicknesses_with_ambient)
     r_te = s_matrix.s21[..., 0, 0]
     r_tm = s_matrix.s21[..., expansion.num_terms, expansion.num_terms]
     return r_te, r_tm

@@ -7,11 +7,9 @@ from typing import Tuple
 
 import jax.numpy as jnp
 
-from fmmax import basis, fields, fmm, scattering, utils
+import fmmax
 
-SMatricesInterior = Tuple[
-    Tuple[scattering.ScatteringMatrix, scattering.ScatteringMatrix], ...
-]
+SMatricesInterior = Tuple[Tuple[fmmax.ScatteringMatrix, fmmax.ScatteringMatrix], ...]
 
 WAVELENGTH_NM: jnp.ndarray = jnp.arange(440, 660, 10)
 
@@ -95,14 +93,14 @@ def simulate_pillars(
     substrate_thickness_nm: float = 100.0,
     resolution_nm: float = 1.0,
     approximate_num_terms: int = 200,
-    truncation: basis.Truncation = basis.Truncation.CIRCULAR,
-    formulation: fmm.Formulation = fmm.Formulation.FFT,
+    truncation: fmmax.Truncation = fmmax.Truncation.CIRCULAR,
+    formulation: fmmax.Formulation = fmmax.Formulation.FFT,
 ) -> Tuple[
     int,
     jnp.ndarray,
     jnp.ndarray,
     Tuple[
-        Tuple[fmm.LayerSolveResult, ...],
+        Tuple[fmmax.LayerSolveResult, ...],
         Tuple[jnp.ndarray, ...],
         SMatricesInterior,
     ],
@@ -135,7 +133,7 @@ def simulate_pillars(
     """
     density = pillar_density(pitch_nm, pillar_diameter_nm, resolution_nm)
     permittivity_ag = permittivity_ag_drude(wavelength_nm)[:, jnp.newaxis, jnp.newaxis]
-    permittivity_pillars = utils.interpolate_permittivity(
+    permittivity_pillars = fmmax.interpolate_permittivity(
         permittivity_solid=permittivity_ag,
         permittivity_void=jnp.asarray(permittivity_planarization),
         density=density[jnp.newaxis, :, :],
@@ -154,22 +152,22 @@ def simulate_pillars(
         jnp.asarray(substrate_thickness_nm),
     ]
 
-    in_plane_wavevector = basis.plane_wave_in_plane_wavevector(
+    in_plane_wavevector = fmmax.plane_wave_in_plane_wavevector(
         wavelength=wavelength_nm,
         polar_angle=jnp.asarray(polar_angle),
         azimuthal_angle=jnp.zeros(()),
         permittivity=jnp.asarray(permittivity_ambient),
     )
-    primitive_lattice_vectors = basis.LatticeVectors(
-        u=pitch_nm * basis.X, v=pitch_nm * basis.Y
+    primitive_lattice_vectors = fmmax.LatticeVectors(
+        u=pitch_nm * fmmax.X, v=pitch_nm * fmmax.Y
     )
-    expansion = basis.generate_expansion(
+    expansion = fmmax.generate_expansion(
         primitive_lattice_vectors=primitive_lattice_vectors,
         approximate_num_terms=approximate_num_terms,
         truncation=truncation,
     )
     layer_solve_results = [
-        fmm.eigensolve_isotropic_media(
+        fmmax.eigensolve_isotropic_media(
             wavelength=jnp.asarray(wavelength_nm),
             in_plane_wavevector=in_plane_wavevector,
             primitive_lattice_vectors=primitive_lattice_vectors,
@@ -180,7 +178,7 @@ def simulate_pillars(
         for p in permittivities
     ]
 
-    s_matrices_interior = scattering.stack_s_matrices_interior(
+    s_matrices_interior = fmmax.stack_s_matrices_interior(
         layer_solve_results, thicknesses
     )
 
@@ -200,7 +198,7 @@ def simulate_pillars(
 
 
 def compute_fields(
-    layer_solve_results: Tuple[fmm.LayerSolveResult, ...],
+    layer_solve_results: Tuple[fmmax.LayerSolveResult, ...],
     thicknesses: Tuple[jnp.ndarray, ...],
     s_matrices_interior: SMatricesInterior,
     resolution_nm: float,
@@ -225,11 +223,11 @@ def compute_fields(
     backward_amplitude_N_end = jnp.zeros_like(forward_amplitude_0_start)
 
     # Compute the wave amplitudes within each layer.
-    amplitudes_interior = fields.stack_amplitudes_interior(
+    amplitudes_interior = fmmax.stack_amplitudes_interior(
         s_matrices_interior, forward_amplitude_0_start, backward_amplitude_N_end
     )
 
-    efields, hfields, (x, y, z) = fields.stack_fields_3d_auto_grid(
+    efields, hfields, (x, y, z) = fmmax.stack_fields_3d_auto_grid(
         amplitudes_interior=amplitudes_interior,
         layer_solve_results=layer_solve_results,
         layer_thicknesses=thicknesses,

@@ -16,8 +16,8 @@ from fmmax import utils
 
 # Officially defines the x- and y- directions. By convention, the x-axis preceeds
 # the y-axis in our array indexing scheme.
-X: jnp.ndarray = jnp.array([1.0, 0.0])
-Y: jnp.ndarray = jnp.array([0.0, 1.0])
+X: jnp.ndarray = jnp.array([1.0, 0.0], dtype=jnp.float32)
+Y: jnp.ndarray = jnp.array([0.0, 1.0], dtype=jnp.float32)
 
 
 @dataclasses.dataclass
@@ -79,22 +79,19 @@ class Expansion:
 
 @enum.unique
 class Truncation(enum.Enum):
-    """Enumerates truncation modes.
+    """Enumerates truncation modes."""
 
-    Members:
-      - CIRCULAR: Fourier orders are truncated based on the total magnitude of their
-            associated wavevectors.
-      - PARALLELOGRAMIC: Fourier orders are truncated based on the magnitude of
-            their component along ``u`` and ``v`` directions, without regard for their
-            total magnitude.
-    """
-
+    #: Fourier orders are truncated based on the total magnitude of their
+    #: associated wavevectors.
     CIRCULAR = "circular"
+
+    #: Fourier orders are truncated based on the magnitude of their component along
+    #: ``u`` and ``v`` directions, without regard for their total magnitude.
     PARALLELOGRAMIC = "parallelogramic"
 
 
 def min_array_shape_for_expansion(expansion: Expansion) -> Tuple[int, int]:
-    """Returns the minimum allowed shape for an array to be expanded."""
+    """Returns the minimum allowed shape compatible with `expansion`."""
     with jax.ensure_compile_time_eval():
         return (
             int(2 * onp.amax(onp.abs(expansion.basis_coefficients[:, 0])) + 1),
@@ -162,9 +159,20 @@ def _reciprocal(lattice_vectors: LatticeVectors) -> LatticeVectors:
 def unit_cell_coordinates(
     primitive_lattice_vectors: LatticeVectors,
     shape: Tuple[int, int],
-    num_unit_cells: Tuple[int, int],
+    num_unit_cells: Tuple[int, int] = (1, 1),
 ) -> Tuple[jnp.ndarray, jnp.ndarray]:
-    """Compute spatial coordinates given the grid shape and number of unit cells."""
+    """Compute spatial coordinates given the grid shape and number of unit cells.
+
+    Args:
+        primitive_lattice_vectors: The lattice vectors defining te unit cell.
+        shape: The shape of the coordinates grid.
+        num_unit_cells: Determines the number of unit cells for which to compute the
+            coordinates. Default is ``(1, 1)``, corresponding to a single unit cell.
+
+    Returns:
+        The unit cell coordinates, with shape ``(shape[0] * num_unit_cells[0],
+        shape[1] * num_unit_cells[1])``.
+    """
     i_stop = num_unit_cells[0] * shape[0]
     j_stop = num_unit_cells[1] * shape[1]
     i, j = tuple(

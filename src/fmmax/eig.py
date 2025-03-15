@@ -10,7 +10,7 @@ import jax
 import jax.numpy as jnp
 from packaging import version
 
-from fmmax import _misc
+from fmmax import misc
 
 # The `jeig` package offers several jax-wrapped implementations of eigendecomposition,
 # some of which have performance benefits. However, since `jeig` has a dependency on
@@ -155,14 +155,14 @@ def _eig_bwd(
     grad_eigenvalues_conj = jnp.conj(grad_eigenvalues)
     grad_eigenvectors_conj = jnp.conj(grad_eigenvectors)
 
-    eigenvectors_H = _misc.matrix_adjoint(eigenvectors)
+    eigenvectors_H = misc.matrix_adjoint(eigenvectors)
     dim = eigenvalues.shape[-1]
     eye_mask = jnp.eye(dim, dtype=bool)
     eye_mask = eye_mask.reshape((1,) * (eigenvalues.ndim - 1) + (dim, dim))
 
     # Then, the gradient is found by equation 4.77 of [2019 Boeddeker].
     rhs = (
-        _misc.diag(grad_eigenvalues_conj)
+        misc.diag(grad_eigenvalues_conj)
         + jnp.conj(f_broadened) * (eigenvectors_H @ grad_eigenvectors_conj)
         - jnp.conj(f_broadened)
         * (eigenvectors_H @ eigenvectors)

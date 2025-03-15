@@ -8,7 +8,7 @@ from typing import Tuple
 
 import jax.numpy as jnp
 
-from fmmax import basis, fmm, scattering, utils
+import fmmax
 
 NUM_TERMS_SWEEP = (9, 25, 49, 81, 121, 169, 225, 289, 361, 441, 529, 625, 729, 841)
 
@@ -24,8 +24,8 @@ def simulate_grating(
     planarization_thickness_nm: float = 20.0,
     resolution_nm: float = 1.0,
     approximate_num_terms: int = 20,
-    truncation: basis.Truncation = basis.Truncation.CIRCULAR,
-    formulation: fmm.Formulation = fmm.Formulation.FFT,
+    truncation: fmmax.Truncation = fmmax.Truncation.CIRCULAR,
+    formulation: fmmax.Formulation = fmmax.Formulation.FFT,
 ) -> Tuple[int, complex, complex]:
     """Computes the TE- and TM-polarized reflection from a 1D stripe grating.
 
@@ -60,7 +60,7 @@ def simulate_grating(
     permittivities = [
         jnp.asarray([[permittivity_ambient]]),
         jnp.asarray([[permittivity_planarization]]),
-        utils.interpolate_permittivity(
+        fmmax.interpolate_permittivity(
             permittivity_solid=jnp.asarray(permittivity_substrate),
             permittivity_void=jnp.asarray(permittivity_planarization),
             density=density,
@@ -70,16 +70,16 @@ def simulate_grating(
     thicknesses = [0, planarization_thickness_nm, grating_thickness_nm, 0]
 
     in_plane_wavevector = jnp.asarray([0.0, 0.0])
-    primitive_lattice_vectors = basis.LatticeVectors(
+    primitive_lattice_vectors = fmmax.LatticeVectors(
         u=jnp.asarray([pitch_nm, 0.0]), v=jnp.asarray([0.0, pitch_nm])
     )
-    expansion = basis.generate_expansion(
+    expansion = fmmax.generate_expansion(
         primitive_lattice_vectors=primitive_lattice_vectors,
         approximate_num_terms=approximate_num_terms,
         truncation=truncation,
     )
     layer_solve_results = [
-        fmm.eigensolve_isotropic_media(
+        fmmax.eigensolve_isotropic_media(
             wavelength=jnp.asarray(wavelength_nm),
             in_plane_wavevector=in_plane_wavevector,
             primitive_lattice_vectors=primitive_lattice_vectors,
@@ -89,7 +89,7 @@ def simulate_grating(
         )
         for p in permittivities
     ]
-    s_matrix = scattering.stack_s_matrix(
+    s_matrix = fmmax.stack_s_matrix(
         layer_solve_results=layer_solve_results,
         layer_thicknesses=[jnp.asarray(t) for t in thicknesses],
     )
@@ -101,18 +101,18 @@ def simulate_grating(
 
 def convergence_study(
     approximate_num_terms: Tuple[int, ...] = NUM_TERMS_SWEEP,
-    truncations: Tuple[basis.Truncation, ...] = (
-        basis.Truncation.CIRCULAR,
-        basis.Truncation.PARALLELOGRAMIC,
+    truncations: Tuple[fmmax.Truncation, ...] = (
+        fmmax.Truncation.CIRCULAR,
+        fmmax.Truncation.PARALLELOGRAMIC,
     ),
-    fmm_formulations: Tuple[fmm.Formulation, ...] = (
-        fmm.Formulation.FFT,
-        fmm.Formulation.JONES_DIRECT,
-        fmm.Formulation.JONES,
-        fmm.Formulation.NORMAL,
-        fmm.Formulation.POL,
+    fmm_formulations: Tuple[fmmax.Formulation, ...] = (
+        fmmax.Formulation.FFT,
+        fmmax.Formulation.JONES_DIRECT,
+        fmmax.Formulation.JONES,
+        fmmax.Formulation.NORMAL,
+        fmmax.Formulation.POL,
     ),
-) -> Tuple[Tuple[fmm.Formulation, basis.Truncation, int, complex, complex], ...]:
+) -> Tuple[Tuple[fmmax.Formulation, fmmax.Truncation, int, complex, complex], ...]:
     """Sweeps over number of terms and fmm formulations to study convergence."""
     results = []
     for formulation, truncation, n in itertools.product(

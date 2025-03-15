@@ -6,6 +6,13 @@
 - Rename args to `time_average_z_poynting_flux` from `*_fields` to `*_field` to be consistent with other functions in the `fields` module.
 - Add a notebook that demonstrates calculation of the farfield for a dipole in vacuum.
 - Improve detection of 1D permittivity distributions, particularly the case of complex permittivity.
+- Add a basic notebook illustrating diffraction calculation.
+- Major changes to make way for FMMAX 1.0.0
+    - Export key functions so they can directly be imported from `fmmax`, e.g. `fmmax.eigensolve_isotropic_media(...)`.
+    - Update examples so they import `fmmax` and use exported functions, rather than importing individual modules.
+    - Update API docs to include only the exported functions/classes/constants.
+    - Update docstrings for enums so they render properly.
+    - Rename `amplitudes_interior` to `layer_amplitudes_interior`, for consistency with other functions in the `fields` module.
 
 ## 0.14.1 (March 4, 2025)
 - Set `Formulation.JONES_DIRECT_FOURIER` as the default formulation for all eigensolve functions in `fmm` module.

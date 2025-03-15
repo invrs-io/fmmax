@@ -7,7 +7,7 @@ import functools
 
 import jax.numpy as jnp
 
-from fmmax import _fft, basis, fmm
+from fmmax import basis, fft, fmm
 
 
 def translate_layer_solve_result(
@@ -107,7 +107,7 @@ def _apply_shift_toeplitz(
     dy: jnp.ndarray,
 ) -> jnp.ndarray:
     """Return toeplitz matrix that results from translating a structure."""
-    idx = _fft._standard_toeplitz_indices(expansion)
+    idx = fft._standard_toeplitz_indices(expansion)
 
     reciprocal_vectors = primitive_lattice_vectors.reciprocal
     u = reciprocal_vectors.u

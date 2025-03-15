@@ -7,7 +7,7 @@ from typing import Optional, Tuple
 
 import jax.numpy as jnp
 
-from fmmax import _fft, _misc, basis, fields, fmm, scattering, utils
+from fmmax import basis, fft, fields, fmm, misc, scattering, utils
 
 
 def amplitudes_for_fields(
@@ -46,7 +46,7 @@ def amplitudes_for_fields(
             f"shapes of {ex.shape}, {ey.shape}, {hx.shape}, and {hy.shape}."
         )
 
-    if not _misc.batch_compatible_shapes(
+    if not misc.batch_compatible_shapes(
         layer_solve_result.batch_shape,
         ex.shape[:-3],
         ey.shape[:-3],
@@ -102,7 +102,7 @@ def amplitudes_for_fields(
                 )
             )
         )
-        field_fft = _fft.fft(
+        field_fft = fft.fft(
             field_split, expansion=layer_solve_result.expansion, axes=(-3, -2)
         )
         return jnp.sum(field_fft, axis=(0, 1))
@@ -338,10 +338,10 @@ def _polarization_terms(
     # Add dimensions as needed to ensures shapes are compatible.
     eta_matrix = layer_solve_result.inverse_z_permittivity_matrix
     leading_ndim = max(jx.ndim - 3, eta_matrix.ndim - 2)
-    eta_matrix = _misc.atleast_nd(eta_matrix, n=(leading_ndim + 2))
-    jx = _misc.atleast_nd(jx, n=(leading_ndim + 2))
-    jy = _misc.atleast_nd(jy, n=(leading_ndim + 2))
-    jz = _misc.atleast_nd(jz, n=(leading_ndim + 2))
+    eta_matrix = misc.atleast_nd(eta_matrix, n=(leading_ndim + 2))
+    jx = misc.atleast_nd(jx, n=(leading_ndim + 2))
+    jy = misc.atleast_nd(jy, n=(leading_ndim + 2))
+    jz = misc.atleast_nd(jz, n=(leading_ndim + 2))
 
     p_parallel = jnp.concatenate([jy, -jx], axis=-2)
 
@@ -396,18 +396,18 @@ def _emission_matrix(
     fd = jnp.exp(1j * q * layer_thickness)
     next_fd = jnp.exp(1j * next_q * next_layer_thickness)
 
-    fd_s12_before = _misc.diag(fd) @ s_matrix_before_source.s12
-    fd_s21_after = _misc.diag(next_fd) @ s_matrix_after_source.s21
+    fd_s12_before = misc.diag(fd) @ s_matrix_before_source.s12
+    fd_s21_after = misc.diag(next_fd) @ s_matrix_after_source.s21
 
     shape = jnp.broadcast_shapes(q.shape, next_q.shape)
-    eye = _misc.diag(jnp.ones(shape, dtype=q.dtype))
+    eye = misc.diag(jnp.ones(shape, dtype=q.dtype))
 
     # Equation 7.9 from [1999 Whittaker].
     matrix = jnp.block(
         [
             [
-                next_omega_k @ next_phi @ _misc.diag(1 / next_q) @ (eye - fd_s21_after),
-                omega_k @ phi @ _misc.diag(1 / q) @ (eye - fd_s12_before),
+                next_omega_k @ next_phi @ misc.diag(1 / next_q) @ (eye - fd_s21_after),
+                omega_k @ phi @ misc.diag(1 / q) @ (eye - fd_s12_before),
             ],
             [
                 next_phi @ (eye + fd_s21_after),

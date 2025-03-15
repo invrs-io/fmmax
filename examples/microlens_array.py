@@ -9,7 +9,7 @@ from typing import Callable, Tuple
 import jax.numpy as jnp
 import matplotlib.pyplot as plt  # type: ignore[import]
 
-from fmmax import basis, fields, fmm, scattering, utils
+import fmmax
 
 
 def simulate_microlens_array(
@@ -52,13 +52,13 @@ def simulate_microlens_array(
         The electric fields, magnetic fields, coordinates where these are evaluated,
         and the `(x, z)` coordinates of the discretized lens profile.
     """
-    primitive_lattice_vectors = basis.LatticeVectors(
-        u=pitch * basis.X, v=pitch * basis.Y
+    primitive_lattice_vectors = fmmax.LatticeVectors(
+        u=pitch * fmmax.X, v=pitch * fmmax.Y
     )
-    expansion = basis.generate_expansion(
+    expansion = fmmax.generate_expansion(
         primitive_lattice_vectors=primitive_lattice_vectors,
         approximate_num_terms=approximate_num_terms,
-        truncation=basis.Truncation.CIRCULAR,
+        truncation=fmmax.Truncation.CIRCULAR,
     )
 
     # Generate the permittivity arrays and thicknesses for the layers that
@@ -70,7 +70,7 @@ def simulate_microlens_array(
     )
     lens_radii = jnp.linspace(0.1, pitch / 2, num_lens_layers)
     lens_layer_permittivities = [
-        utils.interpolate_permittivity(
+        fmmax.interpolate_permittivity(
             density=circle_density(radius=r, pitch=pitch, grid_shape=grid_shape),
             permittivity_solid=jnp.asarray(permittivity_substrate),
             permittivity_void=jnp.asarray(permittivity_ambient),
@@ -97,17 +97,17 @@ def simulate_microlens_array(
     )
 
     layer_solve_results = [
-        fmm.eigensolve_isotropic_media(
+        fmmax.eigensolve_isotropic_media(
             wavelength=jnp.asarray(wavelength),
             in_plane_wavevector=jnp.zeros((2,)),
             permittivity=p,
             primitive_lattice_vectors=primitive_lattice_vectors,
             expansion=expansion,
-            formulation=fmm.Formulation.FFT,
+            formulation=fmmax.Formulation.FFT,
         )
         for p in layer_permittivities
     ]
-    s_matrices_interior = scattering.stack_s_matrices_interior(
+    s_matrices_interior = fmmax.stack_s_matrices_interior(
         layer_solve_results=layer_solve_results,
         layer_thicknesses=layer_thicknesses,
     )
@@ -116,7 +116,7 @@ def simulate_microlens_array(
     # plane wave incident from the substrate.
     bwd_amplitude_substrate_end = jnp.zeros((2 * expansion.num_terms, 1), dtype=complex)
     bwd_amplitude_substrate_end = bwd_amplitude_substrate_end.at[0, 0].set(1)
-    amplitudes_interior = fields.stack_amplitudes_interior(
+    amplitudes_interior = fmmax.stack_amplitudes_interior(
         s_matrices_interior=s_matrices_interior,
         forward_amplitude_0_start=jnp.zeros_like(bwd_amplitude_substrate_end),
         backward_amplitude_N_end=bwd_amplitude_substrate_end,
@@ -125,7 +125,7 @@ def simulate_microlens_array(
     # Compute the fields for a cross section through the center of a lens.
     x = jnp.arange(0, pitch + grid_spacing_fields, grid_spacing_fields)
     y = jnp.ones_like(x) * pitch / 2
-    (ex, ey, ez), (hx, hy, hz), (x, y, z) = fields.stack_fields_3d_on_coordinates(
+    (ex, ey, ez), (hx, hy, hz), (x, y, z) = fmmax.stack_fields_3d_on_coordinates(
         amplitudes_interior=amplitudes_interior,
         layer_solve_results=layer_solve_results,
         layer_thicknesses=layer_thicknesses,
