@@ -3,7 +3,11 @@
 __version__ = "v0.14.1"
 
 # ruff: noqa: F401
-from fmmax.basis import Expansion, LatticeVectors, Truncation
+from fmmax.basis import (
+    Expansion,
+    LatticeVectors,
+    Truncation,
+)
 from fmmax.basis import X as _X
 from fmmax.basis import Y as _Y
 from fmmax.basis import (
