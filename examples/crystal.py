@@ -191,12 +191,7 @@ def simulate_crystal_with_internal_source(
         ],
         x=x,
         y=y,
-    )
-
-    # Perform the Brillouin zone integration by averaging over the Brillouin zone
-    # grid batch axes.
-    ex, ey, ez, hx, hy, hz = (
-        jnp.mean(field, axis=(0, 1)) for field in (ex, ey, ez, hx, hy, hz)
+        brillouin_grid_axes=(0, 1),
     )
 
     # Compute some cross sections for visualizing the structure.
@@ -430,12 +425,7 @@ def simulate_crystal_with_gaussian_beam(
         ],
         x=x,
         y=y,
-    )
-
-    # Perform the Brillouin zone integration by averaging over the Brillouin zone
-    # grid batch axes.
-    ex, ey, ez, hx, hy, hz = (
-        jnp.mean(field, axis=brillouin_grid_axes) for field in (ex, ey, ez, hx, hy, hz)
+        brillouin_grid_axes=brillouin_grid_axes,
     )
 
     # Compute some cross sections for visualizing the structure.

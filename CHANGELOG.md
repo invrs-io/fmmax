@@ -1,6 +1,10 @@
 # Change log
 
 ## Unreleased
+- Enable automatic Brillouin zone integration in functions in the `fields` module.
+- Add new `test_fields_bz` module for BZ-related tests.
+- Update examples and notebooks to use this, rather than manually carrying out BZ integration.
+- Correct docstring for dipole sources in `sources` module; position `(0, 0)` is at the corner of the unit cell, not the center.
 
 ## 1.0.0 (March 17, 2025)
 - Make some additional functions and modules private, including the `vector` module.
