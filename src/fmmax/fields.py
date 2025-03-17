@@ -4,7 +4,7 @@ Copyright (c) Meta Platforms, Inc. and affiliates.
 """
 
 import functools
-from typing import Callable, Sequence, Tuple
+from typing import Callable, Optional, Sequence, Tuple
 
 import jax.numpy as jnp
 
@@ -98,6 +98,35 @@ def _validate_amplitudes_shape(
             f"All amplitudes must have matching shape `(..., {num_terms}, "
             f"amplitudes_batch_size)` but got shapes {[a.shape for a in amplitudes]}."
         )
+
+
+# -----------------------------------------------------------------------------
+# Functions to compute Poynting flux from wave amplitudes or fields.
+# -----------------------------------------------------------------------------
+
+
+def time_average_z_poynting_flux(
+    electric_field: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
+    magnetic_field: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
+) -> jnp.ndarray:
+    """Computes the time-average z-directed Poynting flux, given the physical fields.
+
+    The calculation of Poynting flux is an element-wise operation. When the Poynting
+    flux is calculated over a single unit cell, the resulting array may be *averaged*
+    to yield a flux equal to that in all orders computed by ``amplitude_poynting_flux``.
+
+    Args:
+        electric_field: The tuple of electric fields ``(ex, ey, ez)`` defined on the
+            real-space grid.
+        magnetic_field: The tuple of magnetic fields ``(hx, hy, hz)`` defined on the
+            real-space grid.
+
+    Returns:
+        The time-average z-directed Poynting flux, with the same shape as ``ex``.
+    """
+    ex, ey, _ = electric_field
+    hx, hy, _ = magnetic_field
+    return 0.5 * jnp.real(ex * jnp.conj(hy) - ey * jnp.conj(hx))
 
 
 def amplitude_poynting_flux(
@@ -285,294 +314,8 @@ def _poynting_flux_a_matrix(layer_solve_result: fmm.LayerSolveResult) -> jnp.nda
     )
 
 
-def fields_from_wave_amplitudes(
-    forward_amplitude: jnp.ndarray,
-    backward_amplitude: jnp.ndarray,
-    layer_solve_result: fmm.LayerSolveResult,
-) -> Tuple[
-    Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
-    Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
-]:
-    """Computes the electric and magnetic fields inside a layer.
-
-    The calculation is for a batch of amplitudes, with the batch axis being the
-    final axis. There can also be leading batch axes. Accordingly, amplitudes
-    should have shape ``(..., 2 * num_terms, num_amplitudes)``. The trailing batch
-    dimension is preferred because it allows matrix-matrix multiplication instead
-    of batched matrix-vector multiplication.
-
-    Args:
-        forward_amplitude: The amplitude of the forward-propagating waves.
-        backward_amplitude: The amplitude of the backward-propagating waves,
-            at the same location in space as the ``forward_amplitude``.
-        layer_solve_result: The results of the layer eigensolve.
-
-    Returns:
-        The electric and magnetic fields, ``((ex, ey, ez), (hx, hy, hz))``.
-    """
-    _validate_amplitudes_shape(
-        (forward_amplitude, backward_amplitude),
-        num_terms=2 * layer_solve_result.expansion.num_terms,
-    )
-
-    # The matrix from equation 35 of [2012 Liu].
-    matrix = field_conversion_matrix(layer_solve_result)
-
-    # Obtain the transverse electric and magnetic fields.
-    amplitudes = jnp.concatenate([forward_amplitude, backward_amplitude], axis=-2)
-
-    fields = matrix @ amplitudes
-    # The signs and ordering of fields is defined by equations 31 and 32 of [2012 Liu].
-    negative_ey, ex, hx, hy = jnp.split(fields, 4, axis=-2)
-    ey = -negative_ey
-
-    # Compute the z-directed electric field, using equation 11 from [2012 Liu].
-    transverse_wavevectors = basis.transverse_wavevectors(
-        in_plane_wavevector=layer_solve_result.in_plane_wavevector,
-        primitive_lattice_vectors=layer_solve_result.primitive_lattice_vectors,
-        expansion=layer_solve_result.expansion,
-    )
-    kx = transverse_wavevectors[..., 0, jnp.newaxis]
-    ky = transverse_wavevectors[..., 1, jnp.newaxis]
-    angular_frequency = utils.angular_frequency_for_wavelength(
-        layer_solve_result.wavelength
-    )
-    angular_frequency = angular_frequency[..., jnp.newaxis, jnp.newaxis]
-
-    # We use the the Fourier convolution matrix for the inverse of permittivity,
-    # rather than inverting the Fourier convolution matrix of permittivity itself.
-    # This improves convergence of the computed z-component of electric field.
-    ez = (
-        -layer_solve_result.inverse_z_permittivity_matrix
-        @ (1j * kx * hy - 1j * ky * hx)
-        / (1j * angular_frequency)
-    )
-
-    # Compute the z-directed magnetic field. The expression is similar to
-    # equation 14 from [2012 Liu], but modified to allow for magnetic materials.
-    hz = (
-        layer_solve_result.inverse_z_permeability_matrix
-        @ (1j * kx * ey - 1j * ky * ex)
-        / (1j * angular_frequency)
-    )
-
-    assert ex.shape == ey.shape == ez.shape == hx.shape == hy.shape == hz.shape
-    return (ex, ey, ez), (hx, hy, hz)
-
-
-def field_conversion_matrix(layer_solve_result: fmm.LayerSolveResult) -> jnp.ndarray:
-    """Returns the matrix which converts wave amplitudes to transverse fields."""
-    # The matrix is from equation 35 of [2012 Liu].
-    q = layer_solve_result.eigenvalues
-    phi = layer_solve_result.eigenvectors
-    omega_script_k = layer_solve_result.omega_script_k_matrix
-    angular_frequency = utils.angular_frequency_for_wavelength(
-        layer_solve_result.wavelength
-    )[..., jnp.newaxis]
-
-    # Note that there is a factor of `angular_frequency` in the denominator here, which
-    # differs from equation 35 in [2012 Liu]. This is an error in that reference, and
-    # the factor is actually present e.g. in equation 59.
-    mat = (
-        omega_script_k
-        @ phi
-        @ misc.diag(jnp.ones((), dtype=q.dtype) / (angular_frequency * q))
-    )
-    return jnp.block([[mat, -mat], [phi, phi]])
-
-
 # -----------------------------------------------------------------------------
-# Functions compute fields at grid locations in a single xy plane.
-# -----------------------------------------------------------------------------
-
-
-# Type for functions that compute fields at grid locations.
-FieldsXYSliceFn = Callable[
-    [
-        Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],  # Ex, Ey, Ez Fourier amplitudes
-        Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],  # Hx, Hy, Hz Fourier amplitudes
-        fmm.LayerSolveResult,
-    ],
-    Tuple[
-        Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],  # Ex, Ey, Ez
-        Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],  # Hx, Hy, Hz
-        Tuple[jnp.ndarray, jnp.ndarray],  # x, y
-    ],
-]
-
-
-def fields_on_grid(
-    electric_field: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
-    magnetic_field: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
-    layer_solve_result: fmm.LayerSolveResult,
-    shape: Tuple[int, int],
-    num_unit_cells: Tuple[int, int],
-) -> Tuple[
-    Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
-    Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
-    Tuple[jnp.ndarray, jnp.ndarray],
-]:
-    """Transforms the fields from fourier representation to the grid.
-
-    The fields within an array of unit cells is returned, with the number of
-    cells in each direction given by ``num_unit_cells``.
-
-    The calculation is for a batch of fields, with the batch axis being the
-    final axis. There can also be leading batch axes. Accordingly, fields
-    should have shape `(..., 2 * num_terms, num_amplitudes)`. The trailing batch
-    dimension is preferred because it allows matrix-matrix multiplication instead
-    of batched matrix-vector multiplication.
-
-    Args:
-        electric_field: ``(ex, ey, ez)`` electric field Fourier amplitudes.
-        magnetic_field: ``(hx, hy, hz)`` magnetic field Fourier amplitudes.
-        layer_solve_result: The results of the layer eigensolve.
-        shape: The shape of the grid.
-        num_unit_cells: The number of unit cells along each direction.
-
-    Returns:
-        The electric field ``(ex, ey, ez)``, magnetic field ``(hx, hy, hz)``,
-        and the grid coordinates ``(x, y)``.
-    """
-    return _fields_on_grid(
-        electric_field=electric_field,
-        magnetic_field=magnetic_field,
-        shape=shape,
-        num_unit_cells=num_unit_cells,
-        in_plane_wavevector=layer_solve_result.in_plane_wavevector,
-        primitive_lattice_vectors=layer_solve_result.primitive_lattice_vectors,
-        expansion=layer_solve_result.expansion,
-    )
-
-
-def _fields_on_grid(
-    electric_field: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
-    magnetic_field: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
-    in_plane_wavevector: jnp.ndarray,
-    primitive_lattice_vectors: basis.LatticeVectors,
-    expansion: basis.Expansion,
-    shape: Tuple[int, int],
-    num_unit_cells: Tuple[int, int],
-) -> Tuple[
-    Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
-    Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
-    Tuple[jnp.ndarray, jnp.ndarray],
-]:
-    """Transforms the fields from fourier representation to the grid."""
-    _validate_amplitudes_shape(
-        electric_field + magnetic_field,
-        num_terms=expansion.num_terms,
-    )
-    x, y = basis.unit_cell_coordinates(
-        primitive_lattice_vectors=primitive_lattice_vectors,
-        shape=shape,
-        num_unit_cells=num_unit_cells,
-    )
-    kx = in_plane_wavevector[..., 0, jnp.newaxis, jnp.newaxis]
-    ky = in_plane_wavevector[..., 1, jnp.newaxis, jnp.newaxis]
-    phase = jnp.exp(1j * (kx * x + ky * y))[..., jnp.newaxis]
-    assert (
-        x.shape[-2:]
-        == y.shape[-2:]
-        == (shape[0] * num_unit_cells[0], shape[1] * num_unit_cells[1])
-    )
-
-    def _field_on_grid(fourier_field):
-        field = fft.ifft(fourier_field, expansion, shape, axis=-2)
-        return jnp.tile(field, num_unit_cells + (1,))
-
-    ex, ey, ez = electric_field
-    grid_electric_field = (
-        _field_on_grid(ex) * phase,
-        _field_on_grid(ey) * phase,
-        _field_on_grid(ez) * phase,
-    )
-
-    hx, hy, hz = magnetic_field
-    grid_magnetic_field = (
-        _field_on_grid(hx) * phase,
-        _field_on_grid(hy) * phase,
-        _field_on_grid(hz) * phase,
-    )
-    return grid_electric_field, grid_magnetic_field, (x, y)
-
-
-def fields_on_coordinates(
-    electric_field: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
-    magnetic_field: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
-    layer_solve_result: fmm.LayerSolveResult,
-    x: jnp.ndarray,
-    y: jnp.ndarray,
-) -> Tuple[
-    Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
-    Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
-    Tuple[jnp.ndarray, jnp.ndarray],
-]:
-    """Computes the fields at specified coordinates.
-
-    The calculation is for a batch of fields, with the batch axis being the
-    final axis. There can also be leading batch axes. Accordingly, fields
-    should have shape ``(..., 2 * num_terms, num_amplitudes)``. The trailing batch
-    dimension is preferred because it allows matrix-matrix multiplication instead
-    of batched matrix-vector multiplication.
-
-    Args:
-        electric_field: ``(ex, ey, ez)`` electric field Fourier amplitudes.
-        magnetic_field: ``(hx, hy, hz)`` magnetic field Fourier amplitudes.
-        layer_solve_result: The results of the layer eigensolve.
-        x: The x-coordinates where the fields are sought.
-        y: The y-coordinates where the fields are sought, with shape matching
-            that of ``x``.
-
-    Returns:
-        The electric field ``(ex, ey, ez)``, magnetic field ``(hx, hy, hz)``,
-        and the grid coordinates ``(x, y)``. The field arrays each have shape
-        ``batch_shape + coordinates_shape + (num_amplitudes,)``.
-    """
-    _validate_amplitudes_shape(
-        electric_field + magnetic_field,
-        num_terms=layer_solve_result.expansion.num_terms,
-    )
-    assert x.shape == y.shape
-
-    coordinates_shape = x.shape
-    ex_shape = electric_field[0].shape
-    field_shape = ex_shape[:-2] + coordinates_shape + (ex_shape[-1],)
-
-    transverse_wavevectors = basis.transverse_wavevectors(
-        in_plane_wavevector=layer_solve_result.in_plane_wavevector,
-        primitive_lattice_vectors=layer_solve_result.primitive_lattice_vectors,
-        expansion=layer_solve_result.expansion,
-    )
-    kx = transverse_wavevectors[..., 0, jnp.newaxis]
-    ky = transverse_wavevectors[..., 1, jnp.newaxis]
-
-    def _field_at_coordinates(fourier_field):
-        field = (
-            fourier_field[..., jnp.newaxis, :]
-            * jnp.exp(1j * (kx * x.flatten() + ky * y.flatten()))[..., jnp.newaxis]
-        )
-        field = jnp.sum(field, axis=-3)
-        return field.reshape(field_shape)
-
-    ex, ey, ez = electric_field
-    grid_electric_field = (
-        _field_at_coordinates(ex),
-        _field_at_coordinates(ey),
-        _field_at_coordinates(ez),
-    )
-
-    hx, hy, hz = magnetic_field
-    grid_magnetic_field = (
-        _field_at_coordinates(hx),
-        _field_at_coordinates(hy),
-        _field_at_coordinates(hz),
-    )
-    return grid_electric_field, grid_magnetic_field, (x, y)
-
-
-# -----------------------------------------------------------------------------
-# Functions to wave amplitudes inside a stack of layers.
+# Functions to compute wave amplitudes inside a stack of layers.
 # -----------------------------------------------------------------------------
 
 
@@ -705,6 +448,349 @@ def layer_amplitudes_interior(
 
 
 # -----------------------------------------------------------------------------
+# Functions to compute electric and magnetic fields in the Fourier representation.
+# -----------------------------------------------------------------------------
+
+
+def fields_from_wave_amplitudes(
+    forward_amplitude: jnp.ndarray,
+    backward_amplitude: jnp.ndarray,
+    layer_solve_result: fmm.LayerSolveResult,
+) -> Tuple[
+    Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
+    Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
+]:
+    """Computes the electric and magnetic fields in the Fourier basis within a layer.
+
+    The calculation is for a batch of amplitudes, with the batch axis being the
+    final axis. There can also be leading batch axes. Accordingly, amplitudes
+    should have shape ``(..., 2 * num_terms, num_amplitudes)``. The trailing batch
+    dimension is preferred because it allows matrix-matrix multiplication instead
+    of batched matrix-vector multiplication.
+
+    Args:
+        forward_amplitude: The amplitude of the forward-propagating waves.
+        backward_amplitude: The amplitude of the backward-propagating waves,
+            at the same location in space as the ``forward_amplitude``.
+        layer_solve_result: The results of the layer eigensolve.
+
+    Returns:
+        The electric and magnetic fields, ``((ex, ey, ez), (hx, hy, hz))``.
+    """
+    _validate_amplitudes_shape(
+        (forward_amplitude, backward_amplitude),
+        num_terms=2 * layer_solve_result.expansion.num_terms,
+    )
+
+    # The matrix from equation 35 of [2012 Liu].
+    matrix = field_conversion_matrix(layer_solve_result)
+
+    # Obtain the transverse electric and magnetic fields.
+    amplitudes = jnp.concatenate([forward_amplitude, backward_amplitude], axis=-2)
+
+    fields = matrix @ amplitudes
+    # The signs and ordering of fields is defined by equations 31 and 32 of [2012 Liu].
+    negative_ey, ex, hx, hy = jnp.split(fields, 4, axis=-2)
+    ey = -negative_ey
+
+    # Compute the z-directed electric field, using equation 11 from [2012 Liu].
+    transverse_wavevectors = basis.transverse_wavevectors(
+        in_plane_wavevector=layer_solve_result.in_plane_wavevector,
+        primitive_lattice_vectors=layer_solve_result.primitive_lattice_vectors,
+        expansion=layer_solve_result.expansion,
+    )
+    kx = transverse_wavevectors[..., 0, jnp.newaxis]
+    ky = transverse_wavevectors[..., 1, jnp.newaxis]
+    angular_frequency = utils.angular_frequency_for_wavelength(
+        layer_solve_result.wavelength
+    )
+    angular_frequency = angular_frequency[..., jnp.newaxis, jnp.newaxis]
+
+    # We use the the Fourier convolution matrix for the inverse of permittivity,
+    # rather than inverting the Fourier convolution matrix of permittivity itself.
+    # This improves convergence of the computed z-component of electric field.
+    ez = (
+        -layer_solve_result.inverse_z_permittivity_matrix
+        @ (1j * kx * hy - 1j * ky * hx)
+        / (1j * angular_frequency)
+    )
+
+    # Compute the z-directed magnetic field. The expression is similar to
+    # equation 14 from [2012 Liu], but modified to allow for magnetic materials.
+    hz = (
+        layer_solve_result.inverse_z_permeability_matrix
+        @ (1j * kx * ey - 1j * ky * ex)
+        / (1j * angular_frequency)
+    )
+
+    assert ex.shape == ey.shape == ez.shape == hx.shape == hy.shape == hz.shape
+    return (ex, ey, ez), (hx, hy, hz)
+
+
+def field_conversion_matrix(layer_solve_result: fmm.LayerSolveResult) -> jnp.ndarray:
+    """Returns the matrix which converts wave amplitudes to transverse fields."""
+    # The matrix is from equation 35 of [2012 Liu].
+    q = layer_solve_result.eigenvalues
+    phi = layer_solve_result.eigenvectors
+    omega_script_k = layer_solve_result.omega_script_k_matrix
+    angular_frequency = utils.angular_frequency_for_wavelength(
+        layer_solve_result.wavelength
+    )[..., jnp.newaxis]
+
+    # Note that there is a factor of `angular_frequency` in the denominator here, which
+    # differs from equation 35 in [2012 Liu]. This is an error in that reference, and
+    # the factor is actually present e.g. in equation 59.
+    mat = (
+        omega_script_k
+        @ phi
+        @ misc.diag(jnp.ones((), dtype=q.dtype) / (angular_frequency * q))
+    )
+    return jnp.block([[mat, -mat], [phi, phi]])
+
+
+# -----------------------------------------------------------------------------
+# Functions compute fields at grid locations in a single xy plane.
+# -----------------------------------------------------------------------------
+
+
+# Type for functions that compute fields at grid locations.
+FieldsXYSliceFn = Callable[
+    [
+        Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],  # Ex, Ey, Ez Fourier amplitudes
+        Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],  # Hx, Hy, Hz Fourier amplitudes
+        fmm.LayerSolveResult,
+    ],
+    Tuple[
+        Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],  # Ex, Ey, Ez
+        Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],  # Hx, Hy, Hz
+        Tuple[jnp.ndarray, jnp.ndarray],  # x, y
+    ],
+]
+
+
+def fields_on_grid(
+    electric_field: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
+    magnetic_field: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
+    layer_solve_result: fmm.LayerSolveResult,
+    shape: Tuple[int, int],
+    num_unit_cells: Optional[Tuple[int, int]] = None,
+    brillouin_grid_axes: Optional[Tuple[int, int]] = None,
+) -> Tuple[
+    Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
+    Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
+    Tuple[jnp.ndarray, jnp.ndarray],
+]:
+    """Transforms the fields from fourier representation to the grid.
+
+    The fields within an array of unit cells is returned, with the number of
+    cells in each direction given by ``num_unit_cells``. If ``brillouin_grid_axes``
+    is specified, the fields in a supercell will be computed by Brillouin zone
+    integration.
+
+    Args:
+        electric_field: ``(ex, ey, ez)`` electric field Fourier amplitudes, each
+            with shape ``(..., 2 * num_terms, num_amplitudes)``.
+        magnetic_field: ``(hx, hy, hz)`` magnetic field Fourier amplitudes.
+        layer_solve_result: The results of the layer eigensolve.
+        shape: The shape of the grid.
+        num_unit_cells: Optional, the number of unit cells along each direction. Must
+            not be specified if ``brillouin_grid_axes`` is specified.
+        brillouin_grid_axes: Optional, the axes of each electric field component
+            corresponding to the Brillouin zone grid. If specified, ``num_unit_cells``
+            must be ``None`` and the number of unit cells is equal to the Brillouin
+            grid shape.
+
+    Returns:
+        The electric field ``(ex, ey, ez)``, magnetic field ``(hx, hy, hz)``,
+        and the grid coordinates ``(x, y)``.
+    """
+    return _fields_on_grid(
+        electric_field=electric_field,
+        magnetic_field=magnetic_field,
+        in_plane_wavevector=layer_solve_result.in_plane_wavevector,
+        primitive_lattice_vectors=layer_solve_result.primitive_lattice_vectors,
+        expansion=layer_solve_result.expansion,
+        shape=shape,
+        num_unit_cells=num_unit_cells,
+        brillouin_grid_axes=brillouin_grid_axes,
+    )
+
+
+def _fields_on_grid(
+    electric_field: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
+    magnetic_field: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
+    in_plane_wavevector: jnp.ndarray,
+    primitive_lattice_vectors: basis.LatticeVectors,
+    expansion: basis.Expansion,
+    shape: Tuple[int, int],
+    num_unit_cells: Optional[Tuple[int, int]] = None,
+    brillouin_grid_axes: Optional[Tuple[int, int]] = None,
+) -> Tuple[
+    Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
+    Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
+    Tuple[jnp.ndarray, jnp.ndarray],
+]:
+    """Transforms the fields from fourier representation to the grid."""
+    if num_unit_cells is not None and brillouin_grid_axes is not None:
+        raise ValueError(
+            f"At least one of `num_unit_cells` and `brillouin_grid_axes` must be "
+            f"`None`, but got {num_unit_cells} and {brillouin_grid_axes}."
+        )
+
+    if brillouin_grid_axes is not None:
+        ex, _, _ = electric_field
+        brillouin_grid_axes = utils.absolute_axes(  # type: ignore[assignment]
+            brillouin_grid_axes, ex.ndim
+        )
+        if any(ax > ex.ndim - 3 for ax in brillouin_grid_axes):
+            raise ValueError(
+                f"`brillouin_grid_axes` must be from the leading `d-2` axes of the "
+                f"fields, but got {brillouin_grid_axes} when field components have "
+                f"shape {ex.shape}"
+            )
+
+    if num_unit_cells is None:
+        if brillouin_grid_axes is None:
+            num_unit_cells = (1, 1)
+        else:
+            num_unit_cells = (
+                electric_field[0].shape[brillouin_grid_axes[0]],
+                electric_field[0].shape[brillouin_grid_axes[1]],
+            )
+
+    _validate_amplitudes_shape(
+        electric_field + magnetic_field,
+        num_terms=expansion.num_terms,
+    )
+    x, y = basis.unit_cell_coordinates(
+        primitive_lattice_vectors=primitive_lattice_vectors,
+        shape=shape,
+        num_unit_cells=num_unit_cells,
+    )
+    kx = in_plane_wavevector[..., 0, jnp.newaxis, jnp.newaxis]
+    ky = in_plane_wavevector[..., 1, jnp.newaxis, jnp.newaxis]
+    phase = jnp.exp(1j * (kx * x + ky * y))[..., jnp.newaxis]
+    assert (
+        x.shape[-2:]
+        == y.shape[-2:]
+        == (shape[0] * num_unit_cells[0], shape[1] * num_unit_cells[1])
+    )
+
+    def _field_on_grid(fourier_field):
+        field = fft.ifft(fourier_field, expansion, shape, axis=-2)
+        field = jnp.tile(field, num_unit_cells + (1,))
+        field *= phase
+        if brillouin_grid_axes is None:
+            return field
+        return jnp.mean(field, axis=brillouin_grid_axes)
+
+    ex, ey, ez = electric_field
+    grid_electric_field = (
+        _field_on_grid(ex),
+        _field_on_grid(ey),
+        _field_on_grid(ez),
+    )
+
+    hx, hy, hz = magnetic_field
+    grid_magnetic_field = (
+        _field_on_grid(hx),
+        _field_on_grid(hy),
+        _field_on_grid(hz),
+    )
+    return grid_electric_field, grid_magnetic_field, (x, y)
+
+
+def fields_on_coordinates(
+    electric_field: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
+    magnetic_field: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
+    layer_solve_result: fmm.LayerSolveResult,
+    x: jnp.ndarray,
+    y: jnp.ndarray,
+    brillouin_grid_axes: Optional[Tuple[int, int]] = None,
+) -> Tuple[
+    Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
+    Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
+    Tuple[jnp.ndarray, jnp.ndarray],
+]:
+    """Computes the fields at specified coordinates.
+
+    If ``brillouin_grid_axes`` is specified, the fields in a supercell will be
+    computed by Brillouin zone integration.
+
+    Args:
+        electric_field: ``(ex, ey, ez)`` electric field Fourier amplitudes, each
+            with shape ``(..., 2 * num_terms, num_amplitudes)``.
+        magnetic_field: ``(hx, hy, hz)`` magnetic field Fourier amplitudes.
+        layer_solve_result: The results of the layer eigensolve.
+        x: The x-coordinates where the fields are sought.
+        y: The y-coordinates where the fields are sought, with shape matching
+            that of ``x``.
+        brillouin_grid_axes: Optional, the axes of each electric field component
+            corresponding to the Brillouin zone grid.
+
+    Returns:
+        The electric field ``(ex, ey, ez)``, magnetic field ``(hx, hy, hz)``,
+        and the grid coordinates ``(x, y)``. The field arrays each have shape
+        ``batch_shape + coordinates_shape + (num_amplitudes,)``.
+    """
+    if brillouin_grid_axes is not None:
+        ex, _, _ = electric_field
+        brillouin_grid_axes = utils.absolute_axes(  # type: ignore[assignment]
+            brillouin_grid_axes, ex.ndim
+        )
+        if any(ax > ex.ndim - 3 for ax in brillouin_grid_axes):
+            raise ValueError(
+                f"`brillouin_grid_axes` must be from the leading `d - 2` axes of the "
+                f"fields, but got {brillouin_grid_axes} when field components have "
+                f"shape {ex.shape}"
+            )
+
+    _validate_amplitudes_shape(
+        electric_field + magnetic_field,
+        num_terms=layer_solve_result.expansion.num_terms,
+    )
+    assert x.shape == y.shape
+
+    coordinates_shape = x.shape
+    ex_shape = electric_field[0].shape
+    field_shape = ex_shape[:-2] + coordinates_shape + (ex_shape[-1],)
+
+    transverse_wavevectors = basis.transverse_wavevectors(
+        in_plane_wavevector=layer_solve_result.in_plane_wavevector,
+        primitive_lattice_vectors=layer_solve_result.primitive_lattice_vectors,
+        expansion=layer_solve_result.expansion,
+    )
+    kx = transverse_wavevectors[..., 0, jnp.newaxis]
+    ky = transverse_wavevectors[..., 1, jnp.newaxis]
+
+    def _field_at_coordinates(fourier_field):
+        field = (
+            fourier_field[..., jnp.newaxis, :]
+            * jnp.exp(1j * (kx * x.flatten() + ky * y.flatten()))[..., jnp.newaxis]
+        )
+        field = jnp.sum(field, axis=-3)
+        field = field.reshape(field_shape)
+        if brillouin_grid_axes is None:
+            return field
+        return jnp.mean(field, axis=brillouin_grid_axes)
+
+    ex, ey, ez = electric_field
+    grid_electric_field = (
+        _field_at_coordinates(ex),
+        _field_at_coordinates(ey),
+        _field_at_coordinates(ez),
+    )
+
+    hx, hy, hz = magnetic_field
+    grid_magnetic_field = (
+        _field_at_coordinates(hx),
+        _field_at_coordinates(hy),
+        _field_at_coordinates(hz),
+    )
+    return grid_electric_field, grid_magnetic_field, (x, y)
+
+
+# -----------------------------------------------------------------------------
 # Functions to compute fields on the 3D real-space grid.
 # -----------------------------------------------------------------------------
 
@@ -714,7 +800,8 @@ def stack_fields_3d_auto_grid(
     layer_solve_results: Sequence[fmm.LayerSolveResult],
     layer_thicknesses: Sequence[jnp.ndarray],
     grid_spacing: float,
-    num_unit_cells: Tuple[int, int],
+    num_unit_cells: Optional[Tuple[int, int]] = None,
+    brillouin_grid_axes: Optional[Tuple[int, int]] = None,
 ) -> Tuple[jnp.ndarray, jnp.ndarray, Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]]:
     """Computes the three-dimensional fields in a stack on the real-space grid.
 
@@ -728,7 +815,12 @@ def stack_fields_3d_auto_grid(
         grid_spacing: The approximate spacing of gridpoints on which the field is
             computed. The actual grid spacing is modified to align with the layer
             and unit cell boundaries.
-        num_unit_cells: The number of unit cells along each direction.
+        num_unit_cells: Optional, the number of unit cells along each direction. Must
+            not be specified if ``brillouin_grid_axes`` is specified.
+        brillouin_grid_axes: Optional, the axes of each electric field component
+            corresponding to the Brillouin zone grid. If specified, ``num_unit_cells``
+            must be ``None`` and the number of unit cells is equal to the Brillouin
+            grid shape.
 
     Returns:
         The electric and magnetic fields and grid coordinates, ``(ef, hf, (x, y, z))``.
@@ -748,6 +840,7 @@ def stack_fields_3d_auto_grid(
         layer_znum=layer_znum,
         grid_shape=grid_shape,
         num_unit_cells=num_unit_cells,
+        brillouin_grid_axes=brillouin_grid_axes,
     )
 
 
@@ -757,7 +850,8 @@ def stack_fields_3d(
     layer_thicknesses: Sequence[jnp.ndarray],
     layer_znum: Sequence[int],
     grid_shape: Tuple[int, int],
-    num_unit_cells: Tuple[int, int],
+    num_unit_cells: Optional[Tuple[int, int]] = None,
+    brillouin_grid_axes: Optional[Tuple[int, int]] = None,
 ) -> Tuple[jnp.ndarray, jnp.ndarray, Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]]:
     """Computes the three-dimensional fields in a stack on the real-space grid.
 
@@ -768,7 +862,12 @@ def stack_fields_3d(
         layer_thicknesses: The thickness of each layer.
         layer_znum: The number of gridpoints in the z-direction for each layer.
         grid_shape: The shape of the xy real-space grid.
-        num_unit_cells: The number of unit cells along each direction.
+        num_unit_cells: Optional, the number of unit cells along each direction. Must
+            not be specified if ``brillouin_grid_axes`` is specified.
+        brillouin_grid_axes: Optional, the axes of each electric field component
+            corresponding to the Brillouin zone grid. If specified, ``num_unit_cells``
+            must be ``None`` and the number of unit cells is equal to the Brillouin
+            grid shape.
 
     Returns:
         The electric and magnetic fields and grid coordinates, ``(ef, hf, (x, y, z))``.
@@ -782,6 +881,7 @@ def stack_fields_3d(
             fields_on_grid,
             shape=grid_shape,
             num_unit_cells=num_unit_cells,
+            brillouin_grid_axes=brillouin_grid_axes,
         ),
     )
 
@@ -793,6 +893,7 @@ def stack_fields_3d_on_coordinates(
     layer_znum: Sequence[int],
     x: jnp.ndarray,
     y: jnp.ndarray,
+    brillouin_grid_axes: Optional[Tuple[int, int]] = None,
 ) -> Tuple[jnp.ndarray, jnp.ndarray, Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]]:
     """Computes the three-dimensional fields in a stack at specified coordinates.
 
@@ -808,6 +909,8 @@ def stack_fields_3d_on_coordinates(
         x: The x-coordinates where the fields are sought.
         y: The y-coordinates where the fields are sought, with shape matching
             that of ``x``.
+        brillouin_grid_axes: Optional, the axes of each electric field component
+            corresponding to the Brillouin zone grid.
 
     Returns:
         The electric and magnetic fields and grid coordinates, ``(ef, hf, (x, y, z))``.
@@ -817,7 +920,12 @@ def stack_fields_3d_on_coordinates(
         layer_solve_results=layer_solve_results,
         layer_thicknesses=layer_thicknesses,
         layer_znum=layer_znum,
-        fields_xy_slice_fn=functools.partial(fields_on_coordinates, x=x, y=y),
+        fields_xy_slice_fn=functools.partial(
+            fields_on_coordinates,
+            x=x,
+            y=y,
+            brillouin_grid_axes=brillouin_grid_axes,
+        ),
     )
 
 
@@ -828,7 +936,8 @@ def layer_fields_3d(
     layer_thickness: jnp.ndarray,
     layer_znum: int,
     grid_shape: Tuple[int, int],
-    num_unit_cells: Tuple[int, int],
+    num_unit_cells: Optional[Tuple[int, int]] = None,
+    brillouin_grid_axes: Optional[Tuple[int, int]] = None,
 ) -> Tuple[jnp.ndarray, jnp.ndarray, Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]]:
     """Computes the three-dimensional fields in a layer on the real-space grid.
 
@@ -841,7 +950,12 @@ def layer_fields_3d(
         layer_thickness: The layer thickness.
         layer_znum: The number of gridpoints in the z-direction for the layer.
         grid_shape: The shape of the xy real-space grid.
-        num_unit_cells: The number of unit cells along each direction.
+        num_unit_cells: Optional, the number of unit cells along each direction. Must
+            not be specified if ``brillouin_grid_axes`` is specified.
+        brillouin_grid_axes: Optional, the axes of each electric field component
+            corresponding to the Brillouin zone grid. If specified, ``num_unit_cells``
+            must be ``None`` and the number of unit cells is equal to the Brillouin
+            grid shape.
 
     Returns:
         The electric and magnetic fields and grid coordinates, ``(ef, hf, (x, y, z))``.
@@ -856,6 +970,7 @@ def layer_fields_3d(
             fields_on_grid,
             shape=grid_shape,
             num_unit_cells=num_unit_cells,
+            brillouin_grid_axes=brillouin_grid_axes,
         ),
     )
 
@@ -868,6 +983,7 @@ def layer_fields_3d_on_coordinates(
     layer_znum: int,
     x: jnp.ndarray,
     y: jnp.ndarray,
+    brillouin_grid_axes: Optional[Tuple[int, int]] = None,
 ) -> Tuple[jnp.ndarray, jnp.ndarray, Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]]:
     """Computes the three-dimensional fields in a layer at specified coordinates
 
@@ -885,6 +1001,8 @@ def layer_fields_3d_on_coordinates(
         x: The x-coordinates where the fields are sought.
         y: The y-coordinates where the fields are sought, with shape matching
             that of ``x``.
+        brillouin_grid_axes: Optional, the axes of each electric field component
+            corresponding to the Brillouin zone grid.
 
     Returns:
         The electric and magnetic fields and grid coordinates, ``(ef, hf, (x, y, z))``.
@@ -895,7 +1013,12 @@ def layer_fields_3d_on_coordinates(
         layer_solve_result=layer_solve_result,
         layer_thickness=layer_thickness,
         layer_znum=layer_znum,
-        fields_xy_slice_fn=functools.partial(fields_on_coordinates, x=x, y=y),
+        fields_xy_slice_fn=functools.partial(
+            fields_on_coordinates,
+            x=x,
+            y=y,
+            brillouin_grid_axes=brillouin_grid_axes,
+        ),
     )
 
 
@@ -1049,25 +1172,3 @@ def _validate_matching_lengths(*sequences: Sequence) -> None:
     lengths = [len(s) for s in sequences]
     if not all([length == lengths[0] for length in lengths]):
         raise ValueError(f"Encountered incompatible lengths, got lengths of {lengths}")
-
-
-def time_average_z_poynting_flux(
-    electric_field: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
-    magnetic_field: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
-) -> jnp.ndarray:
-    """Computes the time-average z-directed Poynting flux, given the physical fields.
-
-    The calculation of Poynting flux is an element-wise operation. When the Poynting
-    flux is calculated over a single unit cell, the resulting array may be *averaged*
-    to yield a flux equal to that in all orders computed by ``amplitude_poynting_flux``.
-
-    Args:
-        electric_field: The tuple of electric fields ``(ex, ey, ez)``.
-        magnetic_field: The tuple of magnetic fields ``(hx, hy, hz)``.
-
-    Returns:
-        The time-average z-directed Poynting flux, with the same shape as ``ex``.
-    """
-    ex, ey, _ = electric_field
-    hx, hy, _ = magnetic_field
-    return 0.5 * jnp.real(ex * jnp.conj(hy) - ey * jnp.conj(hx))
