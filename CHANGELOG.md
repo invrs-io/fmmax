@@ -1,6 +1,8 @@
 # Change log
 
 ## Unreleased
+
+## 1.1.0 (March 17, 2025)
 - Enable automatic Brillouin zone integration in functions in the `fields` module.
 - Add new `test_fields_bz` module for BZ-related tests.
 - Update examples and notebooks to use this, rather than manually carrying out BZ integration.
