@@ -1,13 +1,15 @@
 # Change log
 
 ## Unreleased
+
+## 1.0.0 (March 17, 2025)
 - Make some additional functions and modules private, including the `vector` module.
 - Update docstrings to improve formatting of sphinx auto-docs.
 - Rename args to `time_average_z_poynting_flux` from `*_fields` to `*_field` to be consistent with other functions in the `fields` module.
 - Add a notebook that demonstrates calculation of the farfield for a dipole in vacuum.
 - Improve detection of 1D permittivity distributions, particularly the case of complex permittivity.
 - Add a basic notebook illustrating diffraction calculation.
-- Major changes to make way for FMMAX 1.0.0
+- API changes
     - Export key functions so they can directly be imported from `fmmax`, e.g. `fmmax.eigensolve_isotropic_media(...)`.
     - Update examples so they import `fmmax` and use exported functions, rather than importing individual modules.
     - Update API docs to include only the exported functions/classes/constants.
