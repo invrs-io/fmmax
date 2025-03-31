@@ -254,13 +254,15 @@ def brillouin_zone_in_plane_wavevector(
             f"but got {brillouin_grid_shape}."
         )
 
-    spacing_i = 1 / brillouin_grid_shape[0]
-    spacing_j = 1 / brillouin_grid_shape[1]
+    # Compute `(i, j)` so that a point in the center of the Brillouin zone has
+    # a value exactly equal to `(0, 0)`.
+    xdim, ydim = brillouin_grid_shape
     i, j = jnp.meshgrid(
-        jnp.arange(-0.5 + spacing_i / 2, 0.5, spacing_i),
-        jnp.arange(-0.5 + spacing_j / 2, 0.5, spacing_j),
+        jnp.arange(-xdim + 1, xdim, 2) / (2 * xdim),
+        jnp.arange(-ydim + 1, ydim, 2) / (2 * ydim),
         indexing="ij",
     )
+    assert i.shape == brillouin_grid_shape
     reciprocal_vectors = primitive_lattice_vectors.reciprocal
     return jnp.stack(
         [

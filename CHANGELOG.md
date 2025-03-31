@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## 1.1.2 (March 31, 2025)
+- Update calculation of `basis.brillouin_zone_in_plane_wavevector` so that wavevectors at the center of the Brillouin zone are exactly at the center. Previously, the manner in which this was calculated could lead to small nonzero values due to floating point calculations. These small values have no effect in virtually all cases.
+
 ## 1.1.1 (March 19, 2025)
 - Add missing `packaging` dependency (thanks @SamDuffield).
 
