@@ -226,6 +226,20 @@ class InPlaneWavevectorTest(unittest.TestCase):
         onp.testing.assert_allclose(wavevector, expected_vectors)
 
     @parameterized.expand(
+        [[(1, 1)], [(3, 3)], [(5, 5)]],
+    )
+    def test_brillouin_wavevector_at_center_is_exactly_zero(self, shape):
+        primitive_lattice_vectors = basis.LatticeVectors(basis.X * 2, basis.Y)
+        wavevector = basis.brillouin_zone_in_plane_wavevector(
+            brillouin_grid_shape=shape,
+            primitive_lattice_vectors=primitive_lattice_vectors,
+        )
+        onp.testing.assert_array_equal(
+            wavevector[shape[0] // 2, shape[1] // 2, :],
+            onp.asarray([0, 0]),
+        )
+
+    @parameterized.expand(
         [
             [1.0, 0.0, 0.0, 1.0, (0, 0)],
             [1.0, jnp.pi / 4, 0.0, 1.0, (2 * jnp.pi / jnp.sqrt(2), 0)],
