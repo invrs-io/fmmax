@@ -287,3 +287,48 @@ class BZIntegratedFieldsTest(unittest.TestCase):
         )
 
         onp.testing.assert_allclose(bwd, bwd_amplitude_0_end, atol=1e-12)
+
+
+class NumUnitCellsAndBrillouinGridShapeTest(unittest.TestCase):
+    @parameterized.expand(
+        [
+            (None, None, (4, 3, 1, 100, 100, 1)),
+            ((4, 3), None, (4, 3, 1, 400, 300, 1)),
+            ((4, 3), (0, 1), (1, 400, 300, 1)),
+            (None, (0, 1), (1, 400, 300, 1)),
+            ((2, 2), (0, 1), (1, 200, 200, 1)),
+        ]
+    )
+    def test_field_shape_matches_expected(
+        self,
+        num_unit_cells,
+        brillouin_grid_axes,
+        expected_shape,
+    ):
+        in_plane_wavevector = basis.brillouin_zone_in_plane_wavevector(
+            brillouin_grid_shape=(4, 3),
+            primitive_lattice_vectors=PRIMITIVE_LATTICE_VECTORS,
+        )
+        in_plane_wavevector = in_plane_wavevector[..., jnp.newaxis, :]
+        solve_result = fmm.eigensolve_isotropic_media(
+            wavelength=jnp.asarray(0.314),
+            in_plane_wavevector=in_plane_wavevector,
+            primitive_lattice_vectors=PRIMITIVE_LATTICE_VECTORS,
+            permittivity=jnp.ones((1, 1)),
+            expansion=EXPANSION,
+        )
+
+        efield, hfield = fields.fields_from_wave_amplitudes(
+            forward_amplitude=jnp.zeros((4, 3, 1, 2 * EXPANSION.num_terms, 1)),
+            backward_amplitude=jnp.zeros((4, 3, 1, 2 * EXPANSION.num_terms, 1)),
+            layer_solve_result=solve_result,
+        )
+        (ex, _, _), _, _ = fields.fields_on_grid(
+            electric_field=efield,
+            magnetic_field=hfield,
+            layer_solve_result=solve_result,
+            shape=(100, 100),
+            num_unit_cells=num_unit_cells,
+            brillouin_grid_axes=brillouin_grid_axes,
+        )
+        self.assertSequenceEqual(ex.shape, expected_shape)

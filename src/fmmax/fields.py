@@ -593,50 +593,17 @@ def fields_on_grid(
         magnetic_field: ``(hx, hy, hz)`` magnetic field Fourier amplitudes.
         layer_solve_result: The results of the layer eigensolve.
         shape: The shape of the grid.
-        num_unit_cells: Optional, the number of unit cells along each direction. Must
-            not be specified if ``brillouin_grid_axes`` is specified.
-        brillouin_grid_axes: Optional, the axes of each electric field component
-            corresponding to the Brillouin zone grid. If specified, ``num_unit_cells``
-            must be ``None`` and the number of unit cells is equal to the Brillouin
-            grid shape.
+        num_unit_cells: Optional, the number of unit cells along each direction. If
+            ``None``, the number of unit cells is inferred from
+            ``brillouin_grid_axes``. If both are ``None``, the fields for a single
+            unit cell are computed.
+        brillouin_grid_axes: Optional, the axes of each amplitude corresponding to
+            the Brillouin zone grid.
 
     Returns:
         The electric field ``(ex, ey, ez)``, magnetic field ``(hx, hy, hz)``,
         and the grid coordinates ``(x, y)``.
     """
-    return _fields_on_grid(
-        electric_field=electric_field,
-        magnetic_field=magnetic_field,
-        in_plane_wavevector=layer_solve_result.in_plane_wavevector,
-        primitive_lattice_vectors=layer_solve_result.primitive_lattice_vectors,
-        expansion=layer_solve_result.expansion,
-        shape=shape,
-        num_unit_cells=num_unit_cells,
-        brillouin_grid_axes=brillouin_grid_axes,
-    )
-
-
-def _fields_on_grid(
-    electric_field: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
-    magnetic_field: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
-    in_plane_wavevector: jnp.ndarray,
-    primitive_lattice_vectors: basis.LatticeVectors,
-    expansion: basis.Expansion,
-    shape: Tuple[int, int],
-    num_unit_cells: Optional[Tuple[int, int]] = None,
-    brillouin_grid_axes: Optional[Tuple[int, int]] = None,
-) -> Tuple[
-    Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
-    Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
-    Tuple[jnp.ndarray, jnp.ndarray],
-]:
-    """Transforms the fields from fourier representation to the grid."""
-    if num_unit_cells is not None and brillouin_grid_axes is not None:
-        raise ValueError(
-            f"At least one of `num_unit_cells` and `brillouin_grid_axes` must be "
-            f"`None`, but got {num_unit_cells} and {brillouin_grid_axes}."
-        )
-
     if brillouin_grid_axes is not None:
         ex, _, _ = electric_field
         brillouin_grid_axes = utils.absolute_axes(  # type: ignore[assignment]
@@ -644,7 +611,7 @@ def _fields_on_grid(
         )
         if any(ax > ex.ndim - 3 for ax in brillouin_grid_axes):
             raise ValueError(
-                f"`brillouin_grid_axes` must be from the leading `d-2` axes of the "
+                f"`brillouin_grid_axes` must be from the leading `d - 2` axes of the "
                 f"fields, but got {brillouin_grid_axes} when field components have "
                 f"shape {ex.shape}"
             )
@@ -660,15 +627,15 @@ def _fields_on_grid(
 
     _validate_amplitudes_shape(
         electric_field + magnetic_field,
-        num_terms=expansion.num_terms,
+        num_terms=layer_solve_result.expansion.num_terms,
     )
     x, y = basis.unit_cell_coordinates(
-        primitive_lattice_vectors=primitive_lattice_vectors,
+        primitive_lattice_vectors=layer_solve_result.primitive_lattice_vectors,
         shape=shape,
         num_unit_cells=num_unit_cells,
     )
-    kx = in_plane_wavevector[..., 0, jnp.newaxis, jnp.newaxis]
-    ky = in_plane_wavevector[..., 1, jnp.newaxis, jnp.newaxis]
+    kx = layer_solve_result.in_plane_wavevector[..., 0, jnp.newaxis, jnp.newaxis]
+    ky = layer_solve_result.in_plane_wavevector[..., 1, jnp.newaxis, jnp.newaxis]
     phase = jnp.exp(1j * (kx * x + ky * y))[..., jnp.newaxis]
     assert (
         x.shape[-2:]
@@ -677,7 +644,7 @@ def _fields_on_grid(
     )
 
     def _field_on_grid(fourier_field):
-        field = fft.ifft(fourier_field, expansion, shape, axis=-2)
+        field = fft.ifft(fourier_field, layer_solve_result.expansion, shape, axis=-2)
         field = jnp.tile(field, num_unit_cells + (1,))
         field *= phase
         if brillouin_grid_axes is None:
@@ -725,8 +692,8 @@ def fields_on_coordinates(
         x: The x-coordinates where the fields are sought.
         y: The y-coordinates where the fields are sought, with shape matching
             that of ``x``.
-        brillouin_grid_axes: Optional, the axes of each electric field component
-            corresponding to the Brillouin zone grid.
+        brillouin_grid_axes: Optional, the axes of each amplitude corresponding to
+            the Brillouin zone grid.
 
     Returns:
         The electric field ``(ex, ey, ez)``, magnetic field ``(hx, hy, hz)``,
@@ -815,12 +782,12 @@ def stack_fields_3d_auto_grid(
         grid_spacing: The approximate spacing of gridpoints on which the field is
             computed. The actual grid spacing is modified to align with the layer
             and unit cell boundaries.
-        num_unit_cells: Optional, the number of unit cells along each direction. Must
-            not be specified if ``brillouin_grid_axes`` is specified.
-        brillouin_grid_axes: Optional, the axes of each electric field component
-            corresponding to the Brillouin zone grid. If specified, ``num_unit_cells``
-            must be ``None`` and the number of unit cells is equal to the Brillouin
-            grid shape.
+        num_unit_cells: Optional, the number of unit cells along each direction. If
+            ``None``, the number of unit cells is inferred from
+            ``brillouin_grid_axes``. If both are ``None``, the fields for a single
+            unit cell are computed.
+        brillouin_grid_axes: Optional, the axes of each amplitude corresponding to
+            the Brillouin zone grid.
 
     Returns:
         The electric and magnetic fields and grid coordinates, ``(ef, hf, (x, y, z))``.
@@ -862,12 +829,12 @@ def stack_fields_3d(
         layer_thicknesses: The thickness of each layer.
         layer_znum: The number of gridpoints in the z-direction for each layer.
         grid_shape: The shape of the xy real-space grid.
-        num_unit_cells: Optional, the number of unit cells along each direction. Must
-            not be specified if ``brillouin_grid_axes`` is specified.
-        brillouin_grid_axes: Optional, the axes of each electric field component
-            corresponding to the Brillouin zone grid. If specified, ``num_unit_cells``
-            must be ``None`` and the number of unit cells is equal to the Brillouin
-            grid shape.
+        num_unit_cells: Optional, the number of unit cells along each direction. If
+            ``None``, the number of unit cells is inferred from
+            ``brillouin_grid_axes``. If both are ``None``, the fields for a single
+            unit cell are computed.
+        brillouin_grid_axes: Optional, the axes of each amplitude corresponding to
+            the Brillouin zone grid.
 
     Returns:
         The electric and magnetic fields and grid coordinates, ``(ef, hf, (x, y, z))``.
@@ -909,8 +876,8 @@ def stack_fields_3d_on_coordinates(
         x: The x-coordinates where the fields are sought.
         y: The y-coordinates where the fields are sought, with shape matching
             that of ``x``.
-        brillouin_grid_axes: Optional, the axes of each electric field component
-            corresponding to the Brillouin zone grid.
+        brillouin_grid_axes: Optional, the axes of each amplitude corresponding to
+            the Brillouin zone grid.
 
     Returns:
         The electric and magnetic fields and grid coordinates, ``(ef, hf, (x, y, z))``.
@@ -950,12 +917,12 @@ def layer_fields_3d(
         layer_thickness: The layer thickness.
         layer_znum: The number of gridpoints in the z-direction for the layer.
         grid_shape: The shape of the xy real-space grid.
-        num_unit_cells: Optional, the number of unit cells along each direction. Must
-            not be specified if ``brillouin_grid_axes`` is specified.
-        brillouin_grid_axes: Optional, the axes of each electric field component
-            corresponding to the Brillouin zone grid. If specified, ``num_unit_cells``
-            must be ``None`` and the number of unit cells is equal to the Brillouin
-            grid shape.
+        num_unit_cells: Optional, the number of unit cells along each direction. If
+            ``None``, the number of unit cells is inferred from
+            ``brillouin_grid_axes``. If both are ``None``, the fields for a single
+            unit cell are computed.
+        brillouin_grid_axes: Optional, the axes of each amplitude corresponding to
+            the Brillouin zone grid.
 
     Returns:
         The electric and magnetic fields and grid coordinates, ``(ef, hf, (x, y, z))``.
@@ -1001,8 +968,8 @@ def layer_fields_3d_on_coordinates(
         x: The x-coordinates where the fields are sought.
         y: The y-coordinates where the fields are sought, with shape matching
             that of ``x``.
-        brillouin_grid_axes: Optional, the axes of each electric field component
-            corresponding to the Brillouin zone grid.
+        brillouin_grid_axes: Optional, the axes of each amplitude corresponding to
+            the Brillouin zone grid.
 
     Returns:
         The electric and magnetic fields and grid coordinates, ``(ef, hf, (x, y, z))``.
