@@ -2,6 +2,7 @@
 
 ## Unreleased
 - In fields module, allow number of unit cells to be specified independently when Brillouin zone integration is used. Retain ability to infer number of unit cells from Brillouin grid axes in when number of unit cells is not specified.
+- Make the `basis.Expansion` hashable.
 
 ## 1.1.2 (March 31, 2025)
 - Update calculation of `basis.brillouin_zone_in_plane_wavevector` so that wavevectors at the center of the Brillouin zone are exactly at the center. Previously, the manner in which this was calculated could lead to small nonzero values due to floating point calculations. These small values have no effect in virtually all cases.
