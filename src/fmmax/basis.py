@@ -72,7 +72,7 @@ class Expansion:
                 f"{self.basis_coefficients.shape}."
             )
 
-    def __hash__(self) -> str:
+    def __hash__(self) -> int:
         return hash(self.basis_coefficients.tobytes())
 
     def __eq__(self, other: Any) -> bool:
@@ -80,7 +80,7 @@ class Expansion:
             return False
         if self.basis_coefficients.shape != other.basis_coefficients.shape:
             return False
-        return onp.all(self.basis_coefficients == other.basis_coefficients)
+        return bool(onp.all(self.basis_coefficients == other.basis_coefficients))
 
     @property
     def num_terms(self) -> int:
