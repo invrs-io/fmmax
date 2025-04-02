@@ -34,10 +34,10 @@ class CrystalDipoleTest(unittest.TestCase):
         self.assertSequenceEqual(ex.shape, hz.shape)
 
         onp.testing.assert_allclose(
-            onp.mean(onp.abs((ex, ey, ez))), 0.768176, rtol=1e-4
+            onp.mean(onp.abs((ex, ey, ez))), 4.609056, rtol=1e-4
         )
         onp.testing.assert_allclose(
-            onp.mean(onp.abs((hx, hy, hz))), 0.466219, rtol=1e-4
+            onp.mean(onp.abs((hx, hy, hz))), 2.797314, rtol=1e-4
         )
 
 

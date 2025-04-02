@@ -76,12 +76,8 @@ class FieldSourcesTest(unittest.TestCase):
             hfield,
             layer_solve_result,
             shape=(20, 20),
-            num_unit_cells=brillouin_grid_shape,
+            brillouin_grid_axes=(0, 1),
         )
-        ex = jnp.mean(ex, axis=(0, 1))
-        ey = jnp.mean(ey, axis=(0, 1))
-        hx = jnp.mean(hx, axis=(0, 1))
-        hy = jnp.mean(hy, axis=(0, 1))
         (
             fwd_amplitude_extracted,
             bwd_amplitude_extracted,
@@ -178,10 +174,6 @@ class FieldSourcesTest(unittest.TestCase):
             shape=(20, 20),
             num_unit_cells=brillouin_grid_shape,
         )
-        ex = jnp.mean(ex, axis=(1, 2), keepdims=True)
-        ey = jnp.mean(ey, axis=(1, 2), keepdims=True)
-        hx = jnp.mean(hx, axis=(1, 2), keepdims=True)
-        hy = jnp.mean(hy, axis=(1, 2), keepdims=True)
         (
             fwd_amplitude_extracted,
             bwd_amplitude_extracted,

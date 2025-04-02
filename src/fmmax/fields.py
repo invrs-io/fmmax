@@ -649,7 +649,7 @@ def fields_on_grid(
         field *= phase
         if brillouin_grid_axes is None:
             return field
-        return jnp.mean(field, axis=brillouin_grid_axes)
+        return jnp.sum(field, axis=brillouin_grid_axes)
 
     ex, ey, ez = electric_field
     grid_electric_field = (
@@ -739,7 +739,7 @@ def fields_on_coordinates(
         field = field.reshape(field_shape)
         if brillouin_grid_axes is None:
             return field
-        return jnp.mean(field, axis=brillouin_grid_axes)
+        return jnp.sum(field, axis=brillouin_grid_axes)
 
     ex, ey, ez = electric_field
     grid_electric_field = (
