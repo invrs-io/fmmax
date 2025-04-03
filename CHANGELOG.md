@@ -1,6 +1,8 @@
 # Change log
 
 ## Unreleased
+
+## 1.2.0 (April 2, 2025)
 - In fields module, allow number of unit cells to be specified independently when Brillouin zone integration is used. Retain ability to infer number of unit cells from Brillouin grid axes in when number of unit cells is not specified.
 - Make the `basis.Expansion` hashable.
 - Update logic for Brillouin zone integration, so that flux computed from the amplitudes and from the fields are consistent, and source amplitudes computed from fields are consistent from the original amplitudes that yielded the fields. This changes the regression values for the crystal example test, by a factor equal to the the number of points in the Brillouin zone grid.
