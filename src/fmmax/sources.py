@@ -5,6 +5,7 @@ Copyright (c) Meta Platforms, Inc. and affiliates.
 
 from typing import Optional, Tuple
 
+import jax
 import jax.numpy as jnp
 
 from fmmax import basis, fft, fields, fmm, misc, scattering, utils
@@ -92,6 +93,32 @@ def amplitudes_for_fields(
     ky = layer_solve_result.in_plane_wavevector[..., 1, jnp.newaxis, jnp.newaxis]
     phase = jnp.exp(1j * (kx * x + ky * y))[..., jnp.newaxis]
 
+    import matplotlib.pyplot as plt
+
+    plt.figure(figsize=(8, 4))
+    plt.subplot(241)
+    plt.imshow(phase[0, 0, :, :, 0].real, cmap="bwr")
+    plt.subplot(242)
+    plt.imshow(phase[0, 1, :, :, 0].real, cmap="bwr")
+    plt.subplot(245)
+    plt.imshow(phase[1, 0, :, :, 0].real, cmap="bwr")
+    plt.subplot(246)
+    plt.imshow(phase[1, 1, :, :, 0].real, cmap="bwr")
+    plt.subplot(243)
+    plt.imshow(phase[0, 0, :, :, 0].imag, cmap="bwr")
+    plt.subplot(244)
+    plt.imshow(phase[0, 1, :, :, 0].imag, cmap="bwr")
+    plt.subplot(247)
+    plt.imshow(phase[1, 0, :, :, 0].imag, cmap="bwr")
+    plt.subplot(248)
+    plt.imshow(phase[1, 1, :, :, 0].imag, cmap="bwr")
+
+    transverse_wavevectors = basis.transverse_wavevectors(
+        in_plane_wavevector=layer_solve_result.in_plane_wavevector,
+        primitive_lattice_vectors=layer_solve_result.primitive_lattice_vectors,
+        expansion=layer_solve_result.expansion,
+    )
+
     def _process_field(field: jnp.ndarray) -> jnp.ndarray:
         field /= phase
         field_split = jnp.asarray(
@@ -106,6 +133,26 @@ def amplitudes_for_fields(
             field_split, expansion=layer_solve_result.expansion, axes=(-3, -2)
         )
         return jnp.sum(field_fft, axis=(0, 1))
+
+    # def _process_field(field: jnp.ndarray) -> jnp.ndarray:
+
+    #     def _scan_fn(carry: Tuple[()], kt: jnp.ndarray) -> Tuple[Tuple[()], jnp.ndarray]:
+    #         del carry
+    #         kx = kt[..., 0, jnp.newaxis, jnp.newaxis, jnp.newaxis]
+    #         ky = kt[..., 1, jnp.newaxis, jnp.newaxis, jnp.newaxis]
+    #         phase = jnp.exp(-1j * (kx * x[..., jnp.newaxis] + ky * y[..., jnp.newaxis]))
+    #         result = jnp.mean(phase * field, axis=(-3, -2))
+    #         assert result.shape == layer_solve_result.batch_shape + (field.shape[-1],)
+    #         return (), result
+
+    #     _, ys = jax.lax.scan(
+    #         _scan_fn,
+    #         init=(),
+    #         # Shift the Fourier order axis to the leading axis, so we can scan over it.
+    #         xs=jnp.moveaxis(transverse_wavevectors, -2, 0),
+    #     )
+    #     # Shift the Fourier order axis back to `-2`.
+    #     return jnp.moveaxis(ys, 0, -2)
 
     ex = _process_field(ex)
     ey = _process_field(ey)
