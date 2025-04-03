@@ -76,12 +76,8 @@ class FieldSourcesTest(unittest.TestCase):
             hfield,
             layer_solve_result,
             shape=(20, 20),
-            num_unit_cells=brillouin_grid_shape,
+            brillouin_grid_axes=(0, 1),
         )
-        ex = jnp.mean(ex, axis=(0, 1))
-        ey = jnp.mean(ey, axis=(0, 1))
-        hx = jnp.mean(hx, axis=(0, 1))
-        hy = jnp.mean(hy, axis=(0, 1))
         (
             fwd_amplitude_extracted,
             bwd_amplitude_extracted,
@@ -149,9 +145,10 @@ class FieldSourcesTest(unittest.TestCase):
             brillouin_grid_shape=brillouin_grid_shape,
             primitive_lattice_vectors=PRIMITIVE_LATTICE_VECTORS,
         )
+        in_plane_wavevector = in_plane_wavevector[..., jnp.newaxis, :]
         layer_solve_result = fmm.eigensolve_isotropic_media(
             permittivity=jnp.asarray([[1.0]]),
-            wavelength=jnp.asarray([0.277, 0.314])[:, jnp.newaxis, jnp.newaxis],
+            wavelength=jnp.asarray([0.277, 0.314]),
             in_plane_wavevector=in_plane_wavevector,
             primitive_lattice_vectors=PRIMITIVE_LATTICE_VECTORS,
             expansion=EXPANSION,
@@ -159,12 +156,12 @@ class FieldSourcesTest(unittest.TestCase):
         )
         fwd_amplitude = jax.random.normal(
             jax.random.PRNGKey(0),
-            (2,) + brillouin_grid_shape + (2 * EXPANSION.num_terms, 3),
+            brillouin_grid_shape + (2, 2 * EXPANSION.num_terms, 3),
             dtype=complex,
         )
         bwd_amplitude = jax.random.normal(
             jax.random.PRNGKey(1),
-            (2,) + brillouin_grid_shape + (2 * EXPANSION.num_terms, 3),
+            brillouin_grid_shape + (2, 2 * EXPANSION.num_terms, 3),
             dtype=complex,
         )
 
@@ -176,12 +173,8 @@ class FieldSourcesTest(unittest.TestCase):
             hfield,
             layer_solve_result,
             shape=(20, 20),
-            num_unit_cells=brillouin_grid_shape,
+            brillouin_grid_axes=(0, 1),
         )
-        ex = jnp.mean(ex, axis=(1, 2), keepdims=True)
-        ey = jnp.mean(ey, axis=(1, 2), keepdims=True)
-        hx = jnp.mean(hx, axis=(1, 2), keepdims=True)
-        hy = jnp.mean(hy, axis=(1, 2), keepdims=True)
         (
             fwd_amplitude_extracted,
             bwd_amplitude_extracted,
@@ -191,7 +184,7 @@ class FieldSourcesTest(unittest.TestCase):
             hx,
             hy,
             layer_solve_result,
-            brillouin_grid_axes=(1, 2),
+            brillouin_grid_axes=(0, 1),
         )
         onp.testing.assert_allclose(fwd_amplitude_extracted, fwd_amplitude, rtol=5e-3)
         onp.testing.assert_allclose(bwd_amplitude_extracted, bwd_amplitude, rtol=5e-3)

@@ -80,8 +80,8 @@ class BZIntegratedFieldsTest(unittest.TestCase):
             grid_shape=(30, 30),
             num_unit_cells=(3, 3),
         )
-        efield_expected = [onp.mean(f, axis=(0, 1)) for f in efield]
-        hfield_expected = [onp.mean(f, axis=(0, 1)) for f in hfield]
+        efield_expected = [onp.sum(f, axis=(0, 1)) for f in efield]
+        hfield_expected = [onp.sum(f, axis=(0, 1)) for f in hfield]
 
         # Automatically perform Brillouin zone integration.
         efield_integrated, hfield_integrated, _ = fields.stack_fields_3d(
@@ -154,8 +154,8 @@ class BZIntegratedFieldsTest(unittest.TestCase):
             x=x,
             y=y,
         )
-        efield_expected = [onp.mean(f, axis=(0, 1)) for f in efield]
-        hfield_expected = [onp.mean(f, axis=(0, 1)) for f in hfield]
+        efield_expected = [onp.sum(f, axis=(0, 1)) for f in efield]
+        hfield_expected = [onp.sum(f, axis=(0, 1)) for f in hfield]
 
         # Automatically perform Brillouin zone integration.
         efield_integrated, hfield_integrated, _ = fields.stack_fields_3d_on_coordinates(
@@ -171,13 +171,128 @@ class BZIntegratedFieldsTest(unittest.TestCase):
         onp.testing.assert_allclose(efield_integrated, efield_expected)
         onp.testing.assert_allclose(hfield_integrated, hfield_expected)
 
+
+class AmplitudesFromFieldsFromAmplitudesTest(unittest.TestCase):
     @parameterized.expand([[(1, 1)], [(3, 3)]])
-    def test_flux_integration(self, brillouin_grid_shape):
+    def test_dipole_source(self, bz_shape):
         in_plane_wavevector = basis.brillouin_zone_in_plane_wavevector(
-            brillouin_grid_shape=brillouin_grid_shape,
+            brillouin_grid_shape=bz_shape,
             primitive_lattice_vectors=PRIMITIVE_LATTICE_VECTORS,
         )
-        in_plane_wavevector = in_plane_wavevector[..., jnp.newaxis, :]
+        solve_result = fmm.eigensolve_isotropic_media(
+            wavelength=jnp.asarray(0.314),
+            in_plane_wavevector=in_plane_wavevector,
+            primitive_lattice_vectors=PRIMITIVE_LATTICE_VECTORS,
+            permittivity=jnp.ones((1, 1)),
+            expansion=EXPANSION,
+        )
+        thickness = jnp.asarray(1.0)
+        s_matrix = scattering.stack_s_matrix(
+            layer_solve_results=[solve_result],
+            layer_thicknesses=[thickness],
+        )
+        dipole = sources.gaussian_source(
+            fwhm=0.1,
+            location=jnp.asarray([[1.5, 1.5]]),
+            in_plane_wavevector=in_plane_wavevector,
+            primitive_lattice_vectors=PRIMITIVE_LATTICE_VECTORS,
+            expansion=EXPANSION,
+        )
+        bwd, _, _, _, _, _ = sources.amplitudes_for_source(
+            jx=jnp.zeros_like(dipole),
+            jy=jnp.zeros_like(dipole),
+            jz=dipole,
+            s_matrix_before_source=s_matrix,
+            s_matrix_after_source=s_matrix,
+        )
+        fwd = jnp.zeros_like(bwd)
+
+        efield, hfield = fields.fields_from_wave_amplitudes(
+            forward_amplitude=fwd,
+            backward_amplitude=bwd,
+            layer_solve_result=solve_result,
+        )
+        efield, hfield, _ = fields.fields_on_grid(
+            electric_field=efield,
+            magnetic_field=hfield,
+            layer_solve_result=solve_result,
+            shape=(100, 100),
+            brillouin_grid_axes=(0, 1),
+        )
+
+        fwd_recovered, bwd_recovered = sources.amplitudes_for_fields(
+            ex=efield[0],
+            ey=efield[1],
+            hx=hfield[0],
+            hy=hfield[1],
+            layer_solve_result=solve_result,
+            brillouin_grid_axes=(0, 1),
+        )
+
+        onp.testing.assert_allclose(fwd_recovered, fwd, atol=1e-12)
+        onp.testing.assert_allclose(bwd_recovered, bwd, atol=1e-12)
+
+    @parameterized.expand([[(1, 1)], [(3, 3)]])
+    def test_plane_wave(self, bz_shape):
+        in_plane_wavevector = basis.brillouin_zone_in_plane_wavevector(
+            brillouin_grid_shape=bz_shape,
+            primitive_lattice_vectors=PRIMITIVE_LATTICE_VECTORS,
+        )
+        solve_result = fmm.eigensolve_isotropic_media(
+            wavelength=jnp.asarray(0.314),
+            in_plane_wavevector=in_plane_wavevector,
+            primitive_lattice_vectors=PRIMITIVE_LATTICE_VECTORS,
+            permittivity=jnp.ones((1, 1)),
+            expansion=EXPANSION,
+        )
+        # Model a plane wave. Only the central point in the Brillouin zone
+        # grid as nonzero amplitude.
+        fwd = jnp.zeros(bz_shape + (2 * EXPANSION.num_terms, 1), dtype=complex)
+        fwd = fwd.at[bz_shape[0] // 2, bz_shape[1] // 2, 0, 0].set(1.0)
+        bwd = jnp.zeros_like(fwd)
+
+        flux, _ = fields.amplitude_poynting_flux(
+            forward_amplitude=fwd,
+            backward_amplitude=bwd,
+            layer_solve_result=solve_result,
+        )
+        self.assertSequenceEqual(
+            flux.shape,
+            bz_shape + (2 * EXPANSION.num_terms, 1),
+        )
+
+        efield, hfield = fields.fields_from_wave_amplitudes(
+            forward_amplitude=fwd,
+            backward_amplitude=bwd,
+            layer_solve_result=solve_result,
+        )
+        efield, hfield, _ = fields.fields_on_grid(
+            electric_field=efield,
+            magnetic_field=hfield,
+            layer_solve_result=solve_result,
+            shape=(100, 100),
+            brillouin_grid_axes=(0, 1),
+        )
+
+        fwd_recovered, bwd_recovered = sources.amplitudes_for_fields(
+            ex=efield[0],
+            ey=efield[1],
+            hx=hfield[0],
+            hy=hfield[1],
+            layer_solve_result=solve_result,
+            brillouin_grid_axes=(0, 1),
+        )
+        onp.testing.assert_allclose(fwd_recovered, fwd, atol=1e-12)
+        onp.testing.assert_allclose(bwd_recovered, bwd, atol=1e-12)
+
+
+class FluxIntegrationTest(unittest.TestCase):
+    @parameterized.expand([[(1, 1)], [(3, 3)]])
+    def test_dipole_source(self, bz_shape):
+        in_plane_wavevector = basis.brillouin_zone_in_plane_wavevector(
+            brillouin_grid_shape=bz_shape,
+            primitive_lattice_vectors=PRIMITIVE_LATTICE_VECTORS,
+        )
         solve_result = fmm.eigensolve_isotropic_media(
             wavelength=jnp.asarray(0.314),
             in_plane_wavevector=in_plane_wavevector,
@@ -210,13 +325,74 @@ class BZIntegratedFieldsTest(unittest.TestCase):
             backward_amplitude=bwd_amplitude_0_end,
             layer_solve_result=solve_result,
         )
-        expected_flux = onp.mean(flux, axis=(0, 1))  # Average over the BZ grid.
-        expected_flux = onp.sum(expected_flux, axis=-2)  # Sum over Fourier orders.
-        expected_flux /= onp.prod(brillouin_grid_shape)
+        self.assertSequenceEqual(
+            flux.shape,
+            bz_shape + (2 * EXPANSION.num_terms, 1),
+        )
+        # Sum over the Fourier orders and the Brillouin zone grid axes. This can be
+        # understood as simply summing over the Fourier orders of a larger unit cell,
+        # consisting of the original unit cell tiled as specified by the Brillouin
+        # grid shape.
+        expected_flux = onp.sum(flux)
 
         efield, hfield = fields.fields_from_wave_amplitudes(
             forward_amplitude=jnp.zeros_like(bwd_amplitude_0_end),
             backward_amplitude=bwd_amplitude_0_end,
+            layer_solve_result=solve_result,
+        )
+        efield, hfield, _ = fields.fields_on_grid(
+            electric_field=efield,
+            magnetic_field=hfield,
+            layer_solve_result=solve_result,
+            shape=(100, 100),
+            brillouin_grid_axes=(0, 1),
+        )
+        self.assertSequenceEqual(
+            efield[0].shape,
+            tuple(100 * d for d in bz_shape) + (1,),
+        )
+        flux_on_grid = fields.time_average_z_poynting_flux(efield, hfield)
+        flux_on_grid = onp.mean(flux_on_grid, axis=(-3, -2))
+        onp.testing.assert_allclose(flux_on_grid, expected_flux)
+
+    @parameterized.expand([[(1, 1)], [(3, 3)]])
+    def test_plane_wave(self, bz_shape):
+        in_plane_wavevector = basis.brillouin_zone_in_plane_wavevector(
+            brillouin_grid_shape=bz_shape,
+            primitive_lattice_vectors=PRIMITIVE_LATTICE_VECTORS,
+        )
+        solve_result = fmm.eigensolve_isotropic_media(
+            wavelength=jnp.asarray(0.314),
+            in_plane_wavevector=in_plane_wavevector,
+            primitive_lattice_vectors=PRIMITIVE_LATTICE_VECTORS,
+            permittivity=jnp.ones((1, 1)),
+            expansion=EXPANSION,
+        )
+
+        # Model a plane wave. Only the central point in the Brillouin zone
+        # grid as nonzero amplitude.
+        fwd = jnp.zeros(bz_shape + (2 * EXPANSION.num_terms, 1), dtype=complex)
+        fwd = fwd.at[bz_shape[0] // 2, bz_shape[1] // 2, 0, 0].set(1.0)
+        bwd = jnp.zeros_like(fwd)
+
+        flux, _ = fields.amplitude_poynting_flux(
+            forward_amplitude=fwd,
+            backward_amplitude=bwd,
+            layer_solve_result=solve_result,
+        )
+        self.assertSequenceEqual(
+            flux.shape,
+            bz_shape + (2 * EXPANSION.num_terms, 1),
+        )
+        # Sum over the Fourier orders and the Brillouin zone grid axes. This can be
+        # understood as simply summing over the Fourier orders of a larger unit cell,
+        # consisting of the original unit cell tiled as specified by the Brillouin
+        # grid shape.
+        expected_flux = onp.sum(flux)
+
+        efield, hfield = fields.fields_from_wave_amplitudes(
+            forward_amplitude=fwd,
+            backward_amplitude=bwd,
             layer_solve_result=solve_result,
         )
         efield, hfield, _ = fields.fields_on_grid(
@@ -227,66 +403,12 @@ class BZIntegratedFieldsTest(unittest.TestCase):
             brillouin_grid_axes=(0, 1),
         )
         flux_on_grid = fields.time_average_z_poynting_flux(efield, hfield)
+        self.assertSequenceEqual(
+            flux_on_grid.shape,
+            tuple(100 * d for d in bz_shape) + (1,),
+        )
         flux_on_grid = onp.mean(flux_on_grid, axis=(-3, -2))
         onp.testing.assert_allclose(flux_on_grid, expected_flux)
-
-    @parameterized.expand([[(1, 1)], [(3, 3)]])
-    def test_amplitudes_from_fields_from_amplitudes(self, brillouin_grid_shape):
-        in_plane_wavevector = basis.brillouin_zone_in_plane_wavevector(
-            brillouin_grid_shape=brillouin_grid_shape,
-            primitive_lattice_vectors=PRIMITIVE_LATTICE_VECTORS,
-        )
-        in_plane_wavevector = in_plane_wavevector[..., jnp.newaxis, :]
-        solve_result = fmm.eigensolve_isotropic_media(
-            wavelength=jnp.asarray(0.314),
-            in_plane_wavevector=in_plane_wavevector,
-            primitive_lattice_vectors=PRIMITIVE_LATTICE_VECTORS,
-            permittivity=jnp.ones((1, 1)),
-            expansion=EXPANSION,
-        )
-        thickness = jnp.asarray(1.0)
-        s_matrix = scattering.stack_s_matrix(
-            layer_solve_results=[solve_result],
-            layer_thicknesses=[thickness],
-        )
-        dipole = sources.gaussian_source(
-            fwhm=0.1,
-            location=jnp.asarray([[1.5, 1.5]]),
-            in_plane_wavevector=in_plane_wavevector,
-            primitive_lattice_vectors=PRIMITIVE_LATTICE_VECTORS,
-            expansion=EXPANSION,
-        )
-        bwd_amplitude_0_end, _, _, _, _, _ = sources.amplitudes_for_source(
-            jx=jnp.zeros_like(dipole),
-            jy=jnp.zeros_like(dipole),
-            jz=dipole,
-            s_matrix_before_source=s_matrix,
-            s_matrix_after_source=s_matrix,
-        )
-
-        efield, hfield = fields.fields_from_wave_amplitudes(
-            forward_amplitude=jnp.zeros_like(bwd_amplitude_0_end),
-            backward_amplitude=bwd_amplitude_0_end,
-            layer_solve_result=solve_result,
-        )
-        efield, hfield, _ = fields.fields_on_grid(
-            electric_field=efield,
-            magnetic_field=hfield,
-            layer_solve_result=solve_result,
-            shape=(100, 100),
-            brillouin_grid_axes=(0, 1),
-        )
-
-        fwd, bwd = sources.amplitudes_for_fields(
-            ex=efield[0],
-            ey=efield[1],
-            hx=hfield[0],
-            hy=hfield[1],
-            layer_solve_result=solve_result,
-            brillouin_grid_axes=(0, 1),
-        )
-
-        onp.testing.assert_allclose(bwd, bwd_amplitude_0_end, atol=1e-12)
 
 
 class NumUnitCellsAndBrillouinGridShapeTest(unittest.TestCase):

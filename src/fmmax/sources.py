@@ -101,7 +101,7 @@ def amplitudes_for_fields(
                     field, indices_or_sections=brillouin_grid_shape[0], axis=-3
                 )
             )
-        )
+        ) / jnp.prod(jnp.asarray(brillouin_grid_shape))
         field_fft = fft.fft(
             field_split, expansion=layer_solve_result.expansion, axes=(-3, -2)
         )
