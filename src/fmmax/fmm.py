@@ -113,6 +113,12 @@ def eigensolve_isotropic_media(
     Returns:
         The ``LayerSolveResult``.
     """
+    if permittivity.ndim < 2:
+        raise ValueError(
+            f"`permittivity` must have at least two dimensions, with the final two "
+            f"corresponding to the spatial dimensions of the unit cell, but got shape "
+            f"{permittivity.shape}."
+        )
     if permittivity.shape[-2:] == (1, 1):
         _eigensolve_fn = _eigensolve_uniform_isotropic_media
     else:
@@ -165,6 +171,22 @@ def eigensolve_anisotropic_media(
     Returns:
         The ``LayerSolveResult``.
     """
+    shapes = tuple(
+        p.shape
+        for p in [
+            permittivity_xx,
+            permittivity_xy,
+            permittivity_yx,
+            permittivity_yy,
+            permittivity_zz,
+        ]
+    )
+    if not all(shape == shapes[0] for shape in shapes) and len(shapes[0]) > 2:
+        raise ValueError(
+            f"Permittivities must have matching shapes and at least two dimensions, "
+            f"with the final two corresponding to the spatial dimensions of the unit "
+            f"cell, but got shapes {shapes}."
+        )
     return eigensolve_general_anisotropic_media(
         wavelength=wavelength,
         in_plane_wavevector=in_plane_wavevector,
@@ -239,6 +261,27 @@ def eigensolve_general_anisotropic_media(
     Returns:
         The ``LayerSolveResult``.
     """
+    shapes = tuple(
+        p.shape
+        for p in [
+            permittivity_xx,
+            permittivity_xy,
+            permittivity_yx,
+            permittivity_yy,
+            permittivity_zz,
+            permeability_xx,
+            permeability_xy,
+            permeability_yx,
+            permeability_yy,
+            permeability_zz,
+        ]
+    )
+    if not all(shape == shapes[0] for shape in shapes) and len(shapes[0]) > 2:
+        raise ValueError(
+            f"Permittivities and permeabilities must have matching shapes and at least "
+            f"two dimensions, with the final two corresponding to the spatial "
+            f"dimensions of the unit cell, but got shapes {shapes}."
+        )
     if permittivity_xx.shape[-2:] == (1, 1):
         _eigensolve_fn = _eigensolve_uniform_general_anisotropic_media
     else:

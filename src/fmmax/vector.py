@@ -151,15 +151,11 @@ def compute_tangent_field(
     arr = misc.atleast_nd(arr, n=3)
     arr = arr.reshape((-1,) + arr.shape[-2:])
 
+    u = primitive_lattice_vectors.u
+    v = primitive_lattice_vectors.v
     primitive_lattice_vectors = basis.LatticeVectors(
-        u=jnp.broadcast_to(
-            primitive_lattice_vectors.u.reshape((-1, 2)),
-            (arr.shape[0], 2),
-        ),
-        v=jnp.broadcast_to(
-            primitive_lattice_vectors.v.reshape((-1, 2)),
-            (arr.shape[0], 2),
-        ),
+        u=jnp.broadcast_to(u, batch_shape + (2,)).reshape(-1, 2),
+        v=jnp.broadcast_to(v, batch_shape + (2,)).reshape(-1, 2),
     )
 
     field_fn = jax.vmap(
