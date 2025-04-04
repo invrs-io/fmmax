@@ -180,7 +180,7 @@ class FieldsOnCoordinatesTest(unittest.TestCase):
             num_unit_cells=(1, 1),
         )
         with self.subTest("xy on a square grid"):
-            efield, hfield, (x, y) = fields.fields_on_coordinates(
+            efield, hfield, _ = fields.fields_on_coordinates(
                 electric_field=(ex, ey, ez),
                 magnetic_field=(hx, hy, hz),
                 layer_solve_result=layer_solve_result,
@@ -283,7 +283,7 @@ class FieldsOnCoordinatesTest(unittest.TestCase):
         ab = fields.stack_amplitudes_interior(
             s_matrices_interior, forward_amplitude_0_start, backward_amplitude_N_end
         )
-        expected_efield, expected_hfield, (x, y, z) = fields.stack_fields_3d(
+        expected_efield, expected_hfield, (x, y, _) = fields.stack_fields_3d(
             amplitudes_interior=ab,
             layer_solve_results=layer_solve_results,
             layer_thicknesses=thicknesses,
@@ -291,7 +291,7 @@ class FieldsOnCoordinatesTest(unittest.TestCase):
             grid_shape=(10, 10),
             num_unit_cells=(1, 1),
         )
-        efield, hfield, (x, y, z) = fields.stack_fields_3d_on_coordinates(
+        efield, hfield, (x, y, _) = fields.stack_fields_3d_on_coordinates(
             amplitudes_interior=ab,
             layer_solve_results=layer_solve_results,
             layer_thicknesses=thicknesses,
