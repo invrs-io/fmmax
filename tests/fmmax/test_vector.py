@@ -274,6 +274,44 @@ class TangentVectorTest(unittest.TestCase):
             onp.testing.assert_allclose(ty, ty_batch[i, :, :], atol=1e-6)
 
     @parameterized.expand([[True], [False]])
+    def test_vmap_matches_no_vmap(self, use_jones_direct):
+        primitive_lattice_vectors = basis.LatticeVectors(basis.X, basis.Y)
+        expansion = basis.generate_expansion(
+            primitive_lattice_vectors=primitive_lattice_vectors,
+            approximate_num_terms=200,
+            truncation=basis.Truncation.CIRCULAR,
+        )
+        x, y = jnp.meshgrid(
+            jnp.linspace(0, 1, 80), jnp.linspace(0, 1, 80), indexing="ij"
+        )
+        distance = jnp.sqrt((x - 0.5) ** 2 + (y - 0.5) ** 2)
+        arr = jnp.exp(
+            -(distance**2) * jnp.arange(10, 40, 5)[:, jnp.newaxis, jnp.newaxis]
+        )
+        assert arr.shape == (6, 80, 80)
+
+        tx_vmap, ty_vmap = vector.compute_tangent_field(
+            arr,
+            expansion,
+            primitive_lattice_vectors,
+            use_jones_direct=use_jones_direct,
+            fourier_loss_weight=0.1,
+            smoothness_loss_weight=1.0,
+            use_vmap=True,
+        )
+        tx_scan, ty_scan = vector.compute_tangent_field(
+            arr,
+            expansion,
+            primitive_lattice_vectors,
+            use_jones_direct=use_jones_direct,
+            fourier_loss_weight=0.1,
+            smoothness_loss_weight=1.0,
+            use_vmap=False,
+        )
+        onp.testing.assert_allclose(tx_vmap, tx_scan, atol=1e-6)
+        onp.testing.assert_allclose(ty_vmap, ty_scan, atol=1e-6)
+
+    @parameterized.expand([[True], [False]])
     def test_gradient_no_nan(self, use_jones_direct):
         primitive_lattice_vectors = basis.LatticeVectors(basis.X, basis.Y)
         expansion = basis.generate_expansion(
