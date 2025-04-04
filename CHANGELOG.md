@@ -2,7 +2,8 @@
 
 ## Unreleased
 - Add permittivity shape validation to eigensolve functions.
-- Make small changes throughout to acommodate primitive lattice vectors with batch dimensions.s
+- Make small changes throughout to acommodate primitive lattice vectors with batch dimensions.
+- Enable batch of tangent vector fields to be computed by vmap or scan. vmap (previous default) is slightly faster but requires more memory.
 
 ## 1.2.0 (April 2, 2025)
 - In fields module, allow number of unit cells to be specified independently when Brillouin zone integration is used. Retain ability to infer number of unit cells from Brillouin grid axes in when number of unit cells is not specified.

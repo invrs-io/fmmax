@@ -4,7 +4,7 @@ Copyright (c) Meta Platforms, Inc. and affiliates.
 """
 
 import functools
-from typing import Callable, Dict, List, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 import jax
 import jax.numpy as jnp
@@ -14,6 +14,10 @@ from fmmax import basis, fft, misc
 # Absolute tolerance for detecting whether a field is 1D. If the angle of the field at
 # every point differs by less than this value from a reference value, the field is 1D.
 _ATOL_1D_FIELD_ANGLE = 1e-2
+
+# Determines whether vector field calculation for a batch of arrays is to use vmap or
+# scan. Generally, vmap is faster but requires more memory.
+USE_VMAP: bool = True
 
 
 def compute_field_jones_direct(
@@ -109,6 +113,7 @@ def compute_tangent_field(
     fourier_loss_weight: float,
     smoothness_loss_weight: float,
     steps: int = 1,
+    use_vmap: Optional[bool] = None,
 ) -> Tuple[jnp.ndarray, jnp.ndarray]:
     """Compute the tangent vector field for `arr`.
 
@@ -142,6 +147,9 @@ def compute_tangent_field(
             smoothness of the tangent field in real space. Should be positive.
         steps: The number of Newton iterations to carry out. Generally, the default
             single iteration is sufficient to obtain converged fields.
+        use_vmap: If ``True``, the function will use `jax.vmap` to compute the field
+            for each element of ``arr`` in parallel, and ``jax.lax.scan`` otherwise.
+            If `None`, the function will use the default behavior of ``USE_VMAP``.
 
     Returns:
         The normal field, `(tx, ty)`.
@@ -158,21 +166,37 @@ def compute_tangent_field(
         v=jnp.broadcast_to(v, batch_shape + (2,)).reshape(-1, 2),
     )
 
-    field_fn = jax.vmap(
-        functools.partial(
-            _compute_tangent_field_no_batch,
+    def no_batch_field(
+        arr: jnp.ndarray,
+        primitive_lattice_vectors: basis.LatticeVectors,
+    ) -> jnp.ndarray:
+        return _compute_tangent_field_no_batch(
+            arr=arr,
+            expansion=expansion,
+            primitive_lattice_vectors=primitive_lattice_vectors,
             use_jones_direct=use_jones_direct,
             fourier_loss_weight=fourier_loss_weight,
             smoothness_loss_weight=smoothness_loss_weight,
             steps=steps,
-        ),
-        in_axes=(0, None, 0),
-    )
-    field = field_fn(
-        arr,
-        expansion,
-        primitive_lattice_vectors,
-    )
+        )
+
+    if use_vmap is None:
+        use_vmap = USE_VMAP
+    if use_vmap:
+        field = jax.vmap(no_batch_field)(arr, primitive_lattice_vectors)
+    else:
+
+        def _scan_fn(
+            carry: Tuple[()],
+            args: Tuple[jnp.ndarray, basis.LatticeVectors],
+        ) -> Tuple[Tuple[()], jnp.ndarray]:
+            del carry
+            arr, primitive_lattice_vectors = args
+            field = no_batch_field(arr, primitive_lattice_vectors)
+            return (), field
+
+        _, field = jax.lax.scan(_scan_fn, init=(), xs=(arr, primitive_lattice_vectors))
+
     field = field.reshape(batch_shape + field.shape[-3:])
     tx = field[..., 0]
     ty = field[..., 1]
