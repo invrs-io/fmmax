@@ -163,6 +163,8 @@ def _reciprocal(lattice_vectors: LatticeVectors) -> LatticeVectors:
         jnp.stack([-lattice_vectors.u[..., 1], lattice_vectors.u[..., 0]], axis=-1)
         / cross_product[..., jnp.newaxis]
     )
+    assert uprime.shape == lattice_vectors.u.shape
+    assert vprime.shape == lattice_vectors.v.shape
     return LatticeVectors(u=uprime, v=vprime)
 
 
@@ -311,6 +313,11 @@ def transverse_wavevectors(
         expansion.basis_coefficients[:, 0] * reciprocal_vectors.u[..., 1, jnp.newaxis]
         + expansion.basis_coefficients[:, 1] * reciprocal_vectors.v[..., 1, jnp.newaxis]
     )
+    batch_shape = jnp.broadcast_shapes(
+        in_plane_wavevector.shape[:-1],
+        primitive_lattice_vectors.u.shape[:-1],
+    )
+    assert kx.shape == batch_shape + (expansion.num_terms,)
     return jnp.stack([kx, ky], axis=-1)
 
 
