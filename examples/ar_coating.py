@@ -69,7 +69,7 @@ def compute_reflection(
     )
 
     thicknesses_with_ambient = (
-        [jnp.zeros(1)] + [jnp.asarray(t) for t in thicknesses] + [jnp.zeros(1)]
+        [jnp.asarray(0.0)] + [jnp.asarray(t) for t in thicknesses] + [jnp.asarray(0.0)]
     )
     permittivities = (
         [jnp.asarray(refractive_index_ambient**2)]

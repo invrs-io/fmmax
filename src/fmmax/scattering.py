@@ -162,7 +162,8 @@ def _stack_s_matrices(
     has the ``tangent_vector_field`` attribute stripped out.
 
     Args:
-        layer_solve_results: The eigensolve results for layers in the stack.
+        layer_solve_results: The eigensolve results for layers in the stack. All
+            eigensolve results must have identical batch shape.
         layer_thicknesses: The thicknesses for layers in the stack.
         force_x64_solve: If ``True``, matrix solves will be done with 64 bit precision.
 
@@ -175,11 +176,21 @@ def _stack_s_matrices(
             f"length but got {len(layer_solve_results)} and {len(layer_thicknesses)}."
         )
 
+    batch_shape = layer_solve_results[0].batch_shape
+    if not all(lsr.batch_shape == batch_shape for lsr in layer_solve_results):
+        raise ValueError(
+            f"All layer solve results must have matching batch shapes, but got shapes "
+            f"{[lsr.batch_shape for lsr in layer_solve_results]}"
+        )
+
     # Remove the tangent vector fields from the solve results.
     layer_solve_results = tuple(
         dataclasses.replace(solve_result, tangent_vector_field=None)
         for solve_result in layer_solve_results
     )
+
+    # Broadcast all arrays to have the full batch shape.
+    layer_solve_results = [lsr.broadcast() for lsr in layer_solve_results]
 
     # The initial scattering matrix is just the identity matrix, with the
     # necessary batch dimensions.
@@ -227,9 +238,6 @@ def _stack_s_matrices(
             force_x64_solve=force_x64_solve,
         )
         return s_matrix, s_matrix
-
-    for t in tree_util.tree_leaves(stacked_remaining_solve_results):
-        print(t.dtype, t.shape)
 
     _, stacked_remaining_s_matrices = jax.lax.scan(
         scan_fn,

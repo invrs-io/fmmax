@@ -379,6 +379,34 @@ class LayerSolveResult:
         if not isinstance(self.eigenvalues, (jnp.ndarray, onp.ndarray)):
             return
 
+        required_dtype = self.eigenvalues.dtype
+        if self.eigenvectors.dtype != required_dtype:
+            raise ValueError(
+                f"`eigenvectors` should have dtype {required_dtype} but got "
+                f"{self.eigenvectors.dtype}"
+            )
+        if self.z_permittivity_matrix.dtype != required_dtype:
+            raise ValueError(
+                f"`z_permittivity_matrix` should have dtype {required_dtype} but got "
+                f"{self.z_permittivity_matrix.dtype}"
+            )
+
+        if self.inverse_z_permittivity_matrix.dtype != required_dtype:
+            raise ValueError(
+                f"`inverse_z_permittivity_matrix` should have dtype {required_dtype} "
+                f"but got {self.inverse_z_permittivity_matrix.dtype}"
+            )
+        if self.z_permeability_matrix.dtype != required_dtype:
+            raise ValueError(
+                f"`z_permeability_matrix` should have dtype {required_dtype} but got "
+                f"{self.z_permeability_matrix.dtype}"
+            )
+        if self.transverse_permeability_matrix.dtype != required_dtype:
+            raise ValueError(
+                f"`transverse_permeability_matrix` should have dtype {required_dtype} "
+                f"but got {self.transverse_permeability_matrix.dtype}"
+            )
+
         def _incompatible(arr: jnp.ndarray, reference_shape: Tuple[int, ...]) -> bool:
             ndim_mismatch = arr.ndim != len(reference_shape)
             batch_compatible = misc.batch_compatible_shapes(arr.shape, reference_shape)
@@ -464,6 +492,45 @@ class LayerSolveResult:
                 f"`eigenvectors`, but got shapes {self.tangent_vector_field[0]} and "
                 f"{self.eigenvectors}."
             )
+
+    def broadcast(self) -> "LayerSolveResult":
+        """Broadcast attributes so that all have identical batch shape."""
+        shape = self.batch_shape
+        return LayerSolveResult(
+            wavelength=jnp.broadcast_to(self.wavelength, shape),
+            in_plane_wavevector=jnp.broadcast_to(
+                self.in_plane_wavevector,
+                shape + (2,),
+            ),
+            primitive_lattice_vectors=basis.LatticeVectors(
+                u=jnp.broadcast_to(self.primitive_lattice_vectors.u, shape + (2,)),
+                v=jnp.broadcast_to(self.primitive_lattice_vectors.v, shape + (2,)),
+            ),
+            expansion=self.expansion,
+            eigenvalues=self.eigenvalues,
+            eigenvectors=self.eigenvectors,
+            z_permittivity_matrix=jnp.broadcast_to(
+                self.z_permittivity_matrix,
+                shape + self.z_permittivity_matrix.shape[-2:],
+            ),
+            inverse_z_permittivity_matrix=jnp.broadcast_to(
+                self.inverse_z_permittivity_matrix,
+                shape + self.inverse_z_permittivity_matrix.shape[-2:],
+            ),
+            z_permeability_matrix=jnp.broadcast_to(
+                self.z_permeability_matrix,
+                shape + self.z_permeability_matrix.shape[-2:],
+            ),
+            inverse_z_permeability_matrix=jnp.broadcast_to(
+                self.inverse_z_permeability_matrix,
+                shape + self.inverse_z_permeability_matrix.shape[-2:],
+            ),
+            transverse_permeability_matrix=jnp.broadcast_to(
+                self.transverse_permeability_matrix,
+                shape + self.transverse_permeability_matrix.shape[-2:],
+            ),
+            tangent_vector_field=self.tangent_vector_field,
+        )
 
 
 # -----------------------------------------------------------------------------
@@ -929,6 +996,7 @@ def _numerical_eigensolve(
     eigenvalues_squared, eigenvectors = eig.eig(matrix)
     eigenvalues = jnp.sqrt(eigenvalues_squared)
     eigenvalues = _select_eigenvalues_sign(eigenvalues)
+    dtype = eigenvalues.dtype
     return LayerSolveResult(
         wavelength=wavelength,
         in_plane_wavevector=in_plane_wavevector,
@@ -936,11 +1004,11 @@ def _numerical_eigensolve(
         expansion=expansion,
         eigenvalues=eigenvalues,
         eigenvectors=eigenvectors,
-        z_permittivity_matrix=z_permittivity_matrix,
-        inverse_z_permittivity_matrix=inverse_z_permittivity_matrix,
-        z_permeability_matrix=z_permeability_matrix,
-        inverse_z_permeability_matrix=inverse_z_permeability_matrix,
-        transverse_permeability_matrix=transverse_permeability_matrix,
+        z_permittivity_matrix=z_permittivity_matrix.astype(dtype),
+        inverse_z_permittivity_matrix=inverse_z_permittivity_matrix.astype(dtype),
+        z_permeability_matrix=z_permeability_matrix.astype(dtype),
+        inverse_z_permeability_matrix=inverse_z_permeability_matrix.astype(dtype),
+        transverse_permeability_matrix=transverse_permeability_matrix.astype(dtype),
         tangent_vector_field=tangent_vector_field,
     )
 
