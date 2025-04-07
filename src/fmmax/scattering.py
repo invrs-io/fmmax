@@ -175,7 +175,7 @@ def _stack_s_matrices(
             f"`layer_solve_results` and `layer_thicknesses` should have the same "
             f"length but got {len(layer_solve_results)} and {len(layer_thicknesses)}."
         )
-    if not all(t.shape == () for t in layer_thicknesses):
+    if not all(jnp.shape(t) for t in layer_thicknesses):
         raise ValueError(
             f"Thicknesses must be scalar, but shapes "
             f"{[jnp.shape(t) for t in layer_thicknesses]}."
