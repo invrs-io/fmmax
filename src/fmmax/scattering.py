@@ -158,6 +158,9 @@ def _stack_s_matrices(
     for the first layer only, the second is for the stack consisting of the
     first and second layer, etc.
 
+    Note that the ``LayerSolveResult`` attributes of the resulting ``ScatteringMatrix``
+    has the ``tangent_vector_field`` attribute stripped out.
+
     Args:
         layer_solve_results: The eigensolve results for layers in the stack.
         layer_thicknesses: The thicknesses for layers in the stack.
@@ -171,6 +174,12 @@ def _stack_s_matrices(
             f"`layer_solve_results` and `layer_thicknesses` should have the same "
             f"length but got {len(layer_solve_results)} and {len(layer_thicknesses)}."
         )
+
+    # Remove the tangent vector fields from the solve results.
+    layer_solve_results = tuple(
+        dataclasses.replace(solve_result, tangent_vector_field=None)
+        for solve_result in layer_solve_results
+    )
 
     # The initial scattering matrix is just the identity matrix, with the
     # necessary batch dimensions.
@@ -197,20 +206,43 @@ def _stack_s_matrices(
         force_x64_solve=force_x64_solve,
     )
 
-    # TODO(mfschubert): Figure out how to use `jax.lax.fori_loop` or similar.
-    s_matrices = [layer_s_matrix_0, layer_s_matrix_1]
-    for layer_solve_result, layer_thickness in zip(
-        layer_solve_results[2:], layer_thicknesses[2:]
-    ):
-        s_matrices.append(
-            append_layer(
-                s_matrices[-1],
-                layer_solve_result,
-                layer_thickness,
-                force_x64_solve=force_x64_solve,
-            )
+    if len(layer_solve_results) == 2:
+        return (layer_s_matrix_0, layer_s_matrix_1)
+
+    # If we have more than two layers, stack the remaining layer solve results and
+    # thicknesses so they can be scanned over.
+
+    stacked_remaining_solve_results = tree_util.tree_map(
+        lambda *xs: jnp.stack(xs, axis=0),
+        *layer_solve_results[2:],
+    )
+    stacked_remaining_thicknesses = jnp.stack(layer_thicknesses[2:])
+
+    def scan_fn(s_matrix, args):
+        next_layer_solve_result, next_layer_thickness = args
+        s_matrix = append_layer(
+            s_matrix,
+            next_layer_solve_result,
+            next_layer_thickness,
+            force_x64_solve=force_x64_solve,
         )
-    return tuple(s_matrices)
+        return s_matrix, s_matrix
+
+    for t in tree_util.tree_leaves(stacked_remaining_solve_results):
+        print(t.dtype, t.shape)
+
+    _, stacked_remaining_s_matrices = jax.lax.scan(
+        scan_fn,
+        init=layer_s_matrix_1,
+        xs=(stacked_remaining_solve_results, stacked_remaining_thicknesses),
+    )
+
+    # Unstack to return a tuple of scattering matrices.
+    remaining_s_matrices = tuple(
+        tree_util.tree_map(lambda x: x[i, ...], stacked_remaining_s_matrices)
+        for i in range(len(layer_solve_results) - 2)
+    )
+    return (layer_s_matrix_0, layer_s_matrix_1) + remaining_s_matrices
 
 
 def stack_s_matrix_scan(

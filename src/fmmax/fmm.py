@@ -546,10 +546,10 @@ def _eigensolve_uniform_isotropic_media(
     inverse_z_permittivity_diag = jnp.broadcast_to(
         1 / permittivity[..., jnp.newaxis], diag_shape
     )
-    inverse_z_permittivity_matrix = misc.diag(inverse_z_permittivity_diag)
+    inverse_z_permittivity_matrix = misc.diag(inverse_z_permittivity_diag).astype(dtype)
 
     z_permittivity_diag = jnp.broadcast_to(permittivity[..., jnp.newaxis], diag_shape)
-    z_permittivity_matrix = misc.diag(z_permittivity_diag)
+    z_permittivity_matrix = misc.diag(z_permittivity_diag).astype(dtype)
     z_permeability_matrix = misc.diag(jnp.ones(diag_shape, dtype=dtype))
 
     transverse_diag_shape = permittivity.shape + (2 * expansion.num_terms,)
