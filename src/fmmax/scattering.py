@@ -83,7 +83,7 @@ def stack_s_matrix(
 
     Args:
         layer_solve_results: The eigensolve results for layers in the stack.
-        layer_thicknesses: The thicknesses for layers in the stack.
+        layer_thicknesses: The scalar thicknesses for layers in the stack.
         force_x64_solve: If ``True``, matrix solves will be done with 64 bit precision.
 
     Returns:
@@ -109,7 +109,7 @@ def stack_s_matrices_interior(
 
     Args:
         layer_solve_results: The eigensolve results for layers in the stack.
-        layer_thicknesses: The thicknesses for layers in the stack.
+        layer_thicknesses: The scalar thicknesses for layers in the stack.
         force_x64_solve: If ``True``, matrix solves will be done with 64 bit precision.
 
     Returns:
@@ -164,7 +164,7 @@ def _stack_s_matrices(
     Args:
         layer_solve_results: The eigensolve results for layers in the stack. All
             eigensolve results must have identical batch shape.
-        layer_thicknesses: The thicknesses for layers in the stack.
+        layer_thicknesses: The scalar thicknesses for layers in the stack.
         force_x64_solve: If ``True``, matrix solves will be done with 64 bit precision.
 
     Returns:
@@ -175,12 +175,10 @@ def _stack_s_matrices(
             f"`layer_solve_results` and `layer_thicknesses` should have the same "
             f"length but got {len(layer_solve_results)} and {len(layer_thicknesses)}."
         )
-
-    batch_shape = layer_solve_results[0].batch_shape
-    if not all(lsr.batch_shape == batch_shape for lsr in layer_solve_results):
+    if not all(t.shape == () for t in layer_thicknesses):
         raise ValueError(
-            f"All layer solve results must have matching batch shapes, but got shapes "
-            f"{[lsr.batch_shape for lsr in layer_solve_results]}"
+            f"Thicknesses must be scalar, but shapes "
+            f"{[jnp.shape(t) for t in layer_thicknesses]}."
         )
 
     # Remove the tangent vector fields from the solve results.
@@ -189,8 +187,13 @@ def _stack_s_matrices(
         for solve_result in layer_solve_results
     )
 
-    # Broadcast all arrays to have the full batch shape.
-    layer_solve_results = [lsr.broadcast() for lsr in layer_solve_results]
+    # Broadcast all layer solve results so their attributes have the full batch shape.
+    batch_shape = jnp.broadcast_shapes(
+        *[lsr.batch_shape for lsr in layer_solve_results]
+    )
+    layer_solve_results = [lsr.broadcast_to(batch_shape) for lsr in layer_solve_results]
+    for lsr in layer_solve_results:
+        print([x.shape for x in tree_util.tree_leaves(lsr)])
 
     # The initial scattering matrix is just the identity matrix, with the
     # necessary batch dimensions.
@@ -270,7 +273,7 @@ def stack_s_matrix_scan(
 
     Args:
         layer_solve_results: The layer solve results for all layers in the stack.
-        layer_thicknesses: The layer thicknesses for all layers in the stack.
+        layer_thicknesses: The scalar layer thicknesses for all layers in the stack.
         force_x64_solve: If ``True``, matrix solves will be done with 64 bit precision.
 
     Returns:

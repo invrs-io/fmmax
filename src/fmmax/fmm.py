@@ -493,9 +493,9 @@ class LayerSolveResult:
                 f"{self.eigenvectors}."
             )
 
-    def broadcast(self) -> "LayerSolveResult":
-        """Broadcast attributes so that all have identical batch shape."""
-        shape = self.batch_shape
+    def broadcast_to(self, shape: Tuple[int, ...]) -> "LayerSolveResult":
+        """Broadcast attributes so that all have the specified batch shape."""
+        n = self.expansion.num_terms
         return LayerSolveResult(
             wavelength=jnp.broadcast_to(self.wavelength, shape),
             in_plane_wavevector=jnp.broadcast_to(
@@ -507,27 +507,23 @@ class LayerSolveResult:
                 v=jnp.broadcast_to(self.primitive_lattice_vectors.v, shape + (2,)),
             ),
             expansion=self.expansion,
-            eigenvalues=self.eigenvalues,
-            eigenvectors=self.eigenvectors,
+            eigenvalues=jnp.broadcast_to(self.eigenvalues, shape + (2 * n,)),
+            eigenvectors=jnp.broadcast_to(self.eigenvectors, shape + (2 * n, 2 * n)),
             z_permittivity_matrix=jnp.broadcast_to(
-                self.z_permittivity_matrix,
-                shape + self.z_permittivity_matrix.shape[-2:],
+                self.z_permittivity_matrix, shape + (n, n)
             ),
             inverse_z_permittivity_matrix=jnp.broadcast_to(
-                self.inverse_z_permittivity_matrix,
-                shape + self.inverse_z_permittivity_matrix.shape[-2:],
+                self.inverse_z_permittivity_matrix, shape + (n, n)
             ),
             z_permeability_matrix=jnp.broadcast_to(
-                self.z_permeability_matrix,
-                shape + self.z_permeability_matrix.shape[-2:],
+                self.z_permeability_matrix, shape + (n, n)
             ),
             inverse_z_permeability_matrix=jnp.broadcast_to(
-                self.inverse_z_permeability_matrix,
-                shape + self.inverse_z_permeability_matrix.shape[-2:],
+                self.inverse_z_permeability_matrix, shape + (n, n)
             ),
             transverse_permeability_matrix=jnp.broadcast_to(
                 self.transverse_permeability_matrix,
-                shape + self.transverse_permeability_matrix.shape[-2:],
+                shape + (2 * n, 2 * n),
             ),
             tangent_vector_field=self.tangent_vector_field,
         )
