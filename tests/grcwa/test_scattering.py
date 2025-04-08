@@ -45,25 +45,26 @@ def _dummy_solve_result(
     primitive_lattice_vectors=PRIMITIVE_LATTICE_VECTORS,
     expansion=EXPANSION,
 ):
-    keys = jax.random.split(key, 8)
+    keys = iter(jax.random.split(key, 11))
     dim = expansion.basis_coefficients.shape[0]
     return fmm.LayerSolveResult(
         wavelength=wavelength,
         in_plane_wavevector=in_plane_wavevector,
         primitive_lattice_vectors=primitive_lattice_vectors,
         expansion=expansion,
-        eigenvalues=_random_normal_complex(keys[0], (2 * dim,)),
-        eigenvectors=_random_normal_complex(keys[1], (2 * dim, 2 * dim)),
-        z_permittivity_matrix=_random_normal_complex(keys[2], (dim, dim)),
-        inverse_z_permittivity_matrix=_random_normal_complex(keys[3], (dim, dim)),
-        z_permeability_matrix=_random_normal_complex(keys[4], (dim, dim)),
-        inverse_z_permeability_matrix=_random_normal_complex(keys[5], (dim, dim)),
+        eigenvalues=_random_normal_complex(next(keys), (2 * dim,)),
+        eigenvectors=_random_normal_complex(next(keys), (2 * dim, 2 * dim)),
+        omega_script_k_matrix=_random_normal_complex(next(keys), (2 * dim, 2 * dim)),
+        z_permittivity_matrix=_random_normal_complex(next(keys), (dim, dim)),
+        inverse_z_permittivity_matrix=_random_normal_complex(next(keys), (dim, dim)),
+        z_permeability_matrix=_random_normal_complex(next(keys), (dim, dim)),
+        inverse_z_permeability_matrix=_random_normal_complex(next(keys), (dim, dim)),
         transverse_permeability_matrix=_random_normal_complex(
-            keys[6], (2 * dim, 2 * dim)
+            next(keys), (2 * dim, 2 * dim)
         ),
         tangent_vector_field=(
-            _random_normal_complex(keys[7], (2 * dim, 2 * dim)),
-            _random_normal_complex(keys[7], (2 * dim, 2 * dim)),
+            _random_normal_complex(next(keys), (2 * dim, 2 * dim)),
+            _random_normal_complex(next(keys), (2 * dim, 2 * dim)),
         ),
     )
 
