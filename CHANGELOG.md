@@ -6,6 +6,7 @@
 - Update vector field calculation to scan over batch, replacing prior usage of vmap. This seems to compile faster and also actually run faster.
 - Update implementation of `scattering._stack_s_matrices` to use scan rather than a Python `for` loop.
 - Scalar thickness validation in scattering module.
+- Make `omega_script_k_matrix` an attribute of the `LayerSolveResult` rather than a computed property. This avoids redundant computation in cases where jit compilation is not used.
 
 ## 1.2.0 (April 2, 2025)
 - In fields module, allow number of unit cells to be specified independently when Brillouin zone integration is used. Retain ability to infer number of unit cells from Brillouin grid axes in when number of unit cells is not specified.

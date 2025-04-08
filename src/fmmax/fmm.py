@@ -328,6 +328,7 @@ class LayerSolveResult:
         expansion: The expansion used for the eigensolve.
         eigenvalues: The layer eigenvalues.
         eigenvectors: The layer eigenvectors.
+        omega_script_k_matrix: The omega-script-k matrix from equation 26 of [2012 Liu].
         z_permittivity_matrix: The fourier-transformed zz-component of permittivity.
         inverse_z_permittivity_matrix: The fourier-transformed inverse of zz-component
             of permittivity.
@@ -348,6 +349,7 @@ class LayerSolveResult:
     expansion: basis.Expansion
     eigenvalues: jnp.ndarray
     eigenvectors: jnp.ndarray
+    omega_script_k_matrix: jnp.ndarray
     z_permittivity_matrix: jnp.ndarray
     inverse_z_permittivity_matrix: jnp.ndarray
     z_permeability_matrix: jnp.ndarray
@@ -358,20 +360,6 @@ class LayerSolveResult:
     @property
     def batch_shape(self) -> Tuple[int, ...]:
         return self.eigenvectors.shape[:-2]
-
-    @property
-    def omega_script_k_matrix(self):
-        """Compute omega-script-k matrix from equation 26 of [2012 Liu]."""
-        return fmm_matrices.omega_script_k_matrix_patterned(
-            wavelength=self.wavelength,
-            z_permittivity_matrix=self.z_permittivity_matrix,
-            transverse_permeability_matrix=self.transverse_permeability_matrix,
-            transverse_wavevectors=basis.transverse_wavevectors(
-                in_plane_wavevector=self.in_plane_wavevector,
-                primitive_lattice_vectors=self.primitive_lattice_vectors,
-                expansion=self.expansion,
-            ),
-        )
 
     def __post_init__(self) -> None:
         """Validates shapes of the ``LayerSolveResult`` attributes."""
@@ -448,6 +436,12 @@ class LayerSolveResult:
                 f"{self.eigenvalues.shape} when `eigenvectors` shape is "
                 f"{self.eigenvectors.shape}."
             )
+        if self.omega_script_k_matrix.shape != self.eigenvectors.shape:
+            raise ValueError(
+                f"`omega_script_k_matrix` must have shape matching `eigenvectors` "
+                f"shape, but got {self.eigenvalues.shape} when `eigenvectors` shape "
+                f"is {self.eigenvectors.shape}."
+            )
 
         expected_matrix_shape = self.batch_shape + (self.expansion.num_terms,) * 2
         if _incompatible(self.inverse_z_permittivity_matrix, expected_matrix_shape):
@@ -509,6 +503,9 @@ class LayerSolveResult:
             expansion=self.expansion,
             eigenvalues=jnp.broadcast_to(self.eigenvalues, shape + (2 * n,)),
             eigenvectors=jnp.broadcast_to(self.eigenvectors, shape + (2 * n, 2 * n)),
+            omega_script_k_matrix=jnp.broadcast_to(
+                self.omega_script_k_matrix, shape + (2 * n, 2 * n)
+            ),
             z_permittivity_matrix=jnp.broadcast_to(
                 self.z_permittivity_matrix, shape + (n, n)
             ),
@@ -605,6 +602,14 @@ def _eigensolve_uniform_isotropic_media(
     eigenvalues = _select_eigenvalues_sign(eigenvalues)
     eigenvalues = jnp.tile(eigenvalues, 2)
 
+    #  The matrix from equation 26 of [2012 Liu].
+    angular_frequency_squared = angular_frequency[..., jnp.newaxis, jnp.newaxis] ** 2
+    angular_frequency_squared *= jnp.eye(num_eigenvalues)
+    omega_script_k_matrix = (
+        angular_frequency_squared
+        - fmm_matrices.script_k_matrix_uniform(permittivity, transverse_wavevectors)
+    ).astype(dtype)
+
     diag_shape = permittivity.shape + (expansion.num_terms,)
     inverse_z_permittivity_diag = jnp.broadcast_to(
         1 / permittivity[..., jnp.newaxis], diag_shape
@@ -627,6 +632,7 @@ def _eigensolve_uniform_isotropic_media(
         expansion=expansion,
         eigenvalues=eigenvalues,
         eigenvectors=eigenvectors,
+        omega_script_k_matrix=omega_script_k_matrix,
         z_permittivity_matrix=z_permittivity_matrix,
         inverse_z_permittivity_matrix=inverse_z_permittivity_matrix,
         z_permeability_matrix=z_permeability_matrix,
@@ -1000,6 +1006,7 @@ def _numerical_eigensolve(
         expansion=expansion,
         eigenvalues=eigenvalues,
         eigenvectors=eigenvectors,
+        omega_script_k_matrix=omega_script_k_matrix.astype(dtype),
         z_permittivity_matrix=z_permittivity_matrix.astype(dtype),
         inverse_z_permittivity_matrix=inverse_z_permittivity_matrix.astype(dtype),
         z_permeability_matrix=z_permeability_matrix.astype(dtype),
@@ -1308,6 +1315,7 @@ tree_util.register_pytree_node(
             x.expansion,
             x.eigenvalues,
             x.eigenvectors,
+            x.omega_script_k_matrix,
             x.z_permittivity_matrix,
             x.inverse_z_permittivity_matrix,
             x.z_permeability_matrix,
