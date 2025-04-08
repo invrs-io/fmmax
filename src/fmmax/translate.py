@@ -7,7 +7,7 @@ import functools
 
 import jax.numpy as jnp
 
-from fmmax import basis, fft, fmm
+from fmmax import basis, fft, fmm, fmm_matrices
 
 
 def translate_layer_solve_result(
@@ -61,6 +61,19 @@ def translate_layer_solve_result(
         ],
     )
 
+    shifted_z_permittivity_matrix = _shift_toeplitz(solve_result.z_permittivity_matrix)
+
+    omega_script_k_matrix = fmm_matrices.omega_script_k_matrix_patterned(
+        wavelength=solve_result.wavelength,
+        z_permittivity_matrix=shifted_z_permittivity_matrix,
+        transverse_permeability_matrix=shifted_transverse_permeability_matrix,
+        transverse_wavevectors=basis.transverse_wavevectors(
+            in_plane_wavevector=solve_result.in_plane_wavevector,
+            primitive_lattice_vectors=solve_result.primitive_lattice_vectors,
+            expansion=solve_result.expansion,
+        ),
+    ).astype(solve_result.eigenvectors.dtype)
+
     return fmm.LayerSolveResult(
         wavelength=solve_result.wavelength,
         in_plane_wavevector=solve_result.in_plane_wavevector,
@@ -68,7 +81,8 @@ def translate_layer_solve_result(
         expansion=solve_result.expansion,
         eigenvalues=solve_result.eigenvalues,
         eigenvectors=shifted_eigenvectors,
-        z_permittivity_matrix=_shift_toeplitz(solve_result.z_permittivity_matrix),
+        omega_script_k_matrix=omega_script_k_matrix,
+        z_permittivity_matrix=shifted_z_permittivity_matrix,
         inverse_z_permittivity_matrix=_shift_toeplitz(
             solve_result.inverse_z_permittivity_matrix
         ),
