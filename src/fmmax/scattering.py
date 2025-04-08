@@ -175,11 +175,6 @@ def _stack_s_matrices(
             f"`layer_solve_results` and `layer_thicknesses` should have the same "
             f"length but got {len(layer_solve_results)} and {len(layer_thicknesses)}."
         )
-    if not all(jnp.shape(t) == () for t in layer_thicknesses):
-        raise ValueError(
-            f"Thicknesses must be scalar, but shapes "
-            f"{[jnp.shape(t) for t in layer_thicknesses]}."
-        )
 
     # Remove the tangent vector fields from the solve results.
     layer_solve_results = tuple(
@@ -192,8 +187,10 @@ def _stack_s_matrices(
         *[lsr.batch_shape for lsr in layer_solve_results]
     )
     layer_solve_results = [lsr.broadcast_to(batch_shape) for lsr in layer_solve_results]
-    for lsr in layer_solve_results:
-        print([x.shape for x in tree_util.tree_leaves(lsr)])
+
+    # Broadcast all layer thicknesses so they have a common shape.
+    t_shape = jnp.broadcast_shapes(*[jnp.shape(t) for t in layer_thicknesses])
+    layer_thicknesses = [jnp.broadcast_to(t, t_shape) for t in layer_thicknesses]
 
     # The initial scattering matrix is just the identity matrix, with the
     # necessary batch dimensions.
