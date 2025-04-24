@@ -604,6 +604,58 @@ def fields_on_grid(
         The electric field ``(ex, ey, ez)``, magnetic field ``(hx, hy, hz)``,
         and the grid coordinates ``(x, y)``.
     """
+    return _fields_on_grid(
+        electric_field=electric_field,
+        magnetic_field=magnetic_field,
+        in_plane_wavevector=layer_solve_result.in_plane_wavevector,
+        primitive_lattice_vectors=layer_solve_result.primitive_lattice_vectors,
+        expansion=layer_solve_result.expansion,
+        shape=shape,
+        num_unit_cells=num_unit_cells,
+        brillouin_grid_axes=brillouin_grid_axes,
+    )
+
+
+def _fields_on_grid(
+    electric_field: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
+    magnetic_field: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
+    in_plane_wavevector: jnp.ndarray,
+    primitive_lattice_vectors: basis.LatticeVectors,
+    expansion: basis.Expansion,
+    shape: Tuple[int, int],
+    num_unit_cells: Optional[Tuple[int, int]] = None,
+    brillouin_grid_axes: Optional[Tuple[int, int]] = None,
+) -> Tuple[
+    Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
+    Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
+    Tuple[jnp.ndarray, jnp.ndarray],
+]:
+    """Transforms the fields from fourier representation to the grid.
+
+    The fields within an array of unit cells is returned, with the number of
+    cells in each direction given by ``num_unit_cells``. If ``brillouin_grid_axes``
+    is specified, the fields in a supercell will be computed by Brillouin zone
+    integration.
+
+    Args:
+        electric_field: ``(ex, ey, ez)`` electric field Fourier amplitudes, each
+            with shape ``(..., 2 * num_terms, num_amplitudes)``.
+        magnetic_field: ``(hx, hy, hz)`` magnetic field Fourier amplitudes.
+        in_plane_wavevector: The in-plane wavevector for the solve.
+        primitive_lattice_vectors: The primitive vectors for the real-space lattice.
+        expansion: The expansion used for the eigensolve.
+        shape: The shape of the grid.
+        num_unit_cells: Optional, the number of unit cells along each direction. If
+            ``None``, the number of unit cells is inferred from
+            ``brillouin_grid_axes``. If both are ``None``, the fields for a single
+            unit cell are computed.
+        brillouin_grid_axes: Optional, the axes of each amplitude corresponding to
+            the Brillouin zone grid.
+
+    Returns:
+        The electric field ``(ex, ey, ez)``, magnetic field ``(hx, hy, hz)``,
+        and the grid coordinates ``(x, y)``.
+    """
     if brillouin_grid_axes is not None:
         ex, _, _ = electric_field
         brillouin_grid_axes = utils.absolute_axes(  # type: ignore[assignment]
@@ -627,15 +679,15 @@ def fields_on_grid(
 
     _validate_amplitudes_shape(
         electric_field + magnetic_field,
-        num_terms=layer_solve_result.expansion.num_terms,
+        num_terms=expansion.num_terms,
     )
     x, y = basis.unit_cell_coordinates(
-        primitive_lattice_vectors=layer_solve_result.primitive_lattice_vectors,
+        primitive_lattice_vectors=primitive_lattice_vectors,
         shape=shape,
         num_unit_cells=num_unit_cells,
     )
-    kx = layer_solve_result.in_plane_wavevector[..., 0, jnp.newaxis, jnp.newaxis]
-    ky = layer_solve_result.in_plane_wavevector[..., 1, jnp.newaxis, jnp.newaxis]
+    kx = in_plane_wavevector[..., 0, jnp.newaxis, jnp.newaxis]
+    ky = in_plane_wavevector[..., 1, jnp.newaxis, jnp.newaxis]
     phase = jnp.exp(1j * (kx * x + ky * y))[..., jnp.newaxis]
     assert (
         x.shape[-2:]
@@ -644,7 +696,7 @@ def fields_on_grid(
     )
 
     def _field_on_grid(fourier_field):
-        field = fft.ifft(fourier_field, layer_solve_result.expansion, shape, axis=-2)
+        field = fft.ifft(fourier_field, expansion, shape, axis=-2)
         field = jnp.tile(field, num_unit_cells + (1,))
         field *= phase
         if brillouin_grid_axes is None:
