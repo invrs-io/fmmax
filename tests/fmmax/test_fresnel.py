@@ -1,4 +1,7 @@
-"""Tests refection and transmission against the Fresnel expressions."""
+"""Tests refection and transmission against the Fresnel expressions.
+
+Copyright (c) Martin F. Schubert
+"""
 
 import functools
 import unittest

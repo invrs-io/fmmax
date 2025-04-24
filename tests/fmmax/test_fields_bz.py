@@ -1,6 +1,6 @@
 """Tests for `fields` involving Brillouin zone integration.
 
-Copyright (c) 2025 Martin F. Schubert
+Copyright (c) Martin F. Schubert
 """
 
 import unittest

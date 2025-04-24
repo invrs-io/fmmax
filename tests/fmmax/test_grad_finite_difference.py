@@ -1,6 +1,6 @@
 """Tests comparing gradients to finite difference gradients.
 
-Copyright (c) Meta Platforms, Inc. and affiliates.
+Copyright (c) Martin F. Schubert
 """
 
 import functools

@@ -1,6 +1,6 @@
 """Tests for `fmmax.vector`.
 
-Copyright (c) Meta Platforms, Inc. and affiliates.
+Copyright (c) Martin F. Schubert
 """
 
 import functools

@@ -1,4 +1,4 @@
-"""Tests for `fmmax._eig`.
+"""Tests for `fmmax.eig`.
 
 Copyright (c) Meta Platforms, Inc. and affiliates.
 """

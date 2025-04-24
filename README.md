@@ -71,7 +71,7 @@ If you use FMMAX, please consider citing [our paper](https://opg.optica.org/oe/f
 ```
 
 ## License
-FMMAX is licensed under the [MIT license](https://github.com/facebookresearch/fmmax/blob/main/LICENSE).
+Some portions of FMMAX were created while the author was employed by Meta or by Meta collaborators, with copyright owned by Meta and available under the [MIT license](https://github.com/facebookresearch/fmmax/blob/main/LICENSE2). Other portions were created or substantially changed subsequently (copyright not owned by Meta) and are available under the [AGPL](https://github.com/facebookresearch/fmmax/blob/main/LICENSE). These are split on a file-by-file basis, with the file header indicating which license is applicable.
 
 ## References
 - [2012 Liu] V. Liu and S. Fan, [S4: A free electromagnetic solver for layered structures structures](https://www.sciencedirect.com/science/article/pii/S0010465512001658), _Comput. Phys. Commun._ **183**, 2233-2244 (2012).

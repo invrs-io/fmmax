@@ -1,6 +1,6 @@
 """Tests for various jax grad functions.
 
-Copyright (c) Meta Platforms, Inc. and affiliates.
+Copyright (c) Martin F. Schubert
 """
 
 import unittest

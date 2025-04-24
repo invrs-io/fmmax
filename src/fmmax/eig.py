@@ -1,6 +1,21 @@
-"""Defines several utility functions.
+# FMMAX
+# Copyright (C) 2025 Martin F. Schubert
 
-Copyright (c) Meta Platforms, Inc. and affiliates.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""Defines a jax-differentiable eigendecomposition.
+
+Copyright (c) Martin F. Schubert
 """
 
 import functools
@@ -155,7 +170,7 @@ def _eig_bwd(
     grad_eigenvalues_conj = jnp.conj(grad_eigenvalues)
     grad_eigenvectors_conj = jnp.conj(grad_eigenvectors)
 
-    eigenvectors_H = misc.matrix_adjoint(eigenvectors)
+    eigenvectors_adj = misc.matrix_adjoint(eigenvectors)
     dim = eigenvalues.shape[-1]
     eye_mask = jnp.eye(dim, dtype=bool)
     eye_mask = eye_mask.reshape((1,) * (eigenvalues.ndim - 1) + (dim, dim))
@@ -163,12 +178,12 @@ def _eig_bwd(
     # Then, the gradient is found by equation 4.77 of [2019 Boeddeker].
     rhs = (
         misc.diag(grad_eigenvalues_conj)
-        + jnp.conj(f_broadened) * (eigenvectors_H @ grad_eigenvectors_conj)
+        + jnp.conj(f_broadened) * (eigenvectors_adj @ grad_eigenvectors_conj)
         - jnp.conj(f_broadened)
-        * (eigenvectors_H @ eigenvectors)
-        @ jnp.where(eye_mask, jnp.real(eigenvectors_H @ grad_eigenvectors_conj), 0.0)
-    ) @ eigenvectors_H
-    grad_matrix = jnp.linalg.solve(eigenvectors_H, rhs)
+        * (eigenvectors_adj @ eigenvectors)
+        @ jnp.where(eye_mask, jnp.real(eigenvectors_adj @ grad_eigenvectors_conj), 0.0)
+    ) @ eigenvectors_adj
+    grad_matrix = jnp.linalg.solve(eigenvectors_adj, rhs)
 
     # Take the conjugate of the gradient, reverting to the jax convention
     # where gradients are with respect to complex parameters.
