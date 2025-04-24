@@ -1,6 +1,6 @@
-"""Tests for `slant` module.
+"""Tests for `fmmax.translate` module.
 
-Copyright (c) 2024 Martin F. Schubert
+Copyright (c) Martin F. Schubert
 """
 
 import functools
