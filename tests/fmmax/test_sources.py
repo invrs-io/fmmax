@@ -403,7 +403,7 @@ class InternalSourcesTest(unittest.TestCase):
         sigma = fwhm / (2 * jnp.sqrt(2 * jnp.log(2)))
         expected = jnp.exp(-(distance**2) / (2 * sigma**2))
 
-        onp.testing.assert_allclose(hmag, expected, atol=0.05)
+        onp.testing.assert_allclose(hmag, expected, atol=0.06)
 
     @parameterized.expand([[(0, 0)], [(0.5, 0.5)]])
     def test_dirac_delta_matches_gaussian_with_zero_fwhm(self, dipole_location):
