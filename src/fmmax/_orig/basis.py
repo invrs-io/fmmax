@@ -244,51 +244,6 @@ def plane_wave_in_plane_wavevector(
     return jnp.stack([kx0, ky0], axis=-1)
 
 
-def brillouin_zone_in_plane_wavevector(
-    brillouin_grid_shape: Tuple[int, int],
-    primitive_lattice_vectors: LatticeVectors,
-) -> jnp.ndarray:
-    """Computes in-plane wavevectors on a regular grid in the first Brillouin zone.
-
-    The wavevectors are found by dividing the Brillouin zone into a grid with the
-    specified shape; the wavevectors are at the centers of the grid voxels.
-
-    Args:
-        brillouin_grid_shape: The shape of the wavevector grid.
-        primitive_lattice_vectors: The primitive vectors for the real-space lattice.
-
-    Returns:
-        The in-plane wavevectors, with shape ``brillouin_grid_shape + (2,)``.
-    """
-    if len(brillouin_grid_shape) != 2 or brillouin_grid_shape < (1, 1):
-        raise ValueError(
-            f"`brillouin_grid_shape` must be length-2 with positive values, "
-            f"but got {brillouin_grid_shape}."
-        )
-
-    # Compute `(i, j)` so that a point in the center of the Brillouin zone has
-    # a value exactly equal to `(0, 0)`.
-    xdim, ydim = brillouin_grid_shape
-    i, j = jnp.meshgrid(
-        jnp.arange(-xdim + 1, xdim, 2) / (2 * xdim),
-        jnp.arange(-ydim + 1, ydim, 2) / (2 * ydim),
-        indexing="ij",
-    )
-    assert i.shape == brillouin_grid_shape
-    reciprocal_vectors = primitive_lattice_vectors.reciprocal
-    return jnp.stack(
-        [
-            2
-            * jnp.pi
-            * (i * reciprocal_vectors.u[..., 0] + j * reciprocal_vectors.v[..., 0]),
-            2
-            * jnp.pi
-            * (i * reciprocal_vectors.u[..., 1] + j * reciprocal_vectors.v[..., 1]),
-        ],
-        axis=-1,
-    )
-
-
 def transverse_wavevectors(
     in_plane_wavevector: jnp.ndarray,
     primitive_lattice_vectors: LatticeVectors,

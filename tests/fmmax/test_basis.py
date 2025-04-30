@@ -213,8 +213,10 @@ class InPlaneWavevectorTest(unittest.TestCase):
     @parameterized.expand(
         [
             [(1, 1), [[[0, 0]]]],
-            [(2, 1), [[[-0.25 * jnp.pi, 0]], [[0.25 * jnp.pi, 0]]]],
-            [(1, 2), [[[0, -0.5 * jnp.pi], [0, 0.5 * jnp.pi]]]],
+            [(2, 1), [[[-0.5 * jnp.pi, 0]], [[0, 0]]]],
+            [(1, 2), [[[0, -jnp.pi], [0, 0]]]],
+            [(3, 1), [[[-jnp.pi / 3, 0]], [[0, 0]], [[jnp.pi / 3, 0]]]],
+            [(1, 3), [[[0, -2 * jnp.pi / 3], [0, 0], [0, 2 * jnp.pi / 3]]]],
         ],
     )
     def test_brillouin_wavevector_matches_exected(self, shape, expected_vectors):
