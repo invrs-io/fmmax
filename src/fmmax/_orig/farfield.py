@@ -406,7 +406,9 @@ def _unflatten(flat: jnp.ndarray, expansion: basis.Expansion) -> jnp.ndarray:
     stacked_j = merged_j.flatten()
     stacked_flat = jnp.reshape(flat, batch_shape + (-1,))
 
-    return jnp.full(shape, jnp.nan).at[..., stacked_i, stacked_j].set(stacked_flat)
+    unflattened = jnp.full(shape, jnp.nan, dtype=flat.dtype)
+    unflattened = unflattened.at[..., stacked_i, stacked_j].set(stacked_flat)
+    return unflattened
 
 
 def _unflatten_flux(
