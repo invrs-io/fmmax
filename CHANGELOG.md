@@ -2,6 +2,7 @@
 
 ## Unreleased
 - Update Brillouin zone wavevector generation for even-sized grids so that `(0, 0)` is always included.
+- Ensure dtype is preserved in `farfield._unflatten`.
 
 ## 1.3.0 (April 24, 2025)
 - Add permittivity shape validation to eigensolve functions.
