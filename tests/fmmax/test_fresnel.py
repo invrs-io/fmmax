@@ -6,7 +6,6 @@ Copyright (c) Martin F. Schubert
 import functools
 import unittest
 
-import jax
 import jax.numpy as jnp
 import numpy as onp
 from parameterized import parameterized
@@ -16,9 +15,8 @@ from fmmax import basis, fields, fmm, scattering
 
 def fresnel_rt(n1, n2, theta_i):
     """Compute reflection and transmission by the Fresnel equations."""
-    theta_t = jnp.arcsin(n1 * jnp.sin(theta_i) / n2)
-    cos_theta_i = jnp.cos(theta_i)
-    cos_theta_t = jnp.cos(theta_t)
+    cos_theta_i = onp.cos(theta_i)
+    cos_theta_t = onp.sqrt(1 - (n1 / n2 * onp.sin(theta_i)) ** 2)
 
     rs = (n1 * cos_theta_i - n2 * cos_theta_t) / (n1 * cos_theta_i + n2 * cos_theta_t)
     ts = (2 * n1 * cos_theta_i) / (n1 * cos_theta_i + n2 * cos_theta_t)
@@ -26,38 +24,42 @@ def fresnel_rt(n1, n2, theta_i):
     rp = -(n2 * cos_theta_i - n1 * cos_theta_t) / (n2 * cos_theta_i + n1 * cos_theta_t)
     tp = (2 * n1 * cos_theta_i) / (n2 * cos_theta_i + n1 * cos_theta_t)
 
-    reflection = jnp.stack([rs, rp]).astype(complex)
-    transmission = jnp.stack([ts, tp]).astype(complex)
+    Rs = onp.abs(rs) ** 2
+    Rp = onp.abs(rp) ** 2
 
-    power_reflection = jnp.abs(reflection) ** 2
-    power_transmission = (
-        jnp.abs(transmission) ** 2 * n2 * cos_theta_t / (n1 * cos_theta_i)
-    )
-    return (reflection, transmission), (power_reflection, power_transmission)
+    Ts = onp.abs(ts) ** 2 * (n2 * cos_theta_t).real / (n1 * cos_theta_i).real
+    Tp = onp.abs(tp) ** 2 * (n2 * cos_theta_t.conj() / (n1 * cos_theta_i)).real
 
-
-def extract_amplitude(efield):
-    """Extracts the scalar amplitude from an electric field vector."""
-    max_idx = jnp.argmax(jnp.abs(efield), axis=0)
-    max_element = efield[max_idx, jnp.arange(efield.shape[1])]
-    phase = jnp.angle(max_element)
-    amplitude = jax.vmap(jnp.linalg.norm, in_axes=1)(efield)
-    amplitude = amplitude * jnp.exp(1j * phase)
-    direction = efield / amplitude[jnp.newaxis, :]
-    return amplitude, direction
+    assert onp.isclose(Rs + Ts, 1)
+    assert onp.isclose(Rp + Tp, 1)
+    return ((rs, rp), (ts, tp)), ((Rs, Rp), (Ts, Tp))
 
 
 class FresnelComparisonTest(unittest.TestCase):
     @parameterized.expand(
         [
             (1.0 + 0.0j, 1.4 + 0.0j, 0.0),
-            (1.0 + 0.0j, 1.4 + 0.0j, 10.0),
+            (1.0 + 0.0j, 1.4 + 0.0j, 30.0),
             (1.0 + 0.0j, 1.4 + 0.00001j, 0.0),
-            (1.0 + 0.0j, 1.4 + 0.00001j, 10.0),
+            (1.0 + 0.0j, 1.4 + 0.00001j, 30.0),
             (1.4 + 0.0j, 1.0 + 0.0j, 0.0),
-            (1.4 + 0.0j, 1.0 + 0.0j, 10.0),
+            (1.4 + 0.0j, 1.0 + 0.0j, 30.0),
             (1.4 + 0.00001j, 1.0 + 0.0j, 0.0),
-            (1.4 + 0.00001j, 1.0 + 0.0j, 10.0),
+            (1.4 + 0.00001j, 1.0 + 0.0j, 30.0),
+            (1.0 + 0.0j, 1.0 + 1.0j, 0.0),
+            (1.0 + 0.0j, 1.0 + 1.0j, 10.0),
+            (1.0 + 0.0j, 1.0 + 1.0j, 20.0),
+            (1.0 + 0.0j, 1.0 + 1.0j, 30.0),
+            (1.0 + 0.0j, 1.0 + 1.0j, 40.0),
+            (1.0 + 0.0j, 1.0 + 1.0j, 50.0),
+            (1.0 + 0.0j, 1.0 + 1.0j, 60.0),
+            (1.0 + 0.0j, 2.0 + 0.0j, 0.0),
+            (1.0 + 0.0j, 2.0 + 0.0j, 10.0),
+            (1.0 + 0.0j, 2.0 + 0.0j, 20.0),
+            (1.0 + 0.0j, 2.0 + 0.0j, 30.0),
+            (1.0 + 0.0j, 2.0 + 0.0j, 40.0),
+            (1.0 + 0.0j, 2.0 + 0.0j, 50.0),
+            (1.0 + 0.0j, 2.0 + 0.0j, 60.0),
         ]
     )
     def test_validate_fmm(self, n_ambient, n_substrate, incident_angle_deg):
@@ -122,21 +124,21 @@ class FresnelComparisonTest(unittest.TestCase):
             backward_amplitude=bwd_amplitude_substrate_start,
             layer_solve_result=solve_result_substrate,
         )
-        power_reflection = -jnp.diag(reflected_flux) / jnp.diag(incident_flux)
-        power_transmission = jnp.diag(transmitted_flux) / jnp.diag(incident_flux)
+        Rs, Rp = -jnp.diag(reflected_flux) / jnp.diag(incident_flux)
+        Ts, Tp = jnp.diag(transmitted_flux) / jnp.diag(incident_flux)
 
         # Compute the incident, reflected, and transmitted electric fields.
-        e_incident, _ = fields.fields_from_wave_amplitudes(
+        e_incident, h_incident = fields.fields_from_wave_amplitudes(
             forward_amplitude=fwd_amplitude_ambient_end,
             backward_amplitude=jnp.zeros_like(fwd_amplitude_ambient_end),
             layer_solve_result=solve_result_ambient,
         )
-        e_reflected, _ = fields.fields_from_wave_amplitudes(
+        e_reflected, h_reflected = fields.fields_from_wave_amplitudes(
             forward_amplitude=jnp.zeros_like(bwd_amplitude_ambient_end),
             backward_amplitude=bwd_amplitude_ambient_end,
             layer_solve_result=solve_result_ambient,
         )
-        e_transmitted, _ = fields.fields_from_wave_amplitudes(
+        e_transmitted, h_transmitted = fields.fields_from_wave_amplitudes(
             forward_amplitude=fwd_amplitude_substrate_start,
             backward_amplitude=jnp.zeros_like(fwd_amplitude_substrate_start),
             layer_solve_result=solve_result_substrate,
@@ -146,30 +148,47 @@ class FresnelComparisonTest(unittest.TestCase):
         e_incident = jnp.squeeze(jnp.asarray(e_incident), axis=1)
         e_reflected = jnp.squeeze(jnp.asarray(e_reflected), axis=1)
         e_transmitted = jnp.squeeze(jnp.asarray(e_transmitted), axis=1)
+        h_incident = jnp.squeeze(jnp.asarray(h_incident), axis=1)
+        h_reflected = jnp.squeeze(jnp.asarray(h_reflected), axis=1)
+        h_transmitted = jnp.squeeze(jnp.asarray(h_transmitted), axis=1)
         assert e_incident.shape == (3, 2)
 
-        e_incident_amplitude, _ = extract_amplitude(e_incident)
-        e_reflected_amplitude, _ = extract_amplitude(e_reflected)
-        e_transmitted_amplitude, _ = extract_amplitude(e_transmitted)
+        # Use electric field transmission for s polarization.
+        assert e_incident[0, 0] == e_incident[2, 0] == 0
+        assert e_reflected[0, 0] == e_reflected[2, 0] == 0
+        assert e_transmitted[0, 0] == e_transmitted[2, 0] == 0
+        rs = e_reflected[1, 0] / e_incident[1, 0]
+        ts = e_transmitted[1, 0] / e_incident[1, 0]
 
-        reflection = e_reflected_amplitude / e_incident_amplitude
-        transmission = e_transmitted_amplitude / e_incident_amplitude
+        # Use magnetic field transmission for p polarization.
+        assert h_incident[0, 1] == h_incident[2, 1] == 0
+        assert h_reflected[0, 1] == h_reflected[2, 1] == 0
+        assert h_transmitted[0, 1] == h_transmitted[2, 1] == 0
+        rp = -h_reflected[1, 1] / h_incident[1, 1]
+        tp = h_transmitted[1, 1] / h_incident[1, 1] * n_ambient / n_substrate
 
         # Compare complex reflection and transmission coefficients, and real-valued
         # power reflection and transmission coefficients.
         (
-            (expected_reflection, expected_transmission),
-            (expected_power_reflection, expected_power_transmission),
+            ((expected_rs, expected_rp), (expected_ts, expected_tp)),
+            ((expected_Rs, expected_Rp), (expected_Ts, expected_Tp)),
         ) = fresnel_rt(n1=n_ambient, n2=n_substrate, theta_i=incident_angle)
-        onp.testing.assert_allclose(
-            reflection, expected_reflection, rtol=1e-5, atol=1e-7
-        )
-        onp.testing.assert_allclose(
-            transmission, expected_transmission, rtol=1e-5, atol=1e-7
-        )
-        onp.testing.assert_allclose(
-            power_reflection, expected_power_reflection, rtol=1e-5, atol=1e-7
-        )
-        onp.testing.assert_allclose(
-            power_transmission, expected_power_transmission, rtol=1e-5, atol=1e-7
-        )
+
+        rtol = 1e-5
+        atol = 1e-5
+        with self.subTest("rs"):
+            onp.testing.assert_allclose(rs, expected_rs, rtol=rtol, atol=atol)
+        with self.subTest("rp"):
+            onp.testing.assert_allclose(rp, expected_rp, rtol=rtol, atol=atol)
+        with self.subTest("ts"):
+            onp.testing.assert_allclose(ts, expected_ts, rtol=rtol, atol=atol)
+        with self.subTest("tp"):
+            onp.testing.assert_allclose(tp, expected_tp, rtol=rtol, atol=atol)
+        with self.subTest("Rs"):
+            onp.testing.assert_allclose(Rs, expected_Rs, rtol=rtol, atol=atol)
+        with self.subTest("Rp"):
+            onp.testing.assert_allclose(Rp, expected_Rp, rtol=rtol, atol=atol)
+        with self.subTest("Ts"):
+            onp.testing.assert_allclose(Ts, expected_Ts, rtol=rtol, atol=atol)
+        with self.subTest("Tp"):
+            onp.testing.assert_allclose(Tp, expected_Tp, rtol=rtol, atol=atol)
