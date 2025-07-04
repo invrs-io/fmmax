@@ -30,7 +30,7 @@ def fourier_convolution_matrix(
     """
     basis.validate_shape_for_expansion(x.shape, expansion)
 
-    x_fft = jnp.fft.fft2(x)
+    x_fft = _fft2(x, axes=(-2, -1), norm="backward", centered_coordinates=True)
     x_fft /= jnp.prod(jnp.asarray(x.shape[-2:])).astype(x.dtype)
     idx = _standard_toeplitz_indices(expansion)
     return x_fft[..., idx[..., 0], idx[..., 1]]
@@ -73,7 +73,7 @@ def fft(
     axes: Tuple[int, int] = utils.absolute_axes(axes, x.ndim)  # type: ignore[no-redef]
     basis.validate_shape_for_expansion(tuple([x.shape[ax] for ax in axes]), expansion)
 
-    x_fft = jnp.fft.fft2(x, axes=axes, norm="forward")
+    x_fft = _fft2(x, axes=axes, norm="forward", centered_coordinates=True)
 
     leading_dims = len(x.shape[: axes[0]])
     trailing_dims = len(x.shape[axes[1] + 1 :])
@@ -91,17 +91,17 @@ def ifft(
     shape: Tuple[int, int],
     axis: int = -1,
 ) -> jnp.ndarray:
-    """Returns the 2D inverse Fourier transform of `x`.
+    """Returns the 2D inverse Fourier transform of ``y``.
 
     Args:
         y: The array to be transformed.
         expansion: The field expansion to be used.
         shape: The desired shape of the output array.
-        axis: The axis containing the Fourier coefficients. Default is `-1`, the
+        axis: The axis containing the Fourier coefficients. Default is ``-1``, the
             final axis.
 
     Returns:
-        The inverse transformed `x`.
+        The inverse transformed ``y``.
     """
     (axis,) = utils.absolute_axes((axis,), y.ndim)
     assert y.shape[axis] == expansion.basis_coefficients.shape[-2]
@@ -120,4 +120,45 @@ def ifft(
 
     x = jnp.zeros(x_shape, y.dtype)
     x = x.at[tuple(slices)].set(y)
-    return jnp.fft.ifft2(x, axes=(leading_dims, leading_dims + 1), norm="forward")
+    return _ifft2(
+        x,
+        axes=(leading_dims, leading_dims + 1),
+        norm="forward",
+        centered_coordinates=True,
+    )
+
+
+def _fft2(
+    x: jnp.ndarray,
+    axes: Tuple[int, int] = (-2, -1),
+    norm: str = "forward",
+    centered_coordinates: bool = True,
+) -> jnp.ndarray:
+    """Two-dimensional Fourier transform."""
+    y = jnp.fft.fft2(x, axes=axes, norm=norm)
+    if centered_coordinates:
+        axes = utils.absolute_axes(axes, ndim=x.ndim)
+        ki = 0.5 * jnp.fft.fftfreq(x.shape[axes[0]])[:, jnp.newaxis]
+        kj = 0.5 * jnp.fft.fftfreq(x.shape[axes[1]])[jnp.newaxis, :]
+        phase = jnp.exp(-1j * 2 * jnp.pi * (ki + kj))
+        phase = phase.reshape(phase.shape + (1,) * (x.ndim - axes[1] - 1))
+        y = y * phase
+    return y
+
+
+def _ifft2(
+    x: jnp.ndarray,
+    axes: Tuple[int, int] = (-2, -1),
+    norm: str = "forward",
+    centered_coordinates: bool = True,
+) -> jnp.ndarray:
+    """Two-dimensional inverse Fourier transform."""
+    if centered_coordinates:
+        axes = utils.absolute_axes(axes, ndim=x.ndim)
+        ki = 0.5 * jnp.fft.fftfreq(x.shape[axes[0]])[:, jnp.newaxis]
+        kj = 0.5 * jnp.fft.fftfreq(x.shape[axes[1]])[jnp.newaxis, :]
+        phase = jnp.exp(1j * 2 * jnp.pi * (ki + kj))
+        phase = phase.reshape(phase.shape + (1,) * (x.ndim - axes[1] - 1))
+        x = x * phase
+
+    return jnp.fft.ifft2(x, axes=axes, norm=norm)
