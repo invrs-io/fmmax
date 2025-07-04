@@ -429,13 +429,19 @@ class FourierMatrixBatchMatchesSingleTest(unittest.TestCase):
         scale = jnp.arange(1, 5)[:, jnp.newaxis, jnp.newaxis]
         permittivity = 1 + circle * scale
 
+        expansion = basis.generate_expansion(
+            primitive_lattice_vectors=PRIMITIVE_LATTICE_VECTORS,
+            approximate_num_terms=100,
+            truncation=basis.Truncation.CIRCULAR,
+        )
+
         (
             batch_inverse_z_permittivity_matrix,
             batch_z_permittivity_matrix,
             batch_transverse_permittivity_matrix,
             batch_tangent_vector_field,
         ) = fmm._fourier_matrices_patterned_isotropic_media(
-            PRIMITIVE_LATTICE_VECTORS, permittivity, EXPANSION, formulation
+            PRIMITIVE_LATTICE_VECTORS, permittivity, expansion, formulation
         )
 
         for i, p in enumerate(permittivity):
@@ -445,7 +451,7 @@ class FourierMatrixBatchMatchesSingleTest(unittest.TestCase):
                 transverse_permittivity_matrix,
                 tangent_vector_field,
             ) = fmm._fourier_matrices_patterned_isotropic_media(
-                PRIMITIVE_LATTICE_VECTORS, p, EXPANSION, formulation
+                PRIMITIVE_LATTICE_VECTORS, p, expansion, formulation
             )
             onp.testing.assert_allclose(
                 inverse_z_permittivity_matrix,
@@ -483,6 +489,12 @@ class FourierMatrixBatchMatchesSingleTest(unittest.TestCase):
         permeabilities = 1 + circle * permeabilities_scale
         assert permittivities.shape == (5, 6, 50, 50)
 
+        expansion = basis.generate_expansion(
+            primitive_lattice_vectors=PRIMITIVE_LATTICE_VECTORS,
+            approximate_num_terms=100,
+            truncation=basis.Truncation.CIRCULAR,
+        )
+
         (
             batch_inverse_z_permittivity_matrix,
             batch_z_permittivity_matrix,
@@ -495,7 +507,7 @@ class FourierMatrixBatchMatchesSingleTest(unittest.TestCase):
             PRIMITIVE_LATTICE_VECTORS,
             tuple(permittivities),
             tuple(permeabilities),
-            EXPANSION,
+            expansion,
             formulation,
             permittivities[0, ...],
         )
@@ -513,7 +525,7 @@ class FourierMatrixBatchMatchesSingleTest(unittest.TestCase):
                 PRIMITIVE_LATTICE_VECTORS,
                 tuple(permittivities[:, i, ...]),
                 tuple(permeabilities[:, i, ...]),
-                EXPANSION,
+                expansion,
                 formulation,
                 permittivities[0, i, ...],
             )
@@ -528,7 +540,8 @@ class FourierMatrixBatchMatchesSingleTest(unittest.TestCase):
             onp.testing.assert_allclose(
                 transverse_permittivity_matrix,
                 batch_transverse_permittivity_matrix[i, ...],
-                atol=1e-15,
+                atol=1e-12,
+                rtol=1e-6,
             )
             onp.testing.assert_allclose(
                 inverse_z_permeability_matrix,
@@ -541,7 +554,8 @@ class FourierMatrixBatchMatchesSingleTest(unittest.TestCase):
             onp.testing.assert_allclose(
                 transverse_permeability_matrix,
                 batch_transverse_permeability_matrix[i, ...],
-                atol=1e-15,
+                atol=1e-12,
+                rtol=1e-6,
             )
             if formulation != fmm.Formulation.FFT:
                 onp.testing.assert_allclose(

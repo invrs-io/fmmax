@@ -30,7 +30,7 @@ def fourier_convolution_matrix(
     """
     basis.validate_shape_for_expansion(x.shape, expansion)
 
-    x_fft = _fft2(x, axes=(-2, -1), norm="backward", centered_coordinates=True)
+    x_fft = _fft2(x, axes=(-2, -1), norm="backward")
     x_fft /= jnp.prod(jnp.asarray(x.shape[-2:])).astype(x.dtype)
     idx = _standard_toeplitz_indices(expansion)
     return x_fft[..., idx[..., 0], idx[..., 1]]
@@ -73,7 +73,7 @@ def fft(
     axes: Tuple[int, int] = utils.absolute_axes(axes, x.ndim)  # type: ignore[no-redef]
     basis.validate_shape_for_expansion(tuple([x.shape[ax] for ax in axes]), expansion)
 
-    x_fft = _fft2(x, axes=axes, norm="forward", centered_coordinates=True)
+    x_fft = _fft2(x, axes=axes, norm="forward")
 
     leading_dims = len(x.shape[: axes[0]])
     trailing_dims = len(x.shape[axes[1] + 1 :])
@@ -124,7 +124,6 @@ def ifft(
         x,
         axes=(leading_dims, leading_dims + 1),
         norm="forward",
-        centered_coordinates=True,
     )
 
 
