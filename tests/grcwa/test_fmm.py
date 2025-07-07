@@ -10,7 +10,7 @@ import jax
 import jax.numpy as jnp
 import numpy as onp
 
-from fmmax import basis, fmm, utils
+from fmmax import basis, fmm, translate, utils
 
 # Enable 64-bit precision for higher accuracy.
 jax.config.update("jax_enable_x64", True)
@@ -102,6 +102,20 @@ class GrcwaEigensolveComparisonTest(unittest.TestCase):
             expansion=EXPANSION,
             formulation=fmm.Formulation.FFT,
         )
+
+        # GRCWA and FMMAX differ in the coordinates within the unit cell associated with
+        # arrays defined on the unit cell, e.g. the permittivity distribution. For
+        # GRCWA, the coordinates along the u-axis are (0, du, 2 * du, ... u - du), while
+        # for FMMAX these are (du / 2, 3 * du / 2, 5 * du / 2, ... u - du / 2).
+        # We shift the layer solve result here so that eigenvectors can be compared.
+        du = PRIMITIVE_LATTICE_VECTORS.u / permittivity.shape[0]
+        dv = PRIMITIVE_LATTICE_VECTORS.v / permittivity.shape[0]
+        solve_result = translate.translate_layer_solve_result(
+            solve_result,
+            dx=-(du[0] + dv[0]) / 2,
+            dy=-(du[1] + dv[1]) / 2,
+        )
+
         eigenvalues, eigenvectors = _sort_eigs(
             solve_result.eigenvalues, solve_result.eigenvectors
         )
