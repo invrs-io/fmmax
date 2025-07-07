@@ -189,8 +189,8 @@ def unit_cell_coordinates(
     j_stop = num_unit_cells[1] * shape[1]
     i, j = tuple(
         jnp.meshgrid(
-            jnp.arange(0, i_stop) / shape[0],
-            jnp.arange(0, j_stop) / shape[1],
+            jnp.arange(0.5, i_stop) / shape[0],
+            jnp.arange(0.5, j_stop) / shape[1],
             indexing="ij",
         )
     )

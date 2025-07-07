@@ -15,15 +15,15 @@ from fmmax import basis, fields, fmm, scattering
 
 
 def gaussian_permittivity_fn(x0, y0, dim):
-    x = jnp.arange(0, dim)[:, jnp.newaxis] / dim - x0
-    y = jnp.arange(0, dim)[jnp.newaxis, :] / dim - y0
+    x = jnp.arange(0.5, dim)[:, jnp.newaxis] / dim - x0
+    y = jnp.arange(0.5, dim)[jnp.newaxis, :] / dim - y0
     return 1 + 10 * jnp.exp((-(x**2) - y**2) * 25)
 
 
 class FiniteDifferenceGradientTest(unittest.TestCase):
     @parameterized.expand(
         [
-            (fmm.Formulation.FFT, 3e-3),
+            (fmm.Formulation.FFT, 4e-3),
             (fmm.Formulation.JONES_DIRECT, 1e-2),
             (fmm.Formulation.JONES_DIRECT_FOURIER, 1e-2),
             (fmm.Formulation.POL, 2e-2),

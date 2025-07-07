@@ -171,11 +171,8 @@ def simulate_uled(
     s_matrix_before_source = s_matrices_interior_before_source[-1][0]
     s_matrix_after_source = s_matrices_interior_after_source[-1][0]
 
-    # TODO: update the locations and remove the shift by `resolution`. Requires
-    # updating regression test values.
     dipole_locations = [
-        (pitch / 2 - resolution, pitch / 2 + offset * epi_diameter - resolution)
-        for offset in dipole_y_offset
+        (pitch / 2, pitch / 2 + offset * epi_diameter) for offset in dipole_y_offset
     ]
     dipoles = fmmax.gaussian_source(
         fwhm=jnp.asarray(dipole_fwhm),
@@ -305,17 +302,13 @@ def uled_structure(
     # Generate the permittivity for the cross section below the epi
     # structure, including only the metal and the passivation.
     outer_circle_diameter = epi_diameter + thickness_passivation * 2
-    inside_outer_circle = circle_mask(
-        pitch, outer_circle_diameter, resolution, x_offset=0, y_offset=0
-    )
+    inside_outer_circle = circle_mask(pitch, outer_circle_diameter, resolution)
     permittivity_cross_section_passivation_only = jnp.where(
         inside_outer_circle, permittivity_passivation, permittivity_metal
     )
 
     # Permittivity for the cross section also including the epi.
-    inside_inner_circle = circle_mask(
-        pitch, epi_diameter, resolution, x_offset=0, y_offset=0
-    )
+    inside_inner_circle = circle_mask(pitch, epi_diameter, resolution)
     permittivity_cross_section_epi = jnp.where(
         inside_inner_circle,
         permittivity_epi,
@@ -358,16 +351,14 @@ def circle_mask(
     pitch: float,
     diameter: float,
     resolution: float,
-    x_offset: float,
-    y_offset: float,
 ) -> jnp.ndarray:
     """Returns a mask that is `True` for a centered circular feature."""
     x, y = jnp.meshgrid(
-        jnp.arange(-pitch / 2 + resolution / 2, pitch / 2, resolution),
-        jnp.arange(-pitch / 2 + resolution / 2, pitch / 2, resolution),
+        jnp.arange(resolution / 2, pitch, resolution),
+        jnp.arange(resolution / 2, pitch, resolution),
         indexing="ij",
     )
-    distance = jnp.sqrt((x - x_offset) ** 2 + (y - y_offset) ** 2)
+    distance = jnp.sqrt((x - pitch / 2) ** 2 + (y - pitch / 2) ** 2)
     return distance < diameter / 2
 
 

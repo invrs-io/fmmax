@@ -29,8 +29,8 @@ class MetalDipoleTest(unittest.TestCase):
         self.assertSequenceEqual(ex.shape, hz.shape)
 
         onp.testing.assert_allclose(
-            onp.mean(onp.abs((ex, ey, ez))), 4.712292, rtol=1e-4
+            onp.mean(onp.abs((ex, ey, ez))), 4.708408, rtol=1e-4
         )
         onp.testing.assert_allclose(
-            onp.mean(onp.abs((hx, hy, hz))), 7.276852, rtol=1e-4
+            onp.mean(onp.abs((hx, hy, hz))), 7.275805, rtol=1e-4
         )

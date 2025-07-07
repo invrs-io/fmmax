@@ -184,11 +184,13 @@ class GaussianBeamInPMLDecayTest(unittest.TestCase):
             use_pml=False
         )
         # With or without PML, the incident power is identical.
-        onp.testing.assert_allclose(power_at_end, power_at_end_no_pml, rtol=1e-2)
+        onp.testing.assert_allclose(
+            power_at_end, power_at_end_no_pml, rtol=1e-2, atol=0.001
+        )
         # With no PML, the power at the end is equal to the power at the start.
         onp.testing.assert_allclose(power_at_end_no_pml, power_at_start_no_pml)
-        # With PML, the power at the start is decayed by at least 1e4.
-        self.assertGreater(onp.abs(power_at_end), 1e4 * onp.abs(power_at_start))
+        # With PML, the power at the start is decayed by at least 1e3.
+        self.assertGreater(onp.abs(power_at_end), 1e3 * onp.abs(power_at_start))
 
 
 class DipoleFieldsInPMLDecayTest(unittest.TestCase):

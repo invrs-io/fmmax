@@ -263,9 +263,9 @@ class InPlaneWavevectorTest(unittest.TestCase):
 class UnitCellCoordiantesTest(unittest.TestCase):
     @parameterized.expand(
         [
-            [(1, 1), (3, 2), (0, 1, 2), (0, 1)],
-            [(1, 1), (4, 3), (0, 1, 2, 3), (0, 1, 2)],
-            [(2, 2), (2, 1), (0, 0.5, 1.0, 1.5), (0, 0.5)],
+            [(1, 1), (3, 2), (0.5, 1.5, 2.5), (0.5, 1.5)],
+            [(1, 1), (4, 3), (0.5, 1.5, 2.5, 3.5), (0.5, 1.5, 2.5)],
+            [(2, 2), (2, 1), (0.25, 0.75, 1.25, 1.75), (0.25, 0.75)],
         ]
     )
     def test_values_match_expected(self, shape, num_unit_cells, expected_x, expected_y):

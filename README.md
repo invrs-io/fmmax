@@ -31,7 +31,7 @@ Our support of anisotropic, magnetic materials allows modeling of uniaxial perfe
 - The speed of light, vacuum permittivity, and vacuum permeability are all 1.
 - Fields evolve in time as $\exp(-i \omega t)$.
 - If $\mathbf{u}$ and $\mathbf{v}$ are the primitive lattice vectors, the unit cell is defined by the parallelogram with vertices at $\mathbf{0}$, $\mathbf{u}$, $\mathbf{u} + \mathbf{v}$, and $\mathbf{v}$.
-- For quantities defined on a grid (such as the permittivity distribution of a patterned layer) the value at grid index (0, 0) corresponds to the value at physical location $\mathbf{0}$.
+- For quantities defined on a grid (such as the permittivity distribution of a patterned layer) the value at grid index (0, 0) corresponds to the value at physical location $\mathbf{du} / 2 + \mathbf{dv} / 2$.
 - The scattering matrix block $\mathbf{S}_{11}$ relates incident and transmitted forward-going fields, and other blocks have corresponding definitions. This differs from the convention e.g. in photonic integrated circuits.
 
 ## Batching
