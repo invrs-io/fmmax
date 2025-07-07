@@ -33,9 +33,11 @@ class CrystalDipoleTest(unittest.TestCase):
         self.assertSequenceEqual(ex.shape, hy.shape)
         self.assertSequenceEqual(ex.shape, hz.shape)
 
-        onp.testing.assert_allclose(onp.mean(onp.abs((ex, ey, ez))), 4.64785, rtol=1e-4)
         onp.testing.assert_allclose(
-            onp.mean(onp.abs((hx, hy, hz))), 2.606728, rtol=1e-4
+            onp.mean(onp.abs((ex, ey, ez))), 4.764171, rtol=1e-4
+        )
+        onp.testing.assert_allclose(
+            onp.mean(onp.abs((hx, hy, hz))), 2.640133, rtol=1e-4
         )
 
 
@@ -60,10 +62,10 @@ class CrystalGaussianBeamTest(unittest.TestCase):
         self.assertSequenceEqual(ex.shape, hz.shape)
 
         onp.testing.assert_allclose(
-            onp.mean(onp.abs((ex, ey, ez))), 0.268458, rtol=1e-4
+            onp.mean(onp.abs((ex, ey, ez))), 0.268013, rtol=1e-4
         )
         onp.testing.assert_allclose(
-            onp.mean(onp.abs((hx, hy, hz))), 0.187563, rtol=1e-4
+            onp.mean(onp.abs((hx, hy, hz))), 0.186873, rtol=1e-4
         )
 
     def test_broadband_regression(self):
@@ -99,7 +101,7 @@ class CrystalGaussianBeamTest(unittest.TestCase):
                     )
                 )
             ),
-            0.268458,
+            0.268013,
             rtol=1e-4,
         )
         onp.testing.assert_allclose(
@@ -112,6 +114,6 @@ class CrystalGaussianBeamTest(unittest.TestCase):
                     )
                 )
             ),
-            0.187563,
+            0.186873,
             rtol=1e-4,
         )

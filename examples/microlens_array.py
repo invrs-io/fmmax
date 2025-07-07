@@ -150,8 +150,8 @@ def circle_density(
 ) -> jnp.ndarray:
     """Generates the density array for a centered circular feature."""
     x, y = jnp.meshgrid(
-        jnp.arange(0, grid_shape[0]) / grid_shape[0] * pitch,
-        jnp.arange(0, grid_shape[1]) / grid_shape[1] * pitch,
+        jnp.arange(0.5, grid_shape[0]) / grid_shape[0] * pitch,
+        jnp.arange(0.5, grid_shape[1]) / grid_shape[1] * pitch,
         indexing="ij",
     )
     r = jnp.sqrt((x - pitch / 2) ** 2 + (y - pitch / 2) ** 2)

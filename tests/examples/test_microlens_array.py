@@ -30,9 +30,5 @@ class MicrolensArrayTest(unittest.TestCase):
         self.assertSequenceEqual(ex.shape, hy.shape)
         self.assertSequenceEqual(ex.shape, hz.shape)
 
-        onp.testing.assert_allclose(
-            onp.mean(onp.abs((ex, ey, ez))), 0.324081, rtol=1e-4
-        )
-        onp.testing.assert_allclose(
-            onp.mean(onp.abs((hx, hy, hz))), 0.390007, rtol=1e-4
-        )
+        onp.testing.assert_allclose(onp.mean(onp.abs((ex, ey, ez))), 0.32432, rtol=1e-4)
+        onp.testing.assert_allclose(onp.mean(onp.abs((hx, hy, hz))), 0.38995, rtol=1e-4)

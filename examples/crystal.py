@@ -404,7 +404,9 @@ def simulate_crystal_with_gaussian_beam(
         backward_amplitude_N_end=jnp.zeros_like(fwd_amplitude),
     )
     # Coordinates where fields are to be evaluated.
-    x = jnp.arange(0, pitch * brillouin_grid_shape[0], resolution_fields)
+    x = jnp.arange(
+        0.5 * resolution_fields, pitch * brillouin_grid_shape[0], resolution_fields
+    )
     y = jnp.ones_like(x) * pitch * brillouin_grid_shape[1] / 2
     (ex, ey, ez), (hx, hy, hz), (x, y, z) = fmmax.stack_fields_3d_on_coordinates(
         amplitudes_interior=amplitudes_interior,
@@ -447,8 +449,8 @@ def unit_cell_pattern(
 ) -> jnp.ndarray:
     """Defines the pattern of the photonic crystal."""
     x, y = jnp.meshgrid(
-        jnp.arange(0, pitch, resolution),
-        jnp.arange(0, pitch, resolution),
+        jnp.arange(0.5 * resolution, pitch, resolution),
+        jnp.arange(0.5 * resolution, pitch, resolution),
         indexing="ij",
     )
     return (jnp.sqrt((x - pitch / 2) ** 2 + y**2) < diameter / 2) | (
