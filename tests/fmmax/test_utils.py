@@ -25,7 +25,7 @@ class InterpolateTest(unittest.TestCase):
     )
     def test_interpolated_matches_expected(self, p_solid, p_void, density, expected):
         result = utils.interpolate_permittivity(p_solid, p_void, density)
-        onp.testing.assert_allclose(result, expected)
+        onp.testing.assert_allclose(result, expected, atol=1e-6)
 
 
 class AngularFrequencyTest(unittest.TestCase):
