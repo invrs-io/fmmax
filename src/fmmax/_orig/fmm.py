@@ -735,10 +735,6 @@ def _eigensolve_uniform_general_anisotropic_media(
         *permeabilities,
     )
 
-    _ = jnp.broadcast_shapes(
-        wavelength.shape, in_plane_wavevector.shape[:-1], permittivity_xx.shape[:-2]
-    )
-
     shape = permittivity_xx.shape[:-2] + (expansion.num_terms,)
     permittivity_xx = jnp.broadcast_to(jnp.squeeze(permittivity_xx, axis=-1), shape)
     permittivity_xy = jnp.broadcast_to(jnp.squeeze(permittivity_xy, axis=-1), shape)

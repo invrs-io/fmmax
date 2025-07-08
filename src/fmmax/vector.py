@@ -173,6 +173,7 @@ def compute_tangent_field(
         v=jnp.broadcast_to(v, batch_shape + (2,)).reshape(-1, 2),
     )
 
+    @jax.custom_batching.sequential_vmap
     def no_batch_field(
         arr: jnp.ndarray,
         primitive_lattice_vectors: basis.LatticeVectors,
@@ -187,17 +188,7 @@ def compute_tangent_field(
             steps=steps,
         )
 
-    # Scan over the batch to reduce memory usage.
-    def _scan_fn(
-        carry: Tuple[()],
-        args: Tuple[jnp.ndarray, basis.LatticeVectors],
-    ) -> Tuple[Tuple[()], jnp.ndarray]:
-        del carry
-        arr, primitive_lattice_vectors = args
-        field = no_batch_field(arr, primitive_lattice_vectors)
-        return (), field
-
-    _, field = jax.lax.scan(_scan_fn, init=(), xs=(arr, primitive_lattice_vectors))
+    field = jax.vmap(no_batch_field)(arr, primitive_lattice_vectors)
 
     field = field.reshape(batch_shape + field.shape[-3:])
     tx = field[..., 0]
@@ -246,7 +237,9 @@ def _compute_tangent_field_no_batch(
         initial_field = target_field
     else:
         initial_field = _normalize(jnp.stack([grad[..., 1], -grad[..., 0]], axis=-1))
-    fourier_field = fft.fft(initial_field, expansion=expansion, axes=(-3, -2))
+    fourier_field = fft.fft(
+        initial_field, expansion=expansion, axes=(-3, -2), centered_coordinates=False
+    )
 
     flat_fourier_field = fourier_field.flatten()
     for _ in range(steps):
@@ -262,7 +255,13 @@ def _compute_tangent_field_no_batch(
         flat_fourier_field -= jnp.linalg.solve(hessian, jac.conj())
     fourier_field = flat_fourier_field.reshape((expansion.num_terms, 2))
 
-    field = fft.ifft(fourier_field, expansion=expansion, shape=grid_shape, axis=-2)
+    field = fft.ifft(
+        fourier_field,
+        expansion=expansion,
+        shape=grid_shape,
+        axis=-2,
+        centered_coordinates=False,
+    )
 
     # Manually set the tangent field in the 1d case.
     field_1d = jnp.stack([jnp.sin(grad_angle), jnp.cos(grad_angle)])
@@ -343,7 +342,7 @@ def _filter_and_adjust_resolution(
     expansion: basis.Expansion,
 ) -> jnp.ndarray:
     """Filter `x` and adjust its resolution for the given `expansion`."""
-    y = fft.fft(x, expansion=expansion)
+    y = fft.fft(x, expansion=expansion, centered_coordinates=False)
     min_shape = basis.min_array_shape_for_expansion(expansion)
     assert x.ndim == 2
     # Singleton dimensions remain singleton.
@@ -351,7 +350,9 @@ def _filter_and_adjust_resolution(
         min_shape[0] * (2 if x.shape[0] > 1 else 1),
         min_shape[1] * (2 if x.shape[1] > 1 else 1),
     )
-    return fft.ifft(y, expansion=expansion, shape=doubled_min_shape)
+    return fft.ifft(
+        y, expansion=expansion, shape=doubled_min_shape, centered_coordinates=False
+    )
 
 
 def _is_1d_field(field: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
@@ -445,6 +446,7 @@ def _field_loss(
         expansion=expansion,
         shape=shape,
         axis=-2,
+        centered_coordinates=False,
     )
     loss = _alignment_loss(field, target_field, elementwise_alignment_loss_weight)
 

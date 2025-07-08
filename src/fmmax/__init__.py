@@ -42,6 +42,7 @@ from fmmax.fields import (
 from fmmax.fmm import (
     Formulation,
     LayerSolveResult,
+    broadcast_result,
     eigensolve_anisotropic_media,
     eigensolve_general_anisotropic_media,
     eigensolve_isotropic_media,

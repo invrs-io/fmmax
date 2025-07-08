@@ -3,7 +3,8 @@
 ## Unreleased
 - Update Brillouin zone wavevector generation for even-sized grids so that `(0, 0)` is always included.
 - Ensure dtype is preserved in `farfield._unflatten`.
-- Update unit cell coordinates and fft functions so that an array defined on the unit cell has elements with values for pixel centers, rather than pixel lower-left corners.
+- Update unit cell coordinates and fft functions so that an array defined on the unit cell has elements with values for pixel centers, rather than pixel lower-left corners. Note that this new behavior is not used in the `vector` module.
+- Export function to broadcast batch dimensions of layer solve results.
 
 ## 1.3.0 (April 24, 2025)
 - Add permittivity shape validation to eigensolve functions.
