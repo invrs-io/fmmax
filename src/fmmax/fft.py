@@ -24,7 +24,6 @@ import jax.numpy as jnp
 
 from fmmax import basis, utils
 
-
 # ruff: noqa: F401
 from fmmax._orig.fft import _standard_toeplitz_indices
 
