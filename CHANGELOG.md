@@ -1,6 +1,8 @@
 # Change log
 
 ## Unreleased
+
+## 1.4.0 (July 8, 2025)
 - Update Brillouin zone wavevector generation for even-sized grids so that `(0, 0)` is always included.
 - Ensure dtype is preserved in `farfield._unflatten`.
 - Update unit cell coordinates and fft functions so that an array defined on the unit cell has elements with values for pixel centers, rather than pixel lower-left corners. Note that this new behavior is not used in the `vector` module.
