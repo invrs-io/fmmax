@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-## 1.4.1 (July 10, 2025)
+## 1.4.2 (July 10, 2025)
 - Avoid use of `jax.pure_callback` in the eigendecomposition. This requires jax newer than 0.4.36.
 
 ## 1.4.0 (July 8, 2025)
