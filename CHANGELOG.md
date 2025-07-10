@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## 1.4.1 (July 10, 2025)
+- Avoid use of `jax.pure_callback` in the eigendecomposition. This requires jax newer than 0.4.36.
+
 ## 1.4.0 (July 8, 2025)
 - Update Brillouin zone wavevector generation for even-sized grids so that `(0, 0)` is always included.
 - Ensure dtype is preserved in `farfield._unflatten`.
