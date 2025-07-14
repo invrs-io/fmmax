@@ -45,7 +45,7 @@ def _dummy_solve_result(
     primitive_lattice_vectors=PRIMITIVE_LATTICE_VECTORS,
     expansion=EXPANSION,
 ):
-    keys = iter(jax.random.split(key, 11))
+    keys = iter(jax.random.split(key, 12))
     dim = expansion.basis_coefficients.shape[0]
     return fmm.LayerSolveResult(
         wavelength=wavelength,
@@ -57,6 +57,9 @@ def _dummy_solve_result(
         omega_script_k_matrix=_random_normal_complex(next(keys), (2 * dim, 2 * dim)),
         z_permittivity_matrix=_random_normal_complex(next(keys), (dim, dim)),
         inverse_z_permittivity_matrix=_random_normal_complex(next(keys), (dim, dim)),
+        transverse_permittivity_matrix=_random_normal_complex(
+            next(keys), (2 * dim, 2 * dim)
+        ),
         z_permeability_matrix=_random_normal_complex(next(keys), (dim, dim)),
         inverse_z_permeability_matrix=_random_normal_complex(next(keys), (dim, dim)),
         transverse_permeability_matrix=_random_normal_complex(

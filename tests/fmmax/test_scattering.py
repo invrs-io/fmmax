@@ -58,6 +58,9 @@ def _dummy_solve_result(
         omega_script_k_matrix=_random_normal_complex(next(keys), (2 * dim, 2 * dim)),
         z_permittivity_matrix=_random_normal_complex(next(keys), (dim, dim)),
         inverse_z_permittivity_matrix=_random_normal_complex(next(keys), (dim, dim)),
+        transverse_permittivity_matrix=_random_normal_complex(
+            next(keys), (2 * dim, 2 * dim)
+        ),
         z_permeability_matrix=_random_normal_complex(next(keys), (dim, dim)),
         inverse_z_permeability_matrix=_random_normal_complex(next(keys), (dim, dim)),
         transverse_permeability_matrix=_random_normal_complex(
