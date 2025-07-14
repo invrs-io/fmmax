@@ -24,9 +24,6 @@ import jax.numpy as jnp
 
 from fmmax import basis, utils
 
-# ruff: noqa: F401
-from fmmax._orig.fft import _standard_toeplitz_indices
-
 
 def fourier_convolution_matrix(
     x: jnp.ndarray,
@@ -180,3 +177,29 @@ def _ifft2(
         x = x * phase
 
     return jnp.fft.ifft2(x, axes=axes, norm=norm)
+
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Following code is Copyright (c) Meta Platforms, Inc. and affiliates.
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
+
+def _standard_toeplitz_indices(expansion: basis.Expansion) -> jnp.ndarray:
+    """Computes the indices for a standard Toeplitz matrix for `basis_coefficients`.
+
+    Args:
+        expansion: The field expansion to be used.
+
+    Returns:
+        The indices, with shape `(num, num, 2)`.
+    """
+    i, j = jnp.meshgrid(
+        jnp.arange(expansion.num_terms),
+        jnp.arange(expansion.num_terms),
+        indexing="ij",
+    )
+    basis_coefficients = jnp.asarray(expansion.basis_coefficients)
+    idx = basis_coefficients[i, :] - basis_coefficients[j, :]
+    return idx

@@ -1,6 +1,7 @@
 # Change log
 
 ## Unreleased
+- Restructure codebase to integrate code originally in the `_orig` submodule within the main `src/fmmax` modules, separating the code available under the two licenses to the top (AGPL) and bottom (MIT) of each file.
 
 ## 1.4.2 (July 10, 2025)
 - Avoid use of `jax.pure_callback` in the eigendecomposition. This requires jax newer than 0.4.36.
