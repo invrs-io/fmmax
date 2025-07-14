@@ -66,14 +66,22 @@ def translate_layer_solve_result(
         dy=dy,
     )
 
-    m0, m1 = jnp.split(solve_result.transverse_permeability_matrix, 2, axis=-2)
-    m00, m01 = jnp.split(m0, 2, axis=-1)
-    m10, m11 = jnp.split(m1, 2, axis=-1)
-    shifted_transverse_permeability_matrix = jnp.block(
-        [
-            [_shift_toeplitz(m00), _shift_toeplitz(m01)],
-            [_shift_toeplitz(m10), _shift_toeplitz(m11)],
-        ],
+    def _shift_block_toeplitz(matrix: jnp.ndarray) -> jnp.ndarray:
+        m0, m1 = jnp.split(matrix, 2, axis=-2)
+        m00, m01 = jnp.split(m0, 2, axis=-1)
+        m10, m11 = jnp.split(m1, 2, axis=-1)
+        return jnp.block(
+            [
+                [_shift_toeplitz(m00), _shift_toeplitz(m01)],
+                [_shift_toeplitz(m10), _shift_toeplitz(m11)],
+            ],
+        )
+
+    shifted_transverse_permittivity_matrix = _shift_block_toeplitz(
+        solve_result.transverse_permittivity_matrix
+    )
+    shifted_transverse_permeability_matrix = _shift_block_toeplitz(
+        solve_result.transverse_permeability_matrix
     )
 
     shifted_z_permittivity_matrix = _shift_toeplitz(solve_result.z_permittivity_matrix)
@@ -101,6 +109,7 @@ def translate_layer_solve_result(
         inverse_z_permittivity_matrix=_shift_toeplitz(
             solve_result.inverse_z_permittivity_matrix
         ),
+        transverse_permittivity_matrix=shifted_transverse_permittivity_matrix,
         z_permeability_matrix=_shift_toeplitz(solve_result.z_permeability_matrix),
         inverse_z_permeability_matrix=_shift_toeplitz(
             solve_result.inverse_z_permeability_matrix

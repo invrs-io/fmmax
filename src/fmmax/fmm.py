@@ -126,6 +126,10 @@ def broadcast_result(
         inverse_z_permittivity_matrix=jnp.broadcast_to(
             lsr.inverse_z_permittivity_matrix, shape + (n, n)
         ),
+        transverse_permittivity_matrix=jnp.broadcast_to(
+            lsr.transverse_permittivity_matrix,
+            shape + (2 * n, 2 * n),
+        ),
         z_permeability_matrix=jnp.broadcast_to(
             lsr.z_permeability_matrix, shape + (n, n)
         ),
@@ -394,6 +398,8 @@ class LayerSolveResult:
         z_permittivity_matrix: The fourier-transformed zz-component of permittivity.
         inverse_z_permittivity_matrix: The fourier-transformed inverse of zz-component
             of permittivity.
+        transverse_permittivity_matrix: The transverse permittivity matrix which relates
+            the electric field and electric displacement fields.
         z_permeability_matrix: The fourier-transformed zz-component of permeability.
         inverse_z_permeability_matrix: The fourier-transformed inverse of zz-component
             of permeability.
@@ -414,6 +420,7 @@ class LayerSolveResult:
     omega_script_k_matrix: jnp.ndarray
     z_permittivity_matrix: jnp.ndarray
     inverse_z_permittivity_matrix: jnp.ndarray
+    transverse_permittivity_matrix: jnp.ndarray
     z_permeability_matrix: jnp.ndarray
     inverse_z_permeability_matrix: jnp.ndarray
     transverse_permeability_matrix: jnp.ndarray
@@ -518,6 +525,13 @@ class LayerSolveResult:
                 f"`z_permittivity_matrix` must have shape compatible with "
                 f"`eigenvectors`, but got shapes {self.z_permittivity_matrix.shape} "
                 f"and {self.eigenvectors.shape}."
+            )
+        if _incompatible(self.transverse_permittivity_matrix, self.eigenvectors.shape):
+            raise ValueError(
+                f"`transverse_permittivity_matrix` must have shape compatible with "
+                f"`eigenvectors`, but got shapes "
+                f"{self.transverse_permittivity_matrix.shape} and "
+                f"{self.eigenvectors.shape}."
             )
         if _incompatible(self.inverse_z_permeability_matrix, expected_matrix_shape):
             raise ValueError(
@@ -642,9 +656,14 @@ def _eigensolve_uniform_isotropic_media(
 
     z_permittivity_diag = jnp.broadcast_to(permittivity[..., jnp.newaxis], diag_shape)
     z_permittivity_matrix = misc.diag(z_permittivity_diag).astype(dtype)
-    z_permeability_matrix = misc.diag(jnp.ones(diag_shape, dtype=dtype))
-
     transverse_diag_shape = permittivity.shape + (2 * expansion.num_terms,)
+    transverse_permittivity_matrix = misc.diag(
+        jnp.broadcast_to(permittivity[..., jnp.newaxis], transverse_diag_shape).astype(
+            dtype
+        )
+    )
+
+    z_permeability_matrix = misc.diag(jnp.ones(diag_shape, dtype=dtype))
     transverse_permeability_matrix = misc.diag(
         jnp.ones(transverse_diag_shape, dtype=dtype)
     )
@@ -659,6 +678,7 @@ def _eigensolve_uniform_isotropic_media(
         omega_script_k_matrix=omega_script_k_matrix,
         z_permittivity_matrix=z_permittivity_matrix,
         inverse_z_permittivity_matrix=inverse_z_permittivity_matrix,
+        transverse_permittivity_matrix=transverse_permittivity_matrix,
         z_permeability_matrix=z_permeability_matrix,
         inverse_z_permeability_matrix=z_permeability_matrix,
         transverse_permeability_matrix=transverse_permeability_matrix,
@@ -1029,6 +1049,7 @@ def _numerical_eigensolve(
         omega_script_k_matrix=omega_script_k_matrix.astype(dtype),
         z_permittivity_matrix=z_permittivity_matrix.astype(dtype),
         inverse_z_permittivity_matrix=inverse_z_permittivity_matrix.astype(dtype),
+        transverse_permittivity_matrix=transverse_permittivity_matrix.astype(dtype),
         z_permeability_matrix=z_permeability_matrix.astype(dtype),
         inverse_z_permeability_matrix=inverse_z_permeability_matrix.astype(dtype),
         transverse_permeability_matrix=transverse_permeability_matrix.astype(dtype),
@@ -1338,6 +1359,7 @@ tree_util.register_pytree_node(
             x.omega_script_k_matrix,
             x.z_permittivity_matrix,
             x.inverse_z_permittivity_matrix,
+            x.transverse_permittivity_matrix,
             x.z_permeability_matrix,
             x.inverse_z_permeability_matrix,
             x.transverse_permeability_matrix,
