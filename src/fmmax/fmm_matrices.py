@@ -346,7 +346,7 @@ def transverse_permeability_vector_anisotropic(
     The transverse permeability matrix M relates the magnetic and magnetic flux
     density fields, such that
 
-        [Bx, Bx]^T = M [Hx, Hy]^T
+        [Bx, By]^T = M [Hx, Hy]^T
 
     Important differences from the `_transverse_permittivity_vector_anisotropic`
     function result from the different definitions of E and M matrices.
