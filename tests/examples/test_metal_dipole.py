@@ -39,4 +39,4 @@ class MetalDipoleTest(unittest.TestCase):
         with self.subTest("hy"):
             onp.testing.assert_allclose(onp.mean(onp.abs(hy)), 0.0, atol=1e-4)
         with self.subTest("hz"):
-            onp.testing.assert_allclose(onp.mean(onp.abs(hz)), 9.952436, atol=1e-4)
+            onp.testing.assert_allclose(onp.mean(onp.abs(hz)), 9.893226, atol=1e-4)

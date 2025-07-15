@@ -529,21 +529,16 @@ def fields_from_wave_amplitudes(
     )
     angular_frequency = angular_frequency[..., jnp.newaxis, jnp.newaxis]
 
-    # We use the the Fourier convolution matrix for the inverse of permittivity,
-    # rather than inverting the Fourier convolution matrix of permittivity itself.
-    # This improves convergence of the computed z-component of electric field.
-    ez = (
-        -layer_solve_result.inverse_z_permittivity_matrix
-        @ (1j * kx * hy - 1j * ky * hx)
-        / (1j * angular_frequency)
+    ez = jnp.linalg.solve(
+        layer_solve_result.z_permittivity_matrix,
+        -(1j * kx * hy - 1j * ky * hx) / (1j * angular_frequency),
     )
 
     # Compute the z-directed magnetic field. The expression is similar to
     # equation 14 from [2012 Liu], but modified to allow for magnetic materials.
-    hz = (
-        layer_solve_result.inverse_z_permeability_matrix
-        @ (1j * kx * ey - 1j * ky * ex)
-        / (1j * angular_frequency)
+    hz = jnp.linalg.solve(
+        layer_solve_result.z_permeability_matrix,
+        (1j * kx * ey - 1j * ky * ex) / (1j * angular_frequency),
     )
 
     assert ex.shape == ey.shape == ez.shape == hx.shape == hy.shape == hz.shape

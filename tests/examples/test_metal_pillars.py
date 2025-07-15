@@ -52,7 +52,7 @@ class MetalPillarsTest(unittest.TestCase):
             onp.testing.assert_allclose(
                 jnp.mean(jnp.abs(efields) ** 2, axis=(2, 3, 4, 5)),
                 onp.asarray(
-                    [[0.046316, 0.052124], [1.047591, 1.859426], [0.145127, 0.077935]]
+                    [[0.046316, 0.052124], [1.047591, 1.859426], [0.322618, 0.095657]]
                 ),
                 rtol=0.01,
             )

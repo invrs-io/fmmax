@@ -36,7 +36,7 @@ class CrystalDipoleTest(unittest.TestCase):
         with self.subTest("efield"):
             onp.testing.assert_allclose(
                 [onp.mean(onp.abs(ex)), onp.mean(onp.abs(ey)), onp.mean(onp.abs(ez))],
-                [8.311728e00, 1.293643e-06, 5.980783e00],
+                [8.311728e00, 1.293643e-06, 5.886467e00],
                 rtol=1e-4,
             )
         with self.subTest("hfield"):
@@ -70,7 +70,7 @@ class CrystalGaussianBeamTest(unittest.TestCase):
         with self.subTest("efield"):
             onp.testing.assert_allclose(
                 [onp.mean(onp.abs(ex)), onp.mean(onp.abs(ey)), onp.mean(onp.abs(ez))],
-                [4.830812e-01, 4.060432e-04, 3.205514e-01],
+                [4.830812e-01, 4.060432e-04, 3.208762e-01],
                 rtol=1e-4,
                 atol=1e-6,
             )
@@ -111,7 +111,7 @@ class CrystalGaussianBeamTest(unittest.TestCase):
                     onp.mean(onp.abs(ey[wavelength_idx, ...])),
                     onp.mean(onp.abs(ez[wavelength_idx, ...])),
                 ],
-                [4.830811e-01, 4.060428e-04, 3.205514e-01],
+                [4.830811e-01, 4.060428e-04, 3.208762e-01],
                 rtol=1e-4,
             )
         with self.subTest("hfield"):
