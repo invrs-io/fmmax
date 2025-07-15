@@ -33,12 +33,18 @@ class CrystalDipoleTest(unittest.TestCase):
         self.assertSequenceEqual(ex.shape, hy.shape)
         self.assertSequenceEqual(ex.shape, hz.shape)
 
-        onp.testing.assert_allclose(
-            onp.mean(onp.abs((ex, ey, ez))), 4.764171, rtol=1e-4
-        )
-        onp.testing.assert_allclose(
-            onp.mean(onp.abs((hx, hy, hz))), 2.640133, rtol=1e-4
-        )
+        with self.subTest("efield"):
+            onp.testing.assert_allclose(
+                [onp.mean(onp.abs(ex)), onp.mean(onp.abs(ey)), onp.mean(onp.abs(ez))],
+                [8.311728e00, 1.293643e-06, 5.980783e00],
+                rtol=1e-4,
+            )
+        with self.subTest("hfield"):
+            onp.testing.assert_allclose(
+                [onp.mean(onp.abs(hx)), onp.mean(onp.abs(hy)), onp.mean(onp.abs(hz))],
+                [1.396684e-06, 7.920396e00, 1.485839e-06],
+                rtol=1e-4,
+            )
 
 
 class CrystalGaussianBeamTest(unittest.TestCase):
@@ -61,12 +67,20 @@ class CrystalGaussianBeamTest(unittest.TestCase):
         self.assertSequenceEqual(ex.shape, hy.shape)
         self.assertSequenceEqual(ex.shape, hz.shape)
 
-        onp.testing.assert_allclose(
-            onp.mean(onp.abs((ex, ey, ez))), 0.268013, rtol=1e-4
-        )
-        onp.testing.assert_allclose(
-            onp.mean(onp.abs((hx, hy, hz))), 0.186873, rtol=1e-4
-        )
+        with self.subTest("efield"):
+            onp.testing.assert_allclose(
+                [onp.mean(onp.abs(ex)), onp.mean(onp.abs(ey)), onp.mean(onp.abs(ez))],
+                [4.830812e-01, 4.060432e-04, 3.205514e-01],
+                rtol=1e-4,
+                atol=1e-6,
+            )
+        with self.subTest("hfield"):
+            onp.testing.assert_allclose(
+                [onp.mean(onp.abs(hx)), onp.mean(onp.abs(hy)), onp.mean(onp.abs(hz))],
+                [0.000666, 0.559154, 0.0008],
+                rtol=1e-4,
+                atol=1e-6,
+            )
 
     def test_broadband_regression(self):
         (
@@ -90,30 +104,24 @@ class CrystalGaussianBeamTest(unittest.TestCase):
         self.assertSequenceEqual(ex.shape, hz.shape)
 
         wavelength_idx = 1
-
-        onp.testing.assert_allclose(
-            onp.mean(
-                onp.abs(
-                    (
-                        ex[wavelength_idx, ...],
-                        ey[wavelength_idx, ...],
-                        ez[wavelength_idx, ...],
-                    )
-                )
-            ),
-            0.268013,
-            rtol=1e-4,
-        )
-        onp.testing.assert_allclose(
-            onp.mean(
-                onp.abs(
-                    (
-                        hx[wavelength_idx, ...],
-                        hy[wavelength_idx, ...],
-                        hz[wavelength_idx, ...],
-                    )
-                )
-            ),
-            0.186873,
-            rtol=1e-4,
-        )
+        with self.subTest("efield"):
+            onp.testing.assert_allclose(
+                [
+                    onp.mean(onp.abs(ex[wavelength_idx, ...])),
+                    onp.mean(onp.abs(ey[wavelength_idx, ...])),
+                    onp.mean(onp.abs(ez[wavelength_idx, ...])),
+                ],
+                [4.830811e-01, 4.060428e-04, 3.205514e-01],
+                rtol=1e-4,
+            )
+        with self.subTest("hfield"):
+            onp.testing.assert_allclose(
+                [
+                    onp.mean(onp.abs(hx[wavelength_idx, ...])),
+                    onp.mean(onp.abs(hy[wavelength_idx, ...])),
+                    onp.mean(onp.abs(hz[wavelength_idx, ...])),
+                ],
+                [0.000666, 0.559154, 0.0008],
+                rtol=1e-4,
+                atol=1e-6,
+            )
