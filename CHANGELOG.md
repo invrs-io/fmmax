@@ -1,6 +1,8 @@
 # Change log
 
 ## Unreleased
+
+## 1.5.0 (July 15, 2025)
 - Restructure codebase to integrate code originally in the `_orig` submodule within the main `src/fmmax` modules, separating the code available under the two licenses to the top (AGPL) and bottom (MIT) of each file.
 - Include `transverse_permittivity_matrix` in the `LayerSolveResult`.
 - Update the manner in which the `ez` and `hz` field components are computed. Instead of relying on the Toeplitz matrix obtained from the inverse of permittivity (permeability), they now make use of the inverse of the Toeplitz matrix obtained from the permittiivity (permeability).
