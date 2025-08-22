@@ -16,7 +16,6 @@ authors = [
 
 maintainers = [
   {name = "Martin Schubert", email = "mfschubert@gmail.com" },
-  {name = "Alec Hammond", email = "alec.m.hammond@gmail.com" },
 ]
 
 # TODO add gpu channels
