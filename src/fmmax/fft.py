@@ -153,11 +153,12 @@ def _fft2(
     y = jnp.fft.fft2(x, axes=axes, norm=norm)
     if centered_coordinates:
         axes = utils.absolute_axes(axes, ndim=x.ndim)  # type: ignore[assignment]
-        ki = 0.5 * jnp.fft.fftfreq(x.shape[axes[0]])[:, jnp.newaxis]
-        kj = 0.5 * jnp.fft.fftfreq(x.shape[axes[1]])[jnp.newaxis, :]
+        ki = 0.5 * jnp.fft.fftfreq(x.shape[axes[0]], dtype=jnp.float32)[:, jnp.newaxis]
+        kj = 0.5 * jnp.fft.fftfreq(x.shape[axes[1]], dtype=jnp.float32)[jnp.newaxis, :]
         phase = jnp.exp(-1j * 2 * jnp.pi * (ki + kj))
         phase = phase.reshape(phase.shape + (1,) * (x.ndim - axes[1] - 1))
         y = y * phase
+    assert y.dtype == jnp.promote_types(x.dtype, jnp.complex64)
     return y
 
 
@@ -170,11 +171,12 @@ def _ifft2(
     """Two-dimensional inverse Fourier transform."""
     if centered_coordinates:
         axes = utils.absolute_axes(axes, ndim=x.ndim)  # type: ignore[assignment]
-        ki = 0.5 * jnp.fft.fftfreq(x.shape[axes[0]])[:, jnp.newaxis]
-        kj = 0.5 * jnp.fft.fftfreq(x.shape[axes[1]])[jnp.newaxis, :]
+        ki = 0.5 * jnp.fft.fftfreq(x.shape[axes[0]], dtype=jnp.float32)[:, jnp.newaxis]
+        kj = 0.5 * jnp.fft.fftfreq(x.shape[axes[1]], dtype=jnp.float32)[jnp.newaxis, :]
         phase = jnp.exp(1j * 2 * jnp.pi * (ki + kj))
         phase = phase.reshape(phase.shape + (1,) * (x.ndim - axes[1] - 1))
         x = x * phase
+        assert x.dtype == jnp.promote_types(x.dtype, jnp.complex64)
 
     return jnp.fft.ifft2(x, axes=axes, norm=norm)
 

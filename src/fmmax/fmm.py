@@ -1314,6 +1314,12 @@ def _validate_and_broadcast(
     permittivities = tuple(
         [misc.atleast_nd(p, n=num_batch_dims + 2) for p in permittivities]
     )
+
+    wavelength_dtype = jnp.promote_types(wavelength.dtype, permittivities[0].real.dtype)
+    permittivity_dtype = jnp.promote_types(wavelength_dtype, jnp.complex64)
+    wavelength = wavelength.astype(wavelength_dtype)
+    permittivities = tuple(p.astype(permittivity_dtype) for p in permittivities)
+
     return (
         wavelength,
         in_plane_wavevector,

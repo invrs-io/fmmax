@@ -1,6 +1,7 @@
 # Change log
 
 ## Unreleased
+- Fixes to validate and avoid unwanted type promotion.
 
 ## 1.5.0 (July 15, 2025)
 - Restructure codebase to integrate code originally in the `_orig` submodule within the main `src/fmmax` modules, separating the code available under the two licenses to the top (AGPL) and bottom (MIT) of each file.
