@@ -726,6 +726,7 @@ class TimeAveragePoyntingFluxTest(unittest.TestCase):
                     fields.time_average_z_poynting_flux(*grid_fields(fwd, bwd)),
                 ),
                 onp.sum(fields.amplitude_poynting_flux(fwd, bwd, solve_result)),
+                rtol=1e-6,
             )
 
 

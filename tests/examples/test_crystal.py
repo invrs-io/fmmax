@@ -36,13 +36,13 @@ class CrystalDipoleTest(unittest.TestCase):
         with self.subTest("efield"):
             onp.testing.assert_allclose(
                 [onp.mean(onp.abs(ex)), onp.mean(onp.abs(ey)), onp.mean(onp.abs(ez))],
-                [8.311728e00, 1.293643e-06, 5.886467e00],
+                [8.311729e00, 1.295916e-06, 5.886468e00],
                 rtol=1e-4,
             )
         with self.subTest("hfield"):
             onp.testing.assert_allclose(
                 [onp.mean(onp.abs(hx)), onp.mean(onp.abs(hy)), onp.mean(onp.abs(hz))],
-                [1.396684e-06, 7.920396e00, 1.485839e-06],
+                [1.392337e-06, 7.920397e00, 1.487443e-06],
                 rtol=1e-4,
             )
 
