@@ -2,7 +2,10 @@
 
 ## Unreleased
 
-## 1.5.1 (August 25, 20205)
+## 1.5.2 (August 26, 2025)
+- Additional fixes to avoid unwanted type promotion.
+
+## 1.5.1 (August 25, 2025)
 - Fixes to validate and avoid unwanted type promotion.
 
 ## 1.5.0 (July 15, 2025)

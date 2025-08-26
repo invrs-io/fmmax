@@ -453,13 +453,16 @@ def layer_amplitudes_interior(
         num_terms=2 * s_matrix_before.start_layer_solve_result.expansion.num_terms,
     )
     num = forward_amplitude_0_start.shape[-2]
+    dtype = jnp.promote_types(
+        s_matrix_before.s11.dtype, forward_amplitude_0_start.dtype
+    )
 
     # Solve for the interior forward-going wave amplitude at the start of the layer.
     forward_rhs = (
         s_matrix_before.s11 @ forward_amplitude_0_start
         + s_matrix_before.s12 @ s_matrix_after.s22 @ backward_amplitude_N_end
     )
-    forward_mat = jnp.eye(num) - s_matrix_before.s12 @ s_matrix_after.s21
+    forward_mat = jnp.eye(num, dtype=dtype) - s_matrix_before.s12 @ s_matrix_after.s21
     forward_amplitude_i_start = jnp.linalg.solve(forward_mat, forward_rhs)
 
     # The interior backward-going wave amplitude can now be directly computed.
@@ -467,6 +470,8 @@ def layer_amplitudes_interior(
         s_matrix_after.s21 @ forward_amplitude_i_start
         + s_matrix_after.s22 @ backward_amplitude_N_end
     )
+    assert forward_amplitude_i_start.dtype == dtype
+    assert backward_amplitude_i_end.dtype == dtype
     return forward_amplitude_i_start, backward_amplitude_i_end
 
 
