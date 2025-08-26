@@ -642,11 +642,11 @@ def _eigensolve_uniform_isotropic_media(
 
     #  The matrix from equation 26 of [2012 Liu].
     angular_frequency_squared = angular_frequency[..., jnp.newaxis, jnp.newaxis] ** 2
-    angular_frequency_squared *= jnp.eye(num_eigenvalues)
+    angular_frequency_squared *= jnp.eye(num_eigenvalues, dtype=eigenvalues.real.dtype)
     omega_script_k_matrix = (
         angular_frequency_squared
         - fmm_matrices.script_k_matrix_uniform(permittivity, transverse_wavevectors)
-    ).astype(dtype)
+    )
 
     diag_shape = permittivity.shape + (expansion.num_terms,)
     inverse_z_permittivity_diag = jnp.broadcast_to(
