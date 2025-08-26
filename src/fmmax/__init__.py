@@ -18,7 +18,7 @@
 Copyright (c) Martin F. Schubert
 """
 
-__version__ = "v1.5.1"
+__version__ = "v1.5.2"
 
 # ruff: noqa: F401
 from fmmax.basis import (
