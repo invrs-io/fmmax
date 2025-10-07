@@ -5,7 +5,7 @@ version = "v1.5.2"
 description = "Fourier modal method with Jax"
 readme = "README.md"
 requires-python = ">=3.10"
-license = {file = "LICENSE"}
+license = "AGPL-3.0"
 
 keywords = ["fmm", "rcwa", "jax", "optics"]
 
@@ -18,7 +18,6 @@ maintainers = [
   {name = "Martin Schubert", email = "mfschubert@gmail.com" },
 ]
 
-# TODO add gpu channels
 dependencies = [
   "jax >= 0.4.36",
   "jaxlib",
