@@ -9,12 +9,6 @@ from typing import Tuple
 import jax.numpy as jnp
 from jax import tree_util
 
-# -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
-# Following code is Copyright (c) Meta Platforms, Inc. and affiliates.
-# -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
-
 
 @dataclasses.dataclass
 class PMLParams:

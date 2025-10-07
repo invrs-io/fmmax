@@ -1,4 +1,5 @@
-Files: src/fmmax/_fmm.py
+Files: src/fmmax/__init__.py
+       src/fmmax/_fmm.py
        src/fmmax/basis.py
        src/fmmax/eig.py
        src/fmmax/fft.py
