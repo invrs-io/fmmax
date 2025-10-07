@@ -27,7 +27,6 @@ import jax.numpy as jnp
 from jax import tree_util
 
 from fmmax import fmm, misc, utils
-
 from fmmax._scattering import (  # noqa: F401
     ScatteringMatrix,
     _extend_s_matrix,

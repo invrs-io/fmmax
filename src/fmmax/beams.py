@@ -7,7 +7,6 @@ from typing import Callable, Tuple
 
 import jax.numpy as jnp
 
-
 Fields = Tuple[
     Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],  # Ex, Ey, Ez
     Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],  # Hx, Hy, Hz
