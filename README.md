@@ -1,8 +1,8 @@
 # FMMAX: Fourier Modal Method with Jax
 
-<a href="https://mfschubert.github.io/fmmax/"><img src="https://img.shields.io/badge/Docs-blue.svg"/></a>
-![Continuous integration](https://github.com/mfschubert/fmmax/actions/workflows/build-ci.yml/badge.svg)
-![PyPI version](https://img.shields.io/pypi/v/fmmax)
+[![Docs](https://img.shields.io/badge/Docs-blue.svg)](https://mfschubert.github.io/fmmax/)
+[![Continuous integration](https://github.com/mfschubert/fmmax/actions/workflows/build-ci.yml/badge.svg)](https://github.com/mfschubert/fmmax/actions)
+[![PyPI version](https://img.shields.io/pypi/v/fmmax)](https://pypi.org/project/fmmax/)
 
 FMMAX is an implementation of the Fourier modal method (FMM) using [jax](https://github.com/google/jax).
 
