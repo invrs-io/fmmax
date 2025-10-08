@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.6.1 (October 8, 2025)
+- Update readme
+- Docs improvements
+
 ## 1.6.0 (October 7, 2025)
 - Update readme
 - Consolidate license files and split code available under different licenses into diferent files
