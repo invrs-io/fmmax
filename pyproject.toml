@@ -5,7 +5,7 @@ version = "v1.6.1"
 description = "Fourier modal method with Jax"
 readme = "README.md"
 requires-python = ">=3.10"
-license = "AGPL-3.0"
+license = "MIT"
 
 keywords = ["fmm", "rcwa", "jax", "optics"]
 
