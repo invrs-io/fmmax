@@ -3,7 +3,6 @@
 Copyright (c) 2023 Meta Platforms, Inc. and affiliates.
 """
 
-
 from typing import Tuple
 
 import jax.numpy as jnp

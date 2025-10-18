@@ -1,6 +1,6 @@
 """Tests for `fmmax.translate` module.
 
-Copyright (c) Martin F. Schubert
+Copyright (c) 2025 invrs.io LLC
 """
 
 import functools

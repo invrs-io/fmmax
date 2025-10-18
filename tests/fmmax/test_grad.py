@@ -1,6 +1,6 @@
 """Tests for various jax grad functions.
 
-Copyright (c) Martin F. Schubert
+Copyright (c) 2025 invrs.io LLC
 """
 
 import unittest
