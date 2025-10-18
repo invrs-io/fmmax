@@ -1,6 +1,6 @@
 """Tests that fields have the expected symmetry.
 
-Copyright (c) Martin F. Schubert
+Copyright (c) 2025 invrs.io LLC
 """
 
 import unittest

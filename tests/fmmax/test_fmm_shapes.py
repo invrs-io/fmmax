@@ -1,6 +1,6 @@
 """Tests for shapes of arrays returned by functions in `fmmax.fmm`.
 
-Copyright (c) Martin F. Schubert
+Copyright (c) 2025 invrs.io LLC
 """
 
 import dataclasses
