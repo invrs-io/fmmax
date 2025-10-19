@@ -18,7 +18,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.10"
+          python-version: "3.13"
           cache: "pip"
           cache-dependency-path: pyproject.toml
 
@@ -37,7 +37,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.10"
+          python-version: "3.13"
           cache: "pip"
           cache-dependency-path: pyproject.toml
 
@@ -62,6 +62,9 @@ jobs:
 
   test-fmmax:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.13"]
     timeout-minutes: 30
     steps:
       - name: Checkout repository
@@ -69,7 +72,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.10"
+          python-version: ${{ matrix.python-version }}
           cache: "pip"
           cache-dependency-path: pyproject.toml
       - name: Setup environment
@@ -81,6 +84,9 @@ jobs:
 
   test-fmmax-jeig:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.13"]
     timeout-minutes: 30
     steps:
       - name: Checkout repository
@@ -88,7 +94,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.10"
+          python-version: ${{ matrix.python-version }}
           cache: "pip"
           cache-dependency-path: pyproject.toml
       - name: Setup environment
@@ -100,6 +106,9 @@ jobs:
 
   test-grcwa:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.13"]
     timeout-minutes: 2
     steps:
       - name: Checkout repository
@@ -107,7 +116,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.10"
+          python-version: ${{ matrix.python-version }}
           cache: "pip"
           cache-dependency-path: pyproject.toml
       - name: Setup environment
@@ -119,6 +128,9 @@ jobs:
 
   test-examples:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.13"]
     timeout-minutes: 5
     steps:
       - name: Checkout repository
@@ -126,7 +138,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.10"
+          python-version: ${{ matrix.python-version }}
           cache: "pip"
           cache-dependency-path: pyproject.toml
       - name: Setup environment

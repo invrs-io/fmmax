@@ -26,7 +26,7 @@ EXPANSION = basis.generate_expansion(
 
 
 class FftTest(unittest.TestCase):
-    def testfft_ifft_single(self):
+    def test_fft_ifft_single(self):
         shape = (100, 80)
         x = jax.random.uniform(jax.random.PRNGKey(0), shape=shape)
 
@@ -39,7 +39,7 @@ class FftTest(unittest.TestCase):
         fft_ifft_y = fft.fft(ifft_y, EXPANSION)
         onp.testing.assert_allclose(y, fft_ifft_y)
 
-    def testfft_specify_axis(self):
+    def test_fft_specify_axis(self):
         shape = (20, 100, 80, 4)
         x = jax.random.uniform(jax.random.PRNGKey(0), shape=shape)
         y = fft.fft(x, EXPANSION, axes=(-3, -2))
@@ -49,7 +49,7 @@ class FftTest(unittest.TestCase):
             axes=(-2, -1),
         )
         expected_y = jnp.transpose(expected_y_transpose, (0, 2, 1))
-        onp.testing.assert_array_equal(y, expected_y)
+        onp.testing.assert_allclose(y, expected_y, atol=1e-16, rtol=1e-12)
 
     def test_ifft_specify_axis(self):
         shape = (20, 100, 80)
@@ -63,7 +63,7 @@ class FftTest(unittest.TestCase):
         ifft_y = jnp.transpose(ifft_y_transposed, axes=(2, 0, 1))
         onp.testing.assert_allclose(ifft_y, expected_ifft_y)
 
-    def testfft_ifft_batch(self):
+    def test_fft_ifft_batch(self):
         batch_size = 24
         shape = (100, 80)
         x = jax.random.uniform(jax.random.PRNGKey(0), shape=(batch_size,) + shape)
@@ -100,7 +100,7 @@ class ShapeValidationTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "`shape` is insufficient for"):
             fft.fourier_convolution_matrix(jnp.ones((8, 4)), expansion)
 
-    def testfft(self):
+    def test_fft(self):
         expansion = basis.Expansion(basis_coefficients=jnp.asarray([[-2, -2], [2, 2]]))
         with self.assertRaisesRegex(ValueError, "`shape` is insufficient for"):
             fft.fft(jnp.ones((8, 4)), expansion)

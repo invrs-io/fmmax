@@ -58,7 +58,6 @@ def _eig_jax(matrix: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
     eigenvalues, eigenvectors = jax.lax.linalg.eig(
         matrix,
         compute_left_eigenvectors=False,
-        use_magma=False,
     )
     return eigenvalues, eigenvectors
 

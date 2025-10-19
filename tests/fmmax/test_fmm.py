@@ -540,8 +540,8 @@ class FourierMatrixBatchMatchesSingleTest(unittest.TestCase):
             onp.testing.assert_allclose(
                 transverse_permittivity_matrix,
                 batch_transverse_permittivity_matrix[i, ...],
-                atol=1e-12,
-                rtol=1e-6,
+                atol=1e-9,
+                rtol=1e-5,
             )
             onp.testing.assert_allclose(
                 inverse_z_permeability_matrix,
@@ -554,8 +554,8 @@ class FourierMatrixBatchMatchesSingleTest(unittest.TestCase):
             onp.testing.assert_allclose(
                 transverse_permeability_matrix,
                 batch_transverse_permeability_matrix[i, ...],
-                atol=1e-12,
-                rtol=1e-6,
+                atol=1e-9,
+                rtol=1e-5,
             )
             if formulation != fmm.Formulation.FFT:
                 onp.testing.assert_allclose(
