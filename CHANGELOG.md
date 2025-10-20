@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 1.7.1 (October 20, 2025)
+- Fix links in README
+
+## 1.7.0 (October 20, 2025)
+- Update license to MIT
+- Use python 3.13 in GitHub CI workflow
+- remove unused `black` dependency
+
 ## 1.6.1 (October 8, 2025)
 - Update readme
 - Docs improvements
