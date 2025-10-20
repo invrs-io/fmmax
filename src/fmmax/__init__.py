@@ -3,7 +3,7 @@
 Copyright (c) 2025 invrs.io LLC
 """
 
-__version__ = "v1.7.0"
+__version__ = "v1.7.1"
 
 # ruff: noqa: F401
 from fmmax.basis import (
