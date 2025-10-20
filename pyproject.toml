@@ -45,7 +45,6 @@ tests = [
   "pytest-subtests",
 ]
 dev = [
-  "black",
   "bump-my-version",
   "darglint",
   "fmmax[docs,examples,tests]",
