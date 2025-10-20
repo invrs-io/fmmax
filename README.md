@@ -1,7 +1,7 @@
 # FMMAX: Fourier Modal Method with Jax
 
-[![Docs](https://img.shields.io/badge/Docs-blue.svg)](https://mfschubert.github.io/fmmax/)
-[![Continuous integration](https://github.com/mfschubert/fmmax/actions/workflows/build-ci.yml/badge.svg)](https://github.com/mfschubert/fmmax/actions)
+[![Docs](https://img.shields.io/badge/Docs-blue.svg)](https://invrs-io.github.io/fmmax/)
+[![Continuous integration](https://github.com/invrs-io/fmmax/actions/workflows/build-ci.yml/badge.svg)](https://github.com/invrs-io/fmmax/actions)
 [![PyPI version](https://img.shields.io/pypi/v/fmmax)](https://pypi.org/project/fmmax/)
 
 FMMAX is an implementation of the Fourier modal method (FMM) using [jax](https://github.com/google/jax).
@@ -15,17 +15,17 @@ The use of JAX enables GPU acceleration and automatic differentiation of FMM sim
 ## Brillouin zone integration
 Brillouin zone integration [3] allows modeling of localized sources in periodic structures. Check out the `crystal` example to see how we model a Gaussian beam incident upon a photonic crystal slab, or an isolated dipole embedded within the slab. The Gaussian beam fields are shown below.
 
-![Gaussian beam incident on photonic crystal](https://github.com/mfschubert/fmmax/blob/main/docs/img/crystal_beam.gif?raw=true)
+![Gaussian beam incident on photonic crystal](https://github.com/invrs-io/fmmax/blob/main/docs/img/crystal_beam.gif?raw=true)
 
 ## Vector FMM formulations
 Vector FMM formulations introduce local coordinate systems at each point in the unit cell, which are normal and tangent to all interfaces. This allows normal and tangent field components to be treated differently and improves convergence. FMMAX implements several vector formulations of the FMM, with automatic vector field generation based on functional minimization similar to [4]. FMMAX includes the _Pol_, _Normal_, and _Jones_ methods from [4], and introduce a new _Jones direct_ method can yield superior convergence. These are supported also with anisotropic and magnetic materials. The `vector_fields` example computes vector fields by these methods for an example structure.
 
-![Comparison of automatically-generated vector fields](https://github.com/mfschubert/fmmax/blob/main/docs/img/vector_fields.png?raw=true)
+![Comparison of automatically-generated vector fields](https://github.com/invrs-io/fmmax/blob/main/docs/img/vector_fields.png?raw=true)
 
 ## Anisotropic, magnetic materials
 FMMAX's support of anisotropic, magnetic materials allows modeling of uniaxial perfectly matched layers. This is demonstrated in the `metal_dipole` example, which simulates in vaccuum located above a metal substrate. The resulting electric fields are shown below.
 
-![Dipole suspended above metal substrate with PML](https://github.com/mfschubert/fmmax/blob/main/docs/img/metal_dipole.png?raw=true)
+![Dipole suspended above metal substrate with PML](https://github.com/invrs-io/fmmax/blob/main/docs/img/metal_dipole.png?raw=true)
 
 ## FMM Conventions
 - The speed of light, vacuum permittivity, and vacuum permeability are all 1.
@@ -51,9 +51,9 @@ pip install -e ".[dev]"
 
 The `[dev]` modifier specifies optional dependencies for developers which are listed in `pyproject.toml`. (For this to work, it may be necessary to first update your pip installation using e.g. `python3 -m pip install --upgrade pip`.)
 
-## Credit
+## License and Credit
 
-FMMAX was originally developed at Meta and open-sourced under the [MIT license](https://github.com/facebookresearch/fmmax/blob/main/LICENSE). This project was forked from the [original repo](https://github.com/facebookresearch/fmmax) after the primary author left Meta and contains significant improvements to the original version. The [FMMAX pypi project](https://pypi.org/project/fmmax/) is based on this repo. If you use FMMAX, please cite [the paper](https://opg.optica.org/oe/fulltext.cfm?uri=oe-31-26-42945&id=544113),
+FMMAX is available under the [MIT License](https://github.com/invrs-io/fmmax/blob/main/LICENSE). It was originally developed and open-sourced at Meta; this project was forked from the (also MIT-licensed) [original repo](https://github.com/facebookresearch/fmmax) after the primary author left Meta and contains significant improvements to the original version. The [FMMAX pypi project](https://pypi.org/project/fmmax/) is based on this repo. If you use FMMAX, please cite [the paper](https://opg.optica.org/oe/fulltext.cfm?uri=oe-31-26-42945&id=544113),
 
 ```
 @article{schubert2023fourier,
@@ -67,10 +67,6 @@ FMMAX was originally developed at Meta and open-sourced under the [MIT license](
   publisher={Optica Publishing Group}
 }
 ```
-
-## License
-FMMAX is made available under a combination of licenses, with code developed at Meta licensed differently than code written subsequently. See the [LICENSE](https://github.com/mfschubert/fmmax/blob/main/LICENSE) file for details.
-
 
 ## References
 1. V. Liu and S. Fan, [S4: A free electromagnetic solver for layered structures structures](https://www.sciencedirect.com/science/article/pii/S0010465512001658), _Comput. Phys. Commun._ **183**, 2233-2244 (2012).
