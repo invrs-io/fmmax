@@ -39,7 +39,6 @@ jeig = [
   "jeig",
 ]
 tests = [
-  "grcwa",
   "parameterized",
   "pytest",
   "pytest-subtests",
